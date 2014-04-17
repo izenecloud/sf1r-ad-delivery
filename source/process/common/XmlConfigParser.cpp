@@ -1585,14 +1585,6 @@ void CollectionConfig::parseMiningBundleSchema(const ticpp::Element * mining_sch
         parseFuzzyNormalizerNode(
             subNodeNorm, mining_schema.suffixmatch_schema.normalizer_config);
 
-        ticpp::Element* subNodeForward = getUniqChildElement(task_node, "ProductForward", false);
-        if (subNodeForward)
-        {
-            bool bForward = false;
-            getAttribute(subNodeForward, "enable", bForward, false);
-            mining_schema.suffixmatch_schema.product_forward_enable = bForward;
-        }
-
         ticpp::Element* subNodeTopK = getUniqChildElement(task_node, "GroupCounterTopK", false);
         if (subNodeTopK)
         {
