@@ -11,11 +11,9 @@
  */
 
 #include "TextSummarizationSubManager.h"
-#include "text-summarization/TextSummarization.h"
 
 using namespace std;
 using namespace izenelib::util;     //for UString
-using namespace sf1r::text_summarization;
 
 namespace sf1r
 {
@@ -78,34 +76,6 @@ bool TextSummarizationSubManager::getOffsetPairs(
     }
     //initialize first value to be 0 by default
     offsetPairs.push_back(0);
-
-    //append summary offset
-    vector<unsigned int> sentenceOrder;
-    if (numOfSentence > 0)
-    {
-        TextSummarization ts( numOfSentence );
-        ts.computeSummaryRM(numOfSentence, sentenceListInTermId, sentenceOrder);
-
-        //adding summary sentence Offset pair
-        unsigned int i=0;
-        while ( ( i < sentenceOrder.size()) && (i < numOfSentence))
-        {
-            if (sentenceOrder[i] < sentencesOffsetPairs.size())
-            {
-                offsetPairs.push_back(sentencesOffsetPairs[sentenceOrder[i]].first);
-                offsetPairs.push_back(sentencesOffsetPairs[sentenceOrder[i]].second);
-            }
-            i++;
-        }
-
-        if (numOfSentence < sentenceOrder.size())
-            offsetPairs[0] = numOfSentence;
-        else
-            offsetPairs[0] = sentenceOrder.size();
-
-
-        sentenceOrder.clear();
-    }
 
     //adding snippet sentence offset pair
     unsigned int j = 0;

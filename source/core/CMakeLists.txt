@@ -36,8 +36,6 @@ FILE(GLOB document_SRC
   "document-manager/*.cpp"
   "document-manager/snippet-generation-submanager/*.cpp"
   "document-manager/text-summarization-submanager/*.cpp"
-  "document-manager/text-summarization-submanager/text-summarization/*.cpp"
-  "document-manager/text-summarization-submanager/text-summarization/*.C"
   "document-manager/highlighter/*.cpp"
 )
 
