@@ -304,11 +304,6 @@ public:
         return productScoreManager_;
     }
 
-    CategoryClassifyTable* GetCategoryClassifyTable()
-    {
-        return categoryClassifyTable_;
-    }
-
     ProductForwardManager* GetProductForwardManger()
     {
         return productForwardManager_;
@@ -406,7 +401,6 @@ private:
 
     bool initMerchantScoreManager_(const ProductRankingConfig& rankConfig);
     bool initGroupLabelKnowledge_(const ProductRankingConfig& rankConfig);
-    bool initCategoryClassifyTable_(const ProductRankingConfig& rankConfig);
     bool initProductScorerFactory_(const ProductRankingConfig& rankConfig);
     bool initProductRankerFactory_(const ProductRankingConfig& rankConfig);
     bool initProductForwardManager_();
@@ -478,9 +472,6 @@ private:
 
     /** Product Score Table Manager */
     ProductScoreManager* productScoreManager_;
-
-    /** Table stores one classified category for each doc */
-    CategoryClassifyTable* categoryClassifyTable_;
 
     /** The forward index, for B5MA only*/
     ProductForwardManager* productForwardManager_;
