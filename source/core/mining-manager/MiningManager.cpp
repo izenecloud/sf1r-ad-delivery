@@ -1557,6 +1557,13 @@ bool MiningManager::initAdIndexManager_(AdIndexConfig& adIndexConfig)
     const bfs::path parentDir(collectionDataPath_);
     const bfs::path adIndexDir(parentDir / "adindex");
     bfs::create_directories(adIndexDir);
+    adIndexManager_ = new AdIndexManager(
+        system_resource_path_ + "/ad_resource",
+        adIndexDir.string(),
+        document_manager_, numericTableBuilder_,
+        searchManager_->normalSearch_.get(), groupManager_);
+    adIndexManager_->buildMiningTask();
+    miningTaskBuilder_->addTask(adIndexManager_->getMiningTask());
 
     return true;
 }

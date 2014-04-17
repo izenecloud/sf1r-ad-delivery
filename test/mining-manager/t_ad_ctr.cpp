@@ -1,8 +1,8 @@
-#include <mining-manager/ad-index-manager/AdClickPredictor.h>
-#include <mining-manager/ad-index-manager/AdStreamSubscriber.h>
-#include <mining-manager/ad-index-manager/AdSelector.h>
-#include <mining-manager/ad-index-manager/AdRecommender.h>
-#include <mining-manager/ad-index-manager/AdFeedbackMgr.h>
+#include <ad-manager/AdClickPredictor.h>
+#include <ad-manager/AdStreamSubscriber.h>
+#include <ad-manager/AdSelector.h>
+#include <ad-manager/AdRecommender.h>
+#include <ad-manager/AdFeedbackMgr.h>
 #include <node-manager/SuperNodeManager.h>
 #include <boost/thread.hpp>
 #include <boost/filesystem.hpp>
@@ -149,6 +149,7 @@ int main()
         return 0;
 
     TitlePCAWrapper::get()->loadDictFiles("/home/vincentlee/workspace/sf1/sf1r-engine/package/resource/dict/title_pca");
+
 
     LOG(INFO) << "begin generate training test data.";
     std::ifstream ifs("/opt/mine/track2/training.txt");
@@ -313,7 +314,7 @@ int main()
     {
         new_ad_segs.push_back(std::make_pair("Category", gen_rand_str()));
     }
-    for (size_t i = 0; i < 1000; ++i)
+    for (size_t i = 0; i < 100; ++i)
     {
         new_ad_segs.push_back(std::make_pair("Topic", gen_rand_str()));
     }
@@ -408,7 +409,8 @@ int main()
     LOG(INFO) << "end update ad segment string.";
 
     LOG(INFO) << "begin test ad log parser";
-    AdFeedbackMgr::get()->init("172.16.11.60", 8091);
+    AdFeedbackMgr::get()->init("10.10.103.123", 8091);
+
     std::ifstream ifs_adlog("/home/vincentlee/workspace/ad-clicked-log.json");
     std::size_t ad_impression = 0;
     std::size_t ad_clicked = 0;
@@ -430,6 +432,34 @@ int main()
         }
     }
 
+    LOG(INFO) << "end test ad log parser. impression: " << ad_impression << " , clicked: " << ad_clicked;
+    sleep(10);
+    ifs_adlog.close();
+    ifs_adlog.open("/opt/mine/adrs-2014-03-05-adrs.139394880003.avro", ios::binary);
+    ad_impression = 0;
+    ad_clicked = 0;
+    while(ifs_adlog.good())
+    {
+        std::string line;
+        AdFeedbackMgr::FeedbackInfo feedback_info;
+        std::getline(ifs_adlog, line);
+        if (ad_impression == 0)
+        {
+            ++ad_impression;
+            continue;
+        }
+        bool ret = AdFeedbackMgr::get()->parserFeedbackLogForAVRO(line, feedback_info);
+        if (ret)
+        {
+            ++ad_impression;
+            if (feedback_info.action == AdFeedbackMgr::Click)
+            {
+                ad_clicked++;
+                LOG(INFO) << "clicked log : " << feedback_info.user_id << ", "
+                    << feedback_info.ad_id;
+            }
+        }
+    }
     LOG(INFO) << "end test ad log parser. impression: " << ad_impression << " , clicked: " << ad_clicked;
     sleep(30);
     LOG(INFO) << "begin test ad select.";
