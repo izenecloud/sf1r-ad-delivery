@@ -12,10 +12,4 @@ CONFIGURE_FILE(
   ESCAPE_QUOTES @ONLY
   )
 
-ADD_SUBDIRECTORY(document-manager)
 ADD_SUBDIRECTORY(mining-manager)
-ADD_SUBDIRECTORY(ranking-manager)
-ADD_SUBDIRECTORY(query-manager)
-ADD_SUBDIRECTORY(search-manager)
-ADD_SUBDIRECTORY(node-manager)
-#ADD_SUBDIRECTORY(common)

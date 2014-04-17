@@ -23,7 +23,6 @@ CHECK_INCLUDE_FILE(ext/hash_map HAVE_EXT_HASH_MAP)
 FIND_PACKAGE(izenelib REQUIRED COMPONENTS
   izene_util
   index_manager
-  mock_index_manager
   febird
   izene_log
   procmeminfo
