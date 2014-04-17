@@ -19,9 +19,6 @@
 #include <node-manager/DistributeFileSyncMgr.h>
 #include <node-manager/DistributeFileSys.h>
 
-#include <mining-manager/query-recommendation/CorrectionEngineWrapper.h>
-#include <mining-manager/query-recommendation/RecommendEngineWrapper.h>
-#include <mining-manager/query-abbreviation/AbbrEngine.h>
 #include <common/OnSignal.h>
 #include <common/XmlConfigParser.h>
 #include <common/CollectionManager.h>
@@ -155,11 +152,6 @@ void CobraProcess::initQuery()
     {
         pQA->load(qaPath);
     }
-    RecommendEngineWrapper::system_resource_path_ = SF1Config::get()->getResourceDir();
-    RecommendEngineWrapper::system_working_path_ = SF1Config::get()->getWorkingDir();
-    RecommendEngineWrapper::getInstance();
-    QA::AbbrEngine::get()->init(SF1Config::get()->getWorkingDir(), SF1Config::get()->getResourceDir());
-
 }
 
 bool CobraProcess::initFireWall()
