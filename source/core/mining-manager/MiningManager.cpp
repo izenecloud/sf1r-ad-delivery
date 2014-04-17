@@ -24,9 +24,6 @@
 #include "product-score-manager/OfflineProductScorerFactoryImpl.h"
 #include "product-score-manager/ProductScoreTable.h"
 #include "product-ranker/ProductRankerFactory.h"
-#include "product-forward/ProductForwardManager.h"
-#include "product-forward/ProductForwardMiningTask.h"
-
 
 #include "suffix-match-manager/SuffixMatchManager.hpp"
 #include "product-tokenizer/ProductTokenizerFactory.h"
@@ -178,7 +175,6 @@ MiningManager::MiningManager(
     , customRankManager_(NULL)
     , offlineScorerFactory_(NULL)
     , productScoreManager_(NULL)
-    , productForwardManager_(NULL)
     , groupLabelKnowledge_(NULL)
     , productScorerFactory_(NULL)
     , productRankerFactory_(NULL)
@@ -197,7 +193,6 @@ MiningManager::~MiningManager()
     if (productRankerFactory_) delete productRankerFactory_;
     if (productScorerFactory_) delete productScorerFactory_;
     if (groupLabelKnowledge_) delete groupLabelKnowledge_;
-    if (productForwardManager_) delete productForwardManager_;
     if (productScoreManager_) delete productScoreManager_;
     if (offlineScorerFactory_) delete offlineScorerFactory_;
     if (customRankManager_) delete customRankManager_;
@@ -423,10 +418,6 @@ bool MiningManager::open()
                 miningTaskBuilder_->addTask(miningTask);
             }
 
-            if (mining_schema_.suffixmatch_schema.product_forward_enable)
-            {
-                initProductForwardManager_();
-            }
         }
 
         if(!initAdIndexManager_(mining_schema_.ad_index_config))
@@ -1136,22 +1127,10 @@ bool MiningManager::GetSuffixMatch(
         searchManager_->fuzzySearchRanker_.rankByProductScore(
             actionOperation.actionItem_, res_list, isCompare);
 
-        if (mining_schema_.suffixmatch_schema.product_forward_enable)
-        {
-            std::vector<std::pair<double, uint32_t> > final_res;
-            productForwardManager_->forwardSearch(pattern_orig, res_list, final_res);
-            LOG(INFO)<<"suffix res num = "<<res_list.size()<<" forward res = "<<final_res.size();
-            final_res.swap(res_list);
-            totalCount = res_list.size();
-        }
-
         productScoreTime = elapsedFromLast(clock, lastSec);
-        if (!mining_schema_.suffixmatch_schema.product_forward_enable)
-        {
-            getGroupAttrRep_(res_list, actionOperation.actionItem_.groupParam_,
-                         groupRep, attrRep,
-                         kTopLabelPropName, topLabelMap);
-        }
+        getGroupAttrRep_(res_list, actionOperation.actionItem_.groupParam_,
+                     groupRep, attrRep,
+                     kTopLabelPropName, topLabelMap);
 
         groupTime = elapsedFromLast(clock, lastSec);
     }
@@ -1181,13 +1160,9 @@ bool MiningManager::GetSuffixMatch(
         rankScoreList[i] = res_list[i].first;
         docIdList[i] = res_list[i].second;
     }
-    if (!mining_schema_.suffixmatch_schema.product_forward_enable)
-    {
-        searchManager_->fuzzySearchRanker_.rankByPropValue(
-            actionOperation, start, docIdList, rankScoreList, customRankScoreList, distSearchInfo);
-    }
+    searchManager_->fuzzySearchRanker_.rankByPropValue(
+        actionOperation, start, docIdList, rankScoreList, customRankScoreList, distSearchInfo);
 
-    cout<<"return true"<<endl;
 
     return true;
 }
@@ -1380,30 +1355,6 @@ bool MiningManager::initGroupLabelKnowledge_(const ProductRankingConfig& rankCon
         }
     }
 
-    return true;
-}
-
-bool MiningManager::initProductForwardManager_()
-{
-    if (productForwardManager_) delete productForwardManager_;
-
-    const bfs::path parentDir(collectionDataPath_);
-    const bfs::path forwardDir(parentDir / "forward_index");
-    bfs::create_directories(forwardDir);
-
-    productForwardManager_ = new ProductForwardManager(
-        forwardDir.string(), "Title");
-
-    if (!productForwardManager_->open())
-    {
-        LOG(ERROR) << "open " << forwardDir << " failed";
-    }
-
-    MiningTask* miningTask_forward =  new ProductForwardMiningTask(
-        document_manager_, productForwardManager_);
-    miningTaskBuilder_->addTask(miningTask_forward);
-
-    LOG(INFO)<<"product forward init ok";
     return true;
 }
 
