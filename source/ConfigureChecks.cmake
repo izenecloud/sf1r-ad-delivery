@@ -108,6 +108,7 @@ FIND_PACKAGE(JPEG REQUIRED)
 FIND_PACKAGE(PNG REQUIRED)
 FIND_PACKAGE(OpenSSL REQUIRED)
 FIND_PACKAGE(Couchbase REQUIRED)
+FIND_PACKAGE(Avro REQUIRED)
 ##################################################
 # Driver Docs
 #####
