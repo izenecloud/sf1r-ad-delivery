@@ -79,7 +79,6 @@ class ProductScorerFactory;
 class ProductScoreManager;
 class OfflineProductScorerFactory;
 class CategoryClassifyTable;
-class ProductForwardManager;
 class ProductRankerFactory;
 class SuffixMatchManager;
 class MiningTaskBuilder;
@@ -304,16 +303,6 @@ public:
         return productScoreManager_;
     }
 
-    CategoryClassifyTable* GetCategoryClassifyTable()
-    {
-        return categoryClassifyTable_;
-    }
-
-    ProductForwardManager* GetProductForwardManger()
-    {
-        return productForwardManager_;
-    }
-
     const GroupLabelKnowledge* GetGroupLabelKnowledge() const
     {
         return groupLabelKnowledge_;
@@ -406,10 +395,8 @@ private:
 
     bool initMerchantScoreManager_(const ProductRankingConfig& rankConfig);
     bool initGroupLabelKnowledge_(const ProductRankingConfig& rankConfig);
-    bool initCategoryClassifyTable_(const ProductRankingConfig& rankConfig);
     bool initProductScorerFactory_(const ProductRankingConfig& rankConfig);
     bool initProductRankerFactory_(const ProductRankingConfig& rankConfig);
-    bool initProductForwardManager_();
 
     bool initAdIndexManager_(AdIndexConfig& adIndexConfig);
 
@@ -478,12 +465,6 @@ private:
 
     /** Product Score Table Manager */
     ProductScoreManager* productScoreManager_;
-
-    /** Table stores one classified category for each doc */
-    CategoryClassifyTable* categoryClassifyTable_;
-
-    /** The forward index, for B5MA only*/
-    ProductForwardManager* productForwardManager_;
 
     /** the knowledge of top labels for category boosting */
     GroupLabelKnowledge* groupLabelKnowledge_;
