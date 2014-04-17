@@ -20,7 +20,7 @@ SET(libs
   sf1r_document_manager
   sf1r_configuration_manager
   sf1r_mining_manager
-
+  sf1r_ad_manager
   sf1r_query_manager
   sf1r_directory_manager
   sf1r_log_manager

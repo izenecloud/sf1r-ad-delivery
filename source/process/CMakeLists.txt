@@ -41,6 +41,8 @@ ADD_EXECUTABLE(CobraProcess ${cobra_process_SRC})
 
 TARGET_LINK_LIBRARIES(CobraProcess
   sf1r_mining_manager
+  sf1r_ad_manager
+
   sf1r_log_manager
   sf1r_document_manager
   sf1r_ranking_manager

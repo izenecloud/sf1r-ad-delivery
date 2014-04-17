@@ -124,7 +124,11 @@ private:
     void getAdLatentVecKeys(const std::string& ad_docid, std::vector<std::string>& ad_latentvec_keys);
     void getUserLatentVecKeys(const FeatureT& user_info, std::vector<std::string>& user_latentvec_keys);
     void getCombinedUserLatentVec(const std::vector<std::string>& latentvec_keys, LatentVecT& latent_vec);
+    void getCombinedUserLatentVec(const std::vector<std::string>& latentvec_keys,
+        const std::vector<double>& weight_list, LatentVecT& latent_vec);
     void getCombinedUserLatentVec(const std::vector<LatentVecT*>& latentvec_list, LatentVecT& latent_vec);
+    void getCombinedUserLatentVec(const std::vector<LatentVecT*>& latentvec_list,
+        const std::vector<double>& weight_list, LatentVecT& latent_vec);
 
     std::string data_path_;
     bool use_ad_feature_;

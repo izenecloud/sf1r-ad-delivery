@@ -108,8 +108,10 @@ bool AdMiningTask::postProcess()
         return false;
     }
 
-    writeLock lock(rwDNFMutex_);
-    ad_dnf_index_ = incrementalAdIndex_;
+    {
+        writeLock lock(rwDNFMutex_);
+        ad_dnf_index_.swap(incrementalAdIndex_);
+    }
 
     incrementalAdIndex_.reset();
     return true;

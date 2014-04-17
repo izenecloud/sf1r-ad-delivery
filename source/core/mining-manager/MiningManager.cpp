@@ -40,7 +40,7 @@
 
 #include <index-manager/zambezi-manager/ZambeziManager.h>
 
-#include "ad-index-manager/AdIndexManager.h"
+#include <ad-manager/AdIndexManager.h>
 
 #include <search-manager/SearchManager.h>
 #include <search-manager/NumericPropertyTableBuilderImpl.h>
@@ -187,7 +187,6 @@ MiningManager::MiningManager(
     , productRankerFactory_(NULL)
     , suffixMatchManager_(NULL)
     , productTokenizer_(NULL)
-    , adIndexManager_(NULL)
     , miningTaskBuilder_(NULL)
     , multiThreadMiningTaskBuilder_(NULL)
     , hasDeletedDocDuringMining_(false)
@@ -196,7 +195,6 @@ MiningManager::MiningManager(
 
 MiningManager::~MiningManager()
 {
-    if (adIndexManager_) delete adIndexManager_;
     if (multiThreadMiningTaskBuilder_) delete multiThreadMiningTaskBuilder_;
     if (miningTaskBuilder_) delete miningTaskBuilder_;
     if (productRankerFactory_) delete productRankerFactory_;
@@ -1560,17 +1558,6 @@ bool MiningManager::initAdIndexManager_(AdIndexConfig& adIndexConfig)
     const bfs::path adIndexDir(parentDir / "adindex");
     bfs::create_directories(adIndexDir);
 
-    if (adIndexManager_) delete adIndexManager_;
-
-    adIndexManager_ = new AdIndexManager(
-        system_resource_path_ + "/ad_resource",
-        adIndexDir.string(),
-        document_manager_, numericTableBuilder_,
-        searchManager_->normalSearch_.get(), groupManager_);
-    adIndexManager_->buildMiningTask();
-
-    miningTaskBuilder_->addTask(
-            adIndexManager_->getMiningTask());
     return true;
 }
 

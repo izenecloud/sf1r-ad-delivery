@@ -27,6 +27,7 @@ IF(Boost_FOUND AND Boost_UNIT_TEST_FRAMEWORK_FOUND)
       ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
       sf1r_configuration_manager
       sf1r_mining_manager
+      sf1r_ad_manager
       sf1r_log_manager
       sf1r_query_manager
       sf1r_la_manager

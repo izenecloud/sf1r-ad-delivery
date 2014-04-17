@@ -5,7 +5,7 @@
 #ifndef SF1_AD_MINING_TASK_H_
 #define SF1_AD_MINING_TASK_H_
 
-#include "../MiningTask.h"
+#include <mining-manager/MiningTask.h>
 #include "DNFParser.h"
 #include <ir/be_index/InvIndex.hpp>
 #include <document-manager/DocumentManager.h>

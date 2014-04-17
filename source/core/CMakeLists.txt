@@ -25,6 +25,7 @@ FILE(GLOB_RECURSE query_SRC "query-manager/*.cpp")
 FILE(GLOB_RECURSE aggregator_SRC "aggregator-manager/*.cpp")
 FILE(GLOB_RECURSE node_SRC "node-manager/*.cpp")
 FILE(GLOB sf1r_net_SRC "sf1r-net/*.cpp")
+FILE(GLOB ad_SRC "ad-manager/*.cpp")
 
 FILE(GLOB index_SRC
   "index-manager/zambezi-manager/*.cpp"
@@ -64,7 +65,6 @@ FILE(GLOB mining_SRC
   "mining-manager/query-recommendation/evaluate/*.cpp"
   "mining-manager/category-classify/*.cpp"
   "mining-manager/title-scorer/*.cpp"
-  "mining-manager/ad-index-manager/*.cpp"
 )
 
 ADD_DEFINITIONS("-fno-strict-aliasing")
@@ -82,6 +82,7 @@ ADD_LIBRARY(sf1r_document_manager ${document_SRC})
 ADD_LIBRARY(sf1r_aggregator_manager ${aggregator_SRC})
 ADD_LIBRARY(sf1r_node_manager ${node_SRC})
 ADD_LIBRARY(sf1r_net ${sf1r_net_SRC})
+ADD_LIBRARY(sf1r_ad_manager ${ad_SRC})
 
 INSTALL(TARGETS
     sf1r_configuration_manager
@@ -98,6 +99,7 @@ INSTALL(TARGETS
     sf1r_aggregator_manager
     sf1r_node_manager
     sf1r_net
+    sf1r_ad_manager
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     COMPONENT sf1r_libraries)

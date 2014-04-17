@@ -20,6 +20,7 @@ INCLUDE_DIRECTORIES(
 SET(libs
   sf1r_search_manager
   sf1r_mining_manager
+  sf1r_ad_manager
   sf1r_query_manager
   sf1r_ranking_manager
   sf1r_document_manager

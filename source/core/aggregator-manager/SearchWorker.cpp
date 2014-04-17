@@ -21,6 +21,7 @@
 #include <util/driver/Request.h>
 #include <aggregator-manager/MasterNotifier.h>
 #include <query-manager/QueryTypeDef.h>
+#include <ad-manager/AdIndexManager.h>
 
 namespace sf1r
 {

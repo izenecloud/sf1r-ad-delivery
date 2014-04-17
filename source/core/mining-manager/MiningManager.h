@@ -18,7 +18,6 @@
 #include "group-manager/PropValueTable.h" // pvid_t
 #include "custom-rank-manager/CustomRankValue.h"
 #include "merchant-score-manager/MerchantScore.h"
-#include "ad-index-manager/AdIndexManager.h"
 
 #include <common/ResultType.h>
 #include <configuration-manager/PropertyConfig.h>

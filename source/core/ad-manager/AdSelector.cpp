@@ -19,6 +19,7 @@ namespace sf1r
 
 static const std::string linker("-");
 static const std::string UnknownStr("Unknown");
+static const double E_GREEDY_RATIO = 0.1;
 
 static bool sort_tokens_func(const std::pair<std::string, double>& left, const std::pair<std::string, double>& right)
 {
@@ -769,45 +770,6 @@ bool AdSelector::getHistoryCTR(const std::vector<std::string>& user_seg_key,
     return ret;
 }
 
-//bool AdSelector::getHistoryCTR(const std::vector<std::string>& all_fullkey, double& max_ctr)
-//{
-//    if (all_fullkey.empty())
-//        return true;
-//
-//    bool ret = true;
-//    max_ctr = 0;
-//    boost::unordered_map<std::string, double>::const_iterator it = history_ctr_data_.find(all_fullkey[0]);
-//
-//    if (it != history_ctr_data_.end())
-//        max_ctr = it->second;
-//    else
-//    {
-//        ret = false;
-//        LOG(INFO) << "history ctr key not found: " << all_fullkey[0];
-//    }
-//
-//    if (all_fullkey.size() > 1)
-//    {
-//        //LOG(INFO) << "multi values : " << all_fullkey.size(); 
-//        for (size_t i = 1; i < all_fullkey.size(); ++i)
-//        {
-//            it = history_ctr_data_.find(all_fullkey[i]);
-//            if (it != history_ctr_data_.end())
-//            {
-//                max_ctr = std::max(it->second, max_ctr);
-//                //LOG(INFO) << "values : " << all_fullkey[i]; 
-//            }
-//            else
-//            {
-//                ret = false;
-//                LOG(INFO) << "multi value not found: " << all_fullkey[i];
-//            }
-//        }
-//    }
-//    //LOG(INFO) << "history ctr key: " << all_fullkey[0] << ", ctr: " << max_ctr;
-//    return ret;
-//}
-
 void AdSelector::selectByRandSelectPolicy(std::size_t max_unclicked_retnum, std::vector<docid_t>& unclicked_doclist)
 {
     std::set<int> rand_index_list;
@@ -870,7 +832,13 @@ bool AdSelector::select(const FeatureT& user_info,
 
     std::vector<docid_t> pending_compute_doclist;
 
-    bool random_select = true;
+    // rank by random in e-greedy strategy.
+    bool random_select = false;
+    if (random_gen_() % 1000  < E_GREEDY_RATIO*1000)
+    {
+        random_select = true;
+    }
+
     for(size_t i = 0; i < ad_doclist.size(); ++i)
     {
         const docid_t& docid = ad_doclist[i];

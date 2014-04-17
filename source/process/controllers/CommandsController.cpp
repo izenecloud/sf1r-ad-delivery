@@ -13,7 +13,7 @@
 #include <bundles/mining/MiningTaskService.h>
 #include <core/mining-manager/MiningManager.h>
 #include <aggregator-manager/SearchAggregator.h>
-#include <mining-manager/ad-index-manager/AdClickPredictor.h>
+#include <ad-manager/AdClickPredictor.h>
 #include <node-manager/DistributeRequestHooker.h>
 #include <node-manager/MasterManagerBase.h>
 #include <node-manager/NodeManagerBase.h>

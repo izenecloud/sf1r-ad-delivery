@@ -250,6 +250,31 @@ void AdRecommender::getAdLatentVecKeys(const std::string& ad_docid, std::vector<
     }
 }
 
+void AdRecommender::getCombinedUserLatentVec(const std::vector<std::string>& latentvec_keys,
+    const std::vector<double>& weight_list, LatentVecT& latent_vec)
+{
+    latent_vec.clear();
+    latent_vec.resize(default_latent_.size(), 0);
+    for (std::size_t i = 0; i < latentvec_keys.size(); ++i)
+    {
+        LatentVecContainerT::const_iterator it = user_feature_latent_vec_list_.find(latentvec_keys[i]);
+        if (it == user_feature_latent_vec_list_.end())
+            continue;
+        double w = weight_list[i];
+        for(std::size_t j = 0; j < latent_vec.size(); ++j)
+        {
+            latent_vec[j] += it->second[j]*w;
+        }
+    }
+    for(std::size_t j = 0; j < latent_vec.size(); ++j)
+    {
+        if (latentvec_keys.size() == 0)
+            latent_vec[j] = 1;
+        else
+            latent_vec[j] /= latentvec_keys.size();
+    }
+}
+
 void AdRecommender::getCombinedUserLatentVec(const std::vector<std::string>& latentvec_keys, LatentVecT& latent_vec)
 {
     latent_vec.clear();
@@ -284,6 +309,28 @@ void AdRecommender::getCombinedUserLatentVec(const std::vector<LatentVecT*>& lat
         for(std::size_t j = 0; j < latent_vec.size(); ++j)
         {
             latent_vec[j] += (*latentvec_list[i])[j];
+        }
+    }
+    for(std::size_t j = 0; j < latent_vec.size(); ++j)
+    {
+        if (latentvec_list.size() == 0)
+            latent_vec[j] = 1;
+        else
+            latent_vec[j] /= latentvec_list.size();
+    }
+}
+
+void AdRecommender::getCombinedUserLatentVec(const std::vector<LatentVecT*>& latentvec_list,
+    const std::vector<double>& weight_list, LatentVecT& latent_vec)
+{
+    latent_vec.clear();
+    latent_vec.resize(default_latent_.size(), 0);
+    for (std::size_t i = 0; i < latentvec_list.size(); ++i)
+    {
+        double w = weight_list[i];
+        for(std::size_t j = 0; j < latent_vec.size(); ++j)
+        {
+            latent_vec[j] += (*latentvec_list[i])[j] * w;
         }
     }
     for(std::size_t j = 0; j < latent_vec.size(); ++j)
