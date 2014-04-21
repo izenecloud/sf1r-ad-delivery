@@ -485,6 +485,11 @@ bool SearchWorker::getSearchResult_(
         break;
 
     case SearchingMode::AD_INDEX:
+        if (!miningManager_->getAdIndexManager())
+        {
+            LOG(INFO) << "ad index manager was NULL.";
+            return true;
+        }
         if (!miningManager_->getAdIndexManager()->searchByQuery(
                     actionOperation, resultItem))
         {

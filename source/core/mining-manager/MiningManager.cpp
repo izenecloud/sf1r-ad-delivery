@@ -182,6 +182,7 @@ MiningManager::MiningManager(
     , productRankerFactory_(NULL)
     , suffixMatchManager_(NULL)
     , productTokenizer_(NULL)
+    , adIndexManager_(NULL)
     , miningTaskBuilder_(NULL)
     , multiThreadMiningTaskBuilder_(NULL)
     , hasDeletedDocDuringMining_(false)
