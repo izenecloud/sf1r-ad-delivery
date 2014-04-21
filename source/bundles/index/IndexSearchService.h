@@ -22,6 +22,8 @@ using namespace net::aggregator;
 class SearchCache;
 class SearchMerger;
 class SearchWorker;
+class AdSearchService;
+
 class IndexSearchService : public ::izenelib::osgi::IService
 {
 public:
@@ -52,6 +54,7 @@ private:
     boost::shared_ptr<SearchAggregator> ro_searchAggregator_;
     SearchMerger* searchMerger_;
     boost::shared_ptr<SearchWorker> searchWorker_;
+    boost::shared_ptr<AdSearchService> adSearchService_;
 
     boost::scoped_ptr<SearchCache> searchCache_; // for Master Node
     boost::atomic<uint32_t> ro_index_;

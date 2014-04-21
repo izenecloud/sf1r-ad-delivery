@@ -70,7 +70,7 @@
 #include <node-manager/DistributeRequestHooker.h>
 #include <node-manager/NodeManagerBase.h>
 #include <node-manager/MasterManagerBase.h>
-
+#include <ad-manager/AdSearchService.h>
 #include <fstream>
 #include <iterator>
 #include <set>
@@ -146,6 +146,7 @@ MiningManager::MiningManager(
         const boost::shared_ptr<SearchManager>& searchManager,
         const boost::shared_ptr<SearchCache>& searchCache,
         const boost::shared_ptr<IDManager>& idManager,
+        const boost::shared_ptr<AdSearchService>& adSearchService,
         const std::string& collectionName,
         const DocumentSchema& documentSchema,
         const MiningConfig& miningConfig,
@@ -165,6 +166,7 @@ MiningManager::MiningManager(
     , searchManager_(searchManager)
     , searchCache_(searchCache)
     , idManager_(idManager)
+    , adSearchService_(adSearchService)
     , numericTableBuilder_(NULL)
     , rtypeStringPropTableBuilder_(NULL)
     , groupManager_(NULL)
@@ -1466,7 +1468,7 @@ bool MiningManager::initAdIndexManager_(AdIndexConfig& adIndexConfig)
         system_resource_path_ + "/ad_resource",
         adIndexDir.string(),
         document_manager_, numericTableBuilder_,
-        searchManager_->normalSearch_.get(), groupManager_);
+        adSearchService_.get(), groupManager_);
     adIndexManager_->buildMiningTask();
     miningTaskBuilder_->addTask(adIndexManager_->getMiningTask());
 

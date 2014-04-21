@@ -89,6 +89,7 @@ class RTypeStringPropTableBuilder;
 class ZambeziManager;
 class AdIndexManager;
 class ProductTokenizer;
+class AdSearchService;
 
 namespace faceted
 {
@@ -124,6 +125,7 @@ public:
                   const boost::shared_ptr<SearchManager>& searchManager,
                   const boost::shared_ptr<SearchCache>& searchCache,
                   const boost::shared_ptr<izenelib::ir::idmanager::IDManager>& idManager,
+                  const boost::shared_ptr<AdSearchService>& adSearchService,
                   const std::string& collectionName,
                   const DocumentSchema& documentSchema,
                   const MiningConfig& miningConfig,
@@ -433,6 +435,7 @@ private:
     boost::shared_ptr<InvertedIndexManager> index_manager_;
     boost::shared_ptr<SearchManager> searchManager_;
     boost::shared_ptr<SearchCache> searchCache_;
+    boost::shared_ptr<AdSearchService> adSearchService_;
 
     boost::shared_ptr<izenelib::ir::idmanager::IDManager> idManager_;
 

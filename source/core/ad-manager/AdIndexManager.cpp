@@ -7,6 +7,7 @@
 #include "AdSelector.h"
 #include "AdClickPredictor.h"
 #include "AdFeedbackMgr.h"
+#include "AdSearchService.h"
 #include <common/ResultType.h>
 #include <mining-manager/group-manager/GroupManager.h>
 #include <query-manager/ActionItem.h>
@@ -31,7 +32,7 @@ AdIndexManager::AdIndexManager(
         const std::string& ad_data_path,
         boost::shared_ptr<DocumentManager>& dm,
         NumericPropertyTableBuilder* ntb,
-        SearchBase* searcher,
+        AdSearchService* searcher,
         faceted::GroupManager* grp_mgr)
     : indexPath_(ad_data_path + "/index.bin"),
       clickPredictorWorkingPath_(ad_data_path + "/ctr_predictor"),
@@ -238,7 +239,8 @@ bool AdIndexManager::searchByQuery(const SearchKeywordOperation& actionOperation
     if (!ad_searcher_)
         return false;
     // using the DNF as Attributes.
-    bool ret = ad_searcher_->search(actionOperation, searchResult, MAX_SEARCH_AD_COUNT, 0);
+    (*const_cast<SearchKeywordOperation*>(&actionOperation)).actionItem_.searchingMode_.mode_ = SearchingMode::SUFFIX_MATCH;
+    bool ret = ad_searcher_->search(actionOperation.actionItem_, searchResult);
     const std::vector<std::pair<std::string, std::string> > userinfo;
     if (ret)
     {
@@ -278,6 +280,8 @@ bool AdIndexManager::searchByDNF(const FeatureT& info,
 bool AdIndexManager::searchByRecommend(const SearchKeywordOperation& actionOperation,
     KeywordSearchResult& searchResult)
 {
+    if (!ad_searcher_)
+        return false;
     const std::vector<std::pair<std::string, std::string> > userinfo;
     std::vector<double> score_list;
     std::vector<std::string> rec_items;
@@ -289,11 +293,10 @@ bool AdIndexManager::searchByRecommend(const SearchKeywordOperation& actionOpera
         rec_query_str += rec_items[i] + " ";
     }
     LOG(INFO) << "recommend feature items are: ";
-    boost::shared_ptr<LAManager> laManager;
-    boost::shared_ptr<izenelib::ir::idmanager::IDManager> idManager;
-    SearchKeywordOperation rec_search_query(actionOperation.actionItem_, false, laManager, idManager);
-    rec_search_query.actionItem_.env_.queryString_ = rec_query_str;
-    bool ret = ad_searcher_->search(rec_search_query, searchResult, MAX_SEARCH_AD_COUNT, 0);
+    KeywordSearchActionItem rec_search_query(actionOperation.actionItem_);
+    rec_search_query.env_.queryString_ = rec_query_str;
+    rec_search_query.searchingMode_.mode_ = SearchingMode::SUFFIX_MATCH;
+    bool ret = ad_searcher_->search(rec_search_query, searchResult);
     if (ret)
     {
         rankAndSelect(userinfo, searchResult.topKDocs_, searchResult.topKRankScoreList_, searchResult.totalCount_);

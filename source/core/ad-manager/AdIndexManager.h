@@ -24,7 +24,8 @@ class AdMessage;
 class AdClickPredictor;
 class SearchKeywordOperation;
 class KeywordSearchResult;
-class SearchBase;
+class SearchWorker;
+class AdSearchService;
 class AdSelector;
 namespace faceted
 {
@@ -40,7 +41,7 @@ public:
             const std::string& ad_data_path,
             boost::shared_ptr<DocumentManager>& dm,
             NumericPropertyTableBuilder* ntb,
-            SearchBase* searcher,
+            AdSearchService* searcher,
             faceted::GroupManager* grp_mgr);
 
     ~AdIndexManager();
@@ -85,7 +86,7 @@ private:
     AdMiningTask* adMiningTask_;
     AdClickPredictor* ad_click_predictor_;
     NumericPropertyTableBuilder* numericTableBuilder_;
-    SearchBase* ad_searcher_;
+    AdSearchService* ad_searcher_;
     faceted::GroupManager* groupManager_;
     boost::shared_mutex  rwMutex_;
     boost::shared_ptr<AdDNFIndexType> ad_dnf_index_;

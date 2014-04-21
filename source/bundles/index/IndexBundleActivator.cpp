@@ -21,6 +21,7 @@
 #include <node-manager/Sf1rTopology.h>
 #include <node-manager/RecoveryChecker.h>
 #include <util/singleton.h>
+#include <ad-manager/AdSearchService.h>
 
 #include <question-answering/QuestionAnalysis.h>
 
@@ -257,6 +258,8 @@ bool IndexBundleActivator::init_()
     searchWorker_ = createSearchWorker_();
     SF1R_ENSURE_INIT(searchWorker_);
     
+    adSearchService_ = createAdSearchService(searchWorker_.get());
+
     searchAggregator_ = createSearchAggregator_(false);
     SF1R_ENSURE_INIT(searchAggregator_);
     
@@ -303,6 +306,7 @@ bool IndexBundleActivator::init_()
     //searchService_->searchWorker_->rankingManager_ = rankingManager_;
     searchService_->searchWorker_->searchManager_ = searchManager_;
     searchService_->searchWorker_->pQA_ = pQA_;
+    searchService_->adSearchService_ = adSearchService_;
 
     taskService_ = new IndexTaskService(config_);
     indexWorker_->sharding_strategy_ = taskService_->sharding_strategy_;
@@ -569,6 +573,14 @@ boost::shared_ptr<SearchWorker>
 IndexBundleActivator::createSearchWorker_()
 {
     boost::shared_ptr<SearchWorker> ret(new SearchWorker(config_));
+    return ret;
+}
+
+boost::shared_ptr<AdSearchService>
+IndexBundleActivator::createAdSearchService(SearchWorker* searchWorker)
+{
+    boost::shared_ptr<AdSearchService> ret(new AdSearchService(searchWorker));
+    ret->init("10.10.99.121:2181", "stage", config_->collectionName_);
     return ret;
 }
 

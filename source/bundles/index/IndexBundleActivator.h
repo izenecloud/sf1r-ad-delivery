@@ -39,6 +39,7 @@ class IndexMerger;
 class IndexWorker;
 class IIncSupportedIndex;
 class ZambeziManager;
+class AdSearchService;
 
 class IndexBundleActivator : public IBundleActivator, public IServiceTrackerCustomizer
 {
@@ -70,6 +71,7 @@ private:
     boost::shared_ptr<IndexAggregator> indexAggregator_;
     boost::scoped_ptr<IndexMerger> indexMerger_;
     boost::shared_ptr<IndexWorker> indexWorker_;
+    boost::shared_ptr<AdSearchService> adSearchService_;
     ilplib::qa::QuestionAnalysis* pQA_;
     DirectoryRotator directoryRotator_;
 
@@ -99,6 +101,7 @@ private:
     boost::shared_ptr<LAManager> createLAManager_() const;
 
     boost::shared_ptr<SearchWorker> createSearchWorker_() ;
+    boost::shared_ptr<AdSearchService> createAdSearchService(SearchWorker* searchWorker) ;
 
     boost::shared_ptr<SearchAggregator> createSearchAggregator_(bool readonly);
 
