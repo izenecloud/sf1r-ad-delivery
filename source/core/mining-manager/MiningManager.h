@@ -21,6 +21,7 @@
 
 #include <common/ResultType.h>
 #include <configuration-manager/PropertyConfig.h>
+#include <document-manager/Document.h>
 #include <query-manager/SearchKeywordOperation.h>
 #include <configuration-manager/MiningConfig.h>
 #include <configuration-manager/MiningSchema.h>
@@ -66,7 +67,6 @@ namespace sf1r
 {
 
 class GroupLabelLogger;
-class Document;
 class DocumentManager;
 class LAManager;
 class InvertedIndexManager;
