@@ -298,7 +298,7 @@ bool AdSearchService::addSearchServiceNode(const std::string& path, bool notify)
     kv2string parser;
     parser.loadKvString(nodedata);
 
-    if (parser.hasKey(MASTERPORT_KEY))
+    if (!parser.hasKey(MASTERPORT_KEY))
     {
         LOG(INFO) << "no master port key.";
         return false;
