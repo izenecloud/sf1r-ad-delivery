@@ -35,6 +35,7 @@ static const std::string SERVICE_STATE_KEY = "service_state";
 static const std::string SERVICE_NAMES_KEY = "service_names";
 
 static const char  DELIMITER_CHAR = ',';
+static const int RPC_TIMEOUT = 5;
 
 class ServiceWatcher : public ZooKeeperEventHandler, private boost::noncopyable
 {
@@ -434,7 +435,7 @@ bool AdSearchService::search(const KeywordSearchActionItem& action, KeywordSearc
 
     try
     {
-        msgpack::rpc::session s = session_pool_->get_session(node.getHost(), node.master_port);
+        msgpack::rpc::session s = session_pool_->get_session(node.getHost(), node.master_port, RPC_TIMEOUT);
         msgpack::rpc::future f = s.call(MasterServerConnector::Methods_[MasterServerConnector::Method_documentSearch_], action);
         ret = f.get<KeywordSearchResult>();
     }
