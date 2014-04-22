@@ -5,5 +5,7 @@ branch: kite-2
 branch_suffix: resource
 sub_modules:
     - dict
+    - ad_resource
 push_sub_modules:
     - dict
+    - ad_resource
