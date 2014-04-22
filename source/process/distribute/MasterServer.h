@@ -59,6 +59,12 @@ public:
             {
                 notify(req);
             }
+            else
+            {
+                std::string errinfo = "unsupported method : " +  method;
+                LOG(WARNING) << errinfo;
+                req.error(errinfo);
+            }
         }
         catch (msgpack::type_error& e)
         {
