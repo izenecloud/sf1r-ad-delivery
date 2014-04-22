@@ -580,7 +580,7 @@ boost::shared_ptr<AdSearchService>
 IndexBundleActivator::createAdSearchService(SearchWorker* searchWorker)
 {
     boost::shared_ptr<AdSearchService> ret(new AdSearchService(searchWorker));
-    ret->init("10.10.99.121:2181", "stage", config_->collectionName_);
+    ret->init("", "beta", config_->collectionName_);
     return ret;
 }
 
