@@ -433,11 +433,13 @@ bool AdSearchService::search(const KeywordSearchActionItem& action, KeywordSearc
         node = it->second;
     }
 
+    LOG(INFO) << "begin search ad from remote : " << node.getHost();
     try
     {
         msgpack::rpc::session s = session_pool_->get_session(node.getHost(), node.master_port, RPC_TIMEOUT);
         msgpack::rpc::future f = s.call(MasterServerConnector::Methods_[MasterServerConnector::Method_documentSearch_], action);
         ret = f.get<KeywordSearchResult>();
+        LOG(INFO) << "end search ad from remote.";
     }
     catch(const std::exception& e)
     {
