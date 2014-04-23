@@ -185,6 +185,7 @@ MiningManager::MiningManager(
     , adIndexManager_(NULL)
     , miningTaskBuilder_(NULL)
     , multiThreadMiningTaskBuilder_(NULL)
+    , laserManager_(NULL)
     , hasDeletedDocDuringMining_(false)
 {
 }
@@ -440,6 +441,9 @@ bool MiningManager::open()
             !initProductScorerFactory_(rankConfig) ||
             !initProductRankerFactory_(rankConfig))
             return false;
+
+       /** laser */
+       laserManager_.reset(new LaserManager(adSearchService_, mining_schema_.laser_config));
     }
     catch (NotEnoughMemoryException& ex)
     {

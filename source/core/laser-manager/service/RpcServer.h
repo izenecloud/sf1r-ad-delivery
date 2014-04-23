@@ -1,7 +1,6 @@
-#ifndef RPC_SERVER_H_
-#define RPC_SERVER_H_
+#ifndef SF1R_AD_LASER_RPC_SERVER_H
+#define SF1R_AD_LASER_RPC_SERVER_H
 
-//#include "OptimizerServerRequest.h"
 #include <glog/logging.h>
 #include <3rdparty/msgpack/rpc/server.h>
 #include <boost/scoped_ptr.hpp>
@@ -9,10 +8,11 @@
 #include "CLUSTERINGServerRequest.h"
 #include "TermParser.h"
 #include "type/ClusteringDataAdapter.h"
-namespace clustering
+namespace sf1r 
+{ 
+namespace laser 
 {
-namespace rpc
-{
+
 class RpcServer : public msgpack::rpc::server::base
 {
 public:
@@ -23,7 +23,9 @@ public:
 
     ~RpcServer();
 
-    bool init();
+    bool init(const std::string& clusteringRootPath, 
+        const std::string& clusteringDBPath, 
+        const std::string& perUserDBPath);
 
     inline uint16_t getPort() const
     {
@@ -42,12 +44,11 @@ public:
     virtual void dispatch(msgpack::rpc::request req);
 private:
     std::string host_;
-    //ClusteringDataAdapter* cda;
     uint16_t port_;
     uint32_t threadNum_;
 };
 
-} //namespace rpc
-} //namespace clustering
+} 
+} 
 
-#endif /* RPC_SERVER_H_ */
+#endif

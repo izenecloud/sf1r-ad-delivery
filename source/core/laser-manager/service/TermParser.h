@@ -25,7 +25,7 @@ class TermParser
 public:
     TermParser();
     ~TermParser();
-    bool init();
+    bool init(const std::string& clusteringRootPath);
     void release()
     {
         if(tok != NULL)

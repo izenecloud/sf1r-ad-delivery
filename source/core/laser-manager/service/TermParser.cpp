@@ -20,9 +20,9 @@ TermParser::~TermParser()
 {
     release();
 }
-bool TermParser::init()
+bool TermParser::init(const std::string& clusteringRootPath)
 {
-    TermDictionary term_dictionary(Configuration::get()->getClusteringRootPath(), ONLY_READ);
+    TermDictionary term_dictionary(clusteringRootPath, ONLY_READ);
     terms = term_dictionary.getTerms();
     tok = new TitlePCA(Configuration::get()->getDictionaryPath());
     return true;

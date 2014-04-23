@@ -25,9 +25,9 @@ using namespace predict;
 using namespace clustering::type;
 using namespace conf;
 
-namespace clustering
+namespace sf1r
 {
-namespace rpc
+namespace laser
 {
 
 RpcServer::RpcServer(const std::string& host, uint16_t port, uint32_t threadNum)
@@ -43,12 +43,14 @@ RpcServer::~RpcServer()
     LOG(INFO) << "~RpcServer()" << std::endl;
 }
 
-bool RpcServer::init()
+bool RpcServer::init(const std::string& clusteringRootPath, 
+    const std::string& clusteringDBPath, 
+    const std::string& perUserDBPath)
 {
     RETURN_ON_FAILURE(TermParser::get()->init());
-    RETURN_ON_FAILURE(LevelDBClusteringData::get()->init(Configuration::get()->getClusteringDBPath()));
-    RETURN_ON_FAILURE(TopNClusterContainer::get()->init(Configuration::get()->getTopNClusterDBPath()));
-    RETURN_ON_FAILURE(LaserOnlineModel::get()->init(Configuration::get()->getPerUserDBPath()));
+    RETURN_ON_FAILURE(LevelDBClusteringData::get()->init(clusteringRootPath));
+    RETURN_ON_FAILURE(TopNClusterContainer::get()->init(clusteringDBPath));
+    RETURN_ON_FAILURE(LaserOnlineModel::get()->init(perUserDBPath));
     return true;
 }
 

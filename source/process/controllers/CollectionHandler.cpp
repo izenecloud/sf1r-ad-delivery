@@ -15,6 +15,7 @@
 #include "CollectionHandler.h"
 #include "DocumentsGetHandler.h"
 #include "DocumentsSearchHandler.h"
+#include "LaserHandler.h"
 
 #include <common/Keys.h>
 #include <common/JobScheduler.h>
@@ -98,6 +99,11 @@ bool CollectionHandler::destroy(const ::izenelib::driver::Value& document)
     task_type task = boost::bind(&IndexTaskService::destroyDocument, indexTaskService_, document);
     JobScheduler::get()->addTask(task, collection_);
     return true;
+}
+
+void CollectionHandler::laserRecomend(::izenelib::driver::Request& request, ::izenelib::driver::Response& response)
+{
+    LaserHandler handler(request, response, *this);
 }
 
 } // namespace sf1r

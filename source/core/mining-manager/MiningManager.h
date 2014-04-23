@@ -90,6 +90,7 @@ class ZambeziManager;
 class AdIndexManager;
 class ProductTokenizer;
 class AdSearchService;
+class LaserManager;
 
 namespace faceted
 {
@@ -300,6 +301,11 @@ public:
         return searchManager_;
     }
 
+    boost::shared_ptr<LaserManager>& GetLaserManager()
+    {
+        return laManager_;
+    }
+
     ProductScoreManager* GetProductScoreManager()
     {
         return productScoreManager_;
@@ -436,6 +442,7 @@ private:
     boost::shared_ptr<SearchManager> searchManager_;
     boost::shared_ptr<SearchCache> searchCache_;
     boost::shared_ptr<AdSearchService> adSearchService_;
+    boost::shared_ptr<LaserManager> laserManager_;
 
     boost::shared_ptr<izenelib::ir::idmanager::IDManager> idManager_;
 
