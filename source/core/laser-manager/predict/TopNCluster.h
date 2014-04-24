@@ -1,11 +1,15 @@
-#ifndef LASER_TOPN_CLUSTER_H
-#define LASER_TOPN_CLUSTER_H
+#ifndef SF1R_LASER_TOPN_CLUSTER_H
+#define SF1R_LASER_TOPN_CLUSTER_H
 #include <string>
 #include <vector>
 #include <map>
 #include <boost/serialization/access.hpp>
 #include <3rdparty/msgpack/msgpack.hpp>
-#include "clusteringmanager/common/constant.h"
+#include "laser-manager/clusteringmanager/common/constant.h"
+namespace sf1r
+{
+namespace laser
+{
 namespace predict
 {
     typedef std::map<clustering::hash_t, float>  ClusterContainer;
@@ -45,6 +49,8 @@ namespace predict
         std::string user_;
         ClusterContainer clusters_;
     };
+}
+}
 }
 
 #endif

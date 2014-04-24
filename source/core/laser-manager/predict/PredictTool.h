@@ -5,20 +5,20 @@
  *      Author: alex
  */
 
-#ifndef PREDICTTOOL_H_
-#define PREDICTTOOL_H_
+#ifndef SF1R_LASER_PREDICT_PREDICTTOOL_H
+#define SF1R_LASER_PREDICT_PREDICTTOOL_H_
 
 #include <queue>
 #include <string>
 #include "TopNClusterContainer.h"
 #include "PerUserOnlineModel.h"
-#include "type/ClusteringInfo.h"
-#include "type/LevelDBClusteringData.h"
-#include "type/Document.h"
-using std::queue;
-using std::string;
-using std::priority_queue;
-using namespace clustering::type;
+#include "laser-manager/clusteringmanager/type/ClusteringInfo.h"
+#include "laser-manager/clusteringmanager/type/LevelDBClusteringData.h"
+#include "laser-manager/clusteringmanager/type/Document.h"
+namespace sf1r
+{
+namespace laser
+{
 namespace predict
 {
 
@@ -38,7 +38,9 @@ namespace predict
        }
     };
 
-    typedef priority_queue<DocRank, std::vector<DocRank>, comparator> MinHeapDocRankType;
+    typedef std::priority_queue<DocRank, std::vector<DocRank>, comparator> MinHeapDocRankType;
     MinHeapDocRankType getTopN(const ClusterContainer& clusters,const PerUserOnlineModel& puseronlineModel, size_t topN);
-} /* namespace clustering */
+}
+}
+}
 #endif /* PREDICTTOOL_H_ */

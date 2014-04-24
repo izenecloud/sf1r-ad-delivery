@@ -5,10 +5,14 @@
  *      Author: alex
  */
 
-#ifndef CONSTANT_H_
-#define CONSTANT_H_
+#ifndef SF1R_LASER_CONSTANT_H_
+#define SF1R_LASER_CONSTANT_H_
 
-#include "am/sequence_file/ssfr.h"
+#include <am/sequence_file/ssfr.h>
+namespace sf1r
+{
+namespace laser
+{
 namespace clustering
 {
 typedef int hash_t;
@@ -27,5 +31,7 @@ enum STATUS
     TRUNCATED,
     APPEND
 };
+}
+}
 }
 #endif /* CONSTANT_H_ */

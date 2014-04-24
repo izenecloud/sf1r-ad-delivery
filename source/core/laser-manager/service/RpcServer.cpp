@@ -1,29 +1,27 @@
 #include "RpcServer.h"
 #include <string>
 #include <list>
-#include "errno.h"
-#include "DataType.h"
-#include <sys/types.h>
-#include <ifaddrs.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include "DataType.h"
-#include "type/ClusteringData.h"
-#include "type/ClusteringInfo.h"
-#include "conf/Configuration.h"
-#include "type/LevelDBClusteringData.h"
+#include <errno.h>
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/filesystem.hpp>
 #include <3rdparty/json/json.h>
 #include <3rdparty/msgpack/msgpack/type/tuple.hpp>
-#include "predict/TopNClusterContainer.h"
-#include "predict/LaserOnlineModel.h"
+#include <sys/types.h>
+#include <ifaddrs.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include "DataType.h"
+#include "laser-manager/clusteringmanager/type/ClusteringData.h"
+#include "laser-manager/clusteringmanager/type/ClusteringInfo.h"
+#include "laser-manager/clusteringmanager/type/LevelDBClusteringData.h"
+#include "laser-manager/predict/TopNClusterContainer.h"
+#include "laser-manager/predict/LaserOnlineModel.h"
 
 using namespace msgpack::type;
-using namespace predict;
-using namespace clustering::type;
-using namespace conf;
+using namespace sf1r::laser::predict;
+using namespace sf1r::laser::clustering::type;
+using namespace sf1r::laser::clustering::rpc;
 
 namespace sf1r
 {
@@ -47,7 +45,7 @@ bool RpcServer::init(const std::string& clusteringRootPath,
     const std::string& clusteringDBPath, 
     const std::string& perUserDBPath)
 {
-    RETURN_ON_FAILURE(TermParser::get()->init());
+    RETURN_ON_FAILURE(TermParser::get()->init(clusteringRootPath));
     RETURN_ON_FAILURE(LevelDBClusteringData::get()->init(clusteringRootPath));
     RETURN_ON_FAILURE(TopNClusterContainer::get()->init(clusteringDBPath));
     RETURN_ON_FAILURE(LaserOnlineModel::get()->init(perUserDBPath));

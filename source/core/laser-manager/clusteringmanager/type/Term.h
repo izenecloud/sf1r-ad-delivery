@@ -5,13 +5,17 @@
  *      Author: alex
  */
 
-#ifndef TERMS_H_
-#define TERMS_H_
-#include<string>
-#include<ostream>
+#ifndef SF1R_LASER_TERMS_H
+#define SF1R_LASER_TERMS_H
+#include <string>
+#include <ostream>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/serialization.hpp>
-#include "common/constant.h"
+#include "laser-manager/clusteringmanager/common/constant.h"
+namespace sf1r
+{
+namespace laser
+{
 namespace clustering
 {
 namespace type
@@ -78,6 +82,8 @@ public:
         ar & index;
     }
 };
+}
+}
 }
 }
 #endif /* TERMS_H_ */

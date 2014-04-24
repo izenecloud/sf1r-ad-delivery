@@ -5,20 +5,24 @@
  *      Author: alex
  */
 
-#ifndef CATFILES_H_
-#define CATFILES_H_
+#ifndef SF1R_LASER_CATFILES_H_
+#define SF1R_LASER_CATFILES_H_
 #include <fstream>
 #include <string>
 #include <sstream>
 #include <queue>
 #include <map>
-#include "boost/filesystem/operations.hpp"
-#include "boost/filesystem/path.hpp"
-#include "common/constant.h"
-#include "common/utils.h"
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 #include <util/singleton.h>
-#include "type/ClusteringInfo.h"
+#include "laser-manager/clusteringmanager/common/constant.h"
+#include "laser-manager/clusteringmanager/common/utils.h"
+#include "ClusteringInfo.h"
 
+namespace sf1r
+{
+namespace laser
+{
 namespace fs = boost::filesystem;
 
 using std::fstream;
@@ -375,6 +379,8 @@ public:
         res_suffix = resSuffix;
     }
 };
+}
+}
 }
 }
 #endif /* CATFILES_H_ */

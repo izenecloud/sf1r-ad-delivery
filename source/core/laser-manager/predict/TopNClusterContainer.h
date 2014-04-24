@@ -1,13 +1,17 @@
-#ifndef LASER_TOPN_CLUSTER_CONTAINER_H
-#define LASER_TOPN_CLUSTER_CONTAINER_H
+#ifndef SF1R_LASER_TOPN_CLUSTER_CONTAINER_H
+#define SF1R_LASER_TOPN_CLUSTER_CONTAINER_H
 
 #include <boost/unordered_map.hpp>
 #include <boost/thread/mutex.hpp>
+#include <util/singleton.h>
+#include <am/leveldb/Table.h>
 #include <vector>
 #include <string>
 #include "TopNCluster.h"
-#include <util/singleton.h>
-#include "am/leveldb/Table.h"
+namespace sf1r
+{
+namespace laser
+{
 namespace predict
 {
     class TopNClusterContainer
@@ -34,6 +38,8 @@ namespace predict
         TopNclusterLeveldbType* topNclusterLeveldb_;
         std::string topNClusterPath_;
     };
+}
+}
 }
 
 #endif

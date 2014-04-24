@@ -5,17 +5,21 @@
  *      Author: alex
  */
 
-#ifndef TERMPARSER_H_
-#define TERMPARSER_H_
+#ifndef SF1R_LASER_TERMPARSER_H
+#define SF1R_LASER_TERMPARSER_H
 #include <string>
-#include "knlp/title_pca.h"
-#include "type/CatDictionary.h"
-#include "type/TermDictionary.h"
-#include "DataType.h"
-#include "type/Term.h"
+#include <knlp/title_pca.h>
 #include <util/singleton.h>
 
-using namespace clustering::type;
+#include "laser-manager/clusteringmanager/type/CatDictionary.h"
+#include "laser-manager/clusteringmanager/type/TermDictionary.h"
+#include "laser-manager/clusteringmanager/type/Term.h"
+#include "DataType.h"
+
+namespace sf1r
+{
+namespace laser
+{
 namespace clustering
 {
 namespace rpc
@@ -34,18 +38,20 @@ public:
             tok = NULL;
         }
     }
-    SplitTitleResult parse(SplitTitle title);
+    clustering::rpc::SplitTitleResult parse(clustering::rpc::SplitTitle title);
     static TermParser* get()
     {
         return izenelib::util::Singleton<TermParser>::get();
     }
 
 private:
-    TitlePCA* tok; //the pca
+    ilplib::knlp::TitlePCA* tok; //the pca
     //term_dictionary will maintain the term dictionary, sort and reduce the dimention
     //TermDictionary term_dictionary;
-    std::map<hash_t, Term> terms;
+    std::map<clustering::hash_t, clustering::type::Term> terms;
 };
+}
+}
 }
 }
 

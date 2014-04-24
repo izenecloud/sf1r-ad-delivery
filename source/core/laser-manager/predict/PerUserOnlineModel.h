@@ -1,10 +1,14 @@
-#ifndef MSGPACK_LASER_ONLINE_MODEL_H
-#define MSGPACK_LASER_ONLINE_MODEL_H
+#ifndef SF1R_LASER_PER_USER_ONLINE_MODEL_H
+#define SF1R_LASER_PER_USER_ONLINE_MODEL_H
 #include <3rdparty/msgpack/msgpack.hpp>
 #include <vector>
 #include <string>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/serialization.hpp>
+namespace sf1r
+{
+namespace laser
+{
 namespace predict
 {
     class PerUserOnlineModel
@@ -54,5 +58,7 @@ namespace predict
         std::string user_;
 
    };
+}
+}
 }
 #endif

@@ -4,7 +4,11 @@
  *  Created on: Apr 4, 2014
  *      Author: alex
  */
-#include "type/ClusteringListDes.h"
+#include "ClusteringListDes.h"
+namespace sf1r
+{
+namespace laser
+{
 namespace clustering
 {
 namespace type
@@ -32,6 +36,6 @@ bool ClusteringListDes::init(string clustering_dir_, STATUS is_rebuild, string m
 
 }//namespace type
 }//namespace clustering
-
-
+}
+}
 

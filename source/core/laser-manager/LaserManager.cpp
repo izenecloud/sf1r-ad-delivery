@@ -1,11 +1,9 @@
 #include "LaserManager.h"
 #include <glog/logging.h>
-
+using namespace sf1r::laser;
 namespace sf1r
 {
-namespace laser
-{
-    LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService,
+    LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService,
         const LaserConfig& laserConfig)
         : adSearchService_(adSearchService)
         , conf_(laserConfig)
@@ -14,11 +12,11 @@ namespace laser
             conf_.msgpack.port, conf_.msgpack.numThread));
         LOG(INFO)<<"start msgpack server on host:"<<
             conf_.msgpack.host<<" port: "<< conf_.msgpack.port;
-        rpcServer_.init(conf_.clustering.leveldbRootPath,
+        rpcServer_->init(conf_.clustering.leveldbRootPath,
             conf_.clustering.dbClusteringPath,
             conf_.clustering.dbPerUserModelPath);
 
-        rpcServer_.start();
+        rpcServer_->start();
 
         recommend_.reset(new LaserRecommend());
     }
@@ -26,21 +24,20 @@ namespace laser
     LaserManager::~LaserManager()
     {
         LOG(INFO)<<"inform msgpack to exit";
-        rpcServer_.stop();
-        rpcServer_.join();
+        rpcServer_->stop();
+        rpcServer_->join();
         LOG(INFO)<<"msgpack exited";
     }
     
-    bool LaserManager::recommend(const std::string& uuid, 
-        RawTextResultFromMIA& result, 
-        const std::size_t num) const; 
+    bool LaserManager::recommend(const LaserRecommendParam& param, 
+        RawTextResultFromMIA& itemList) const 
     {
         std::vector<std::string> docIdList;
-        if (!recommend_.recommend(uuid, docIdList, itemScoreList, num))
+        std::vector<float> itemScoreList;
+        if (!recommend_->recommend(param.uuid_, docIdList, itemScoreList, param.topN_))
             return false;
         //TODO
         //miningManager_.GetAdSearchService()->getDocument(docIdList, itemList);
         return true;
     }
-}
 }

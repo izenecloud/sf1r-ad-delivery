@@ -5,14 +5,18 @@
  *      Author: alex
  */
 
-#ifndef LEVELDBCLUSTERINGDATA_H_
-#define LEVELDBCLUSTERINGDATA_H_
+#ifndef SF1R_LASER_LEVELDBCLUSTERINGDATA_H_
+#define SF1R_LASER_LEVELDBCLUSTERINGDATA_H_
 
 #include "ClusteringDataAdapter.h"
 #include <3rdparty/am/leveldb/db.h>
 #include <string>
 #include <list>
 #include <util/singleton.h>
+namespace sf1r
+{
+namespace laser
+{
 namespace clustering
 {
 namespace type
@@ -51,4 +55,6 @@ public:
 };
 }
 } /* namespace clustering */
+}
+}
 #endif /* LEVELDBCLUSTERINGDATA_H_ */

@@ -1,8 +1,12 @@
-#ifndef _CLUSTERING_SERVER_REQUEST_H_
-#define _CLUSTERING_SERVER_REQUEST_H_
+#ifndef SF1R_LASER_CLUSTERING_SERVER_REQUEST_H_
+#define SF1R_LASER_CLUSTERING_SERVER_REQUEST_H_
 
 #include "DataType.h"
 
+namespace sf1r
+{
+namespace laser
+{
 namespace clustering
 {
 namespace rpc
@@ -69,4 +73,6 @@ public:
 
 } // namespace rpc
 } // namespace clustering
+}
+}
 #endif /* _CLUSTERING_SERVER_REQUEST_H_ */

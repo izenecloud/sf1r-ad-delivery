@@ -5,25 +5,24 @@
  *      Author: alex
  */
 
-#ifndef TERM_DICTIONARY_H_
-#define TERM_DICTIONARY_H_
+#ifndef SF1R_LASER_TERM_DICTIONARY_H_
+#define SF1R_LASER_TERM_DICTIONARY_H__
 #include <string>
 #include <fstream>
 #include <map>
-#include "type/Term.h"
-#include "common/constant.h"
-#include "common/utils.h"
-#include  "boost/filesystem/operations.hpp"
-#include  "boost/filesystem/path.hpp"
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 #include <stack>
 #include <algorithm>
 
-namespace  fs=boost::filesystem;
-using std::string;
-using std::fstream;
-using std::ios;
-using std::map;
-using std::stack;
+#include "Term.h"
+#include "laser-manager/clusteringmanager/common/constant.h"
+#include "laser-manager/clusteringmanager/common/utils.h"
+
+namespace sf1r
+{
+namespace laser
+{
 namespace clustering
 {
 namespace type
@@ -204,6 +203,8 @@ public:
     }
 };
 
+}
+}
 }
 }
 #endif /* TERM_DICTIONARY_H_ */

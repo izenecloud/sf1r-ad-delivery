@@ -1,10 +1,14 @@
-#ifndef LASER_LASER_ONLINE_MODEL_H
-#define LASER_LASER_ONLINE_MODEL_H
+#ifndef SF1R_LASER_LASER_ONLINE_MODEL_H
+#define SF1R_LASER_LASER_ONLINE_MODEL_H
 #include <am/leveldb/Table.h>
 #include <util/singleton.h>
 #include <string>
 #include "PerUserOnlineModel.h"
 #include "TopNCluster.h"
+namespace sf1r
+{
+namespace laser
+{
 namespace predict
 {
     class LaserOnlineModel
@@ -27,4 +31,6 @@ namespace predict
     };
 }
 
+}
+}
 #endif

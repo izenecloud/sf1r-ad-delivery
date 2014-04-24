@@ -13,13 +13,17 @@
 #include <boost/filesystem/path.hpp>
 #include <limits>
 #include "PCAClustering.h"
-#include "type/ClusteringListDes.h"
-#include "common/utils.h"
-#include "type/Document.h"
+#include "laser-manager/clusteringmanager/type/ClusteringListDes.h"
+#include "laser-manager/clusteringmanager/common/utils.h"
+#include "laser-manager/clusteringmanager/type/Document.h"
 namespace fs = boost::filesystem;
 using std::string;
-using namespace clustering::type;
+using namespace sf1r::laser::clustering::type;
 
+namespace sf1r
+{
+namespace laser
+{
 namespace clustering
 {
 /**
@@ -139,5 +143,7 @@ void PCAClustering::next(string title, string category, string docid)
     if (cat_hash_value > 0)
         iwp->Append(cat_hash_value, d);
 
+}
+}
 }
 }

@@ -1,5 +1,9 @@
 #include "LaserOnlineModel.h"
 
+namespace sf1r
+{
+namespace laser
+{
 namespace predict
 {
     LaserOnlineModel::LaserOnlineModel()
@@ -54,4 +58,6 @@ namespace predict
         }
         return res;
     }
+}
+}
 }

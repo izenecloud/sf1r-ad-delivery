@@ -1,6 +1,7 @@
 #ifndef SF1R_LASER_CONFIG_H
 #define SF1R_LASER_CONFIG_H
-
+#include <string>
+#include <stdint.h>
 namespace sf1r
 {
 class LaserMsgpackConfig

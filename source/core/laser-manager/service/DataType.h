@@ -1,14 +1,18 @@
-#ifndef DATA_TYPE_H_
-#define DATA_TYPE_H_
+#ifndef SF1R_LASER_DATA_TYPE_H_
+#define SF1R_LASER_DATA_TYPE_H_
 
 #include <3rdparty/msgpack/msgpack.hpp>
-#include "type/Document.h"
-#include "common/constant.h"
+#include "laser-manager/clusteringmanager/type/Document.h"
+#include "laser-manager/clusteringmanager/common/constant.h"
+#include "laser-manager/clusteringmanager/type/ClusteringInfo.h"
 #include <string>
 #include <vector>
 #include <map>
 #include <list>
-#include <type/ClusteringInfo.h>
+namespace sf1r
+{
+namespace laser
+{
 namespace clustering
 {
 namespace rpc
@@ -77,4 +81,6 @@ struct GetClusteringItemResult
 
 } // namespace rpc
 } // namespace cluaster
+}
+}
 #endif /* DATA_TYPE_H_ */

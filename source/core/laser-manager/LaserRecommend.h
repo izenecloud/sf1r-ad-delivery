@@ -1,5 +1,7 @@
 #ifndef SF1R_LASER_RECOMMEND_H
 #define SF1R_LASER_RECOMMEND_H
+#include <string>
+#include <vector>
 
 namespace sf1r
 {

@@ -1,7 +1,13 @@
 #include "TopNClusterContainer.h"
-#include "common/utils.h"
+#include "laser-manager/clusteringmanager/common/utils.h"
+#include "laser-manager/clusteringmanager/type/LevelDBClusteringData.h"
 #include <am/range/AmIterator.h>
 using namespace izenelib::am;
+using namespace sf1r::laser::clustering::type;
+namespace sf1r
+{
+namespace laser
+{
 namespace predict
 {
     TopNClusterContainer::TopNClusterContainer()
@@ -73,4 +79,6 @@ namespace predict
         bool res = topNclusterLeveldb_->get(user, cluster);
         return res;
     }
+}
+}
 }

@@ -6,8 +6,12 @@
  */
 
 #include "TermParser.h"
-#include "conf/Configuration.h"
-using namespace conf;
+using namespace sf1r::laser::clustering::type;
+using namespace ilplib::knlp;
+namespace sf1r
+{
+namespace laser
+{
 namespace clustering
 {
 namespace rpc
@@ -24,7 +28,7 @@ bool TermParser::init(const std::string& clusteringRootPath)
 {
     TermDictionary term_dictionary(clusteringRootPath, ONLY_READ);
     terms = term_dictionary.getTerms();
-    tok = new TitlePCA(Configuration::get()->getDictionaryPath());
+    tok = new TitlePCA("TODO");
     return true;
 }
 SplitTitleResult TermParser::parse(SplitTitle st)
@@ -53,6 +57,8 @@ SplitTitleResult TermParser::parse(SplitTitle st)
         }
     }
     return splitTitleResult;
+}
+}
 }
 }
 }

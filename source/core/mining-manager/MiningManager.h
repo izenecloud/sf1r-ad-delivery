@@ -301,9 +301,9 @@ public:
         return searchManager_;
     }
 
-    boost::shared_ptr<LaserManager>& GetLaserManager()
+    LaserManager* GetLaserManager()
     {
-        return laManager_;
+        return laserManager_;
     }
 
     ProductScoreManager* GetProductScoreManager()
@@ -442,7 +442,7 @@ private:
     boost::shared_ptr<SearchManager> searchManager_;
     boost::shared_ptr<SearchCache> searchCache_;
     boost::shared_ptr<AdSearchService> adSearchService_;
-    boost::shared_ptr<LaserManager> laserManager_;
+    LaserManager* laserManager_;
 
     boost::shared_ptr<izenelib::ir::idmanager::IDManager> idManager_;
 

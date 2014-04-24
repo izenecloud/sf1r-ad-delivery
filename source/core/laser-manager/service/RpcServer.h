@@ -7,7 +7,7 @@
 #include "TermParser.h"
 #include "CLUSTERINGServerRequest.h"
 #include "TermParser.h"
-#include "type/ClusteringDataAdapter.h"
+#include "laser-manager/clusteringmanager/type/ClusteringDataAdapter.h"
 namespace sf1r 
 { 
 namespace laser 

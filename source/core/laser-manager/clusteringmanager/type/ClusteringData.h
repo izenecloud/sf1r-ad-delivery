@@ -5,15 +5,19 @@
  *      Author: alex
  */
 
-#ifndef CLUSTERINGDATA_H_
-#define CLUSTERINGDATA_H_
-#include "type/Document.h"
+#ifndef SF1R_LASER_CLUSTERINGDATA_H_
+#define SF1R_LASER_CLUSTERINGDATA_H_
+#include "Document.h"
 #include <vector>
 #include <3rdparty/msgpack/msgpack.hpp>
 #include <iostream>
 #include <string>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/serialization.hpp>
+namespace sf1r
+{
+namespace laser
+{
 namespace clustering
 {
 namespace type
@@ -49,4 +53,6 @@ struct ClusteringData
 
 } /* namespace type */
 } /* namespace clustering */
+}
+}
 #endif /* CLUSTERINGDATA_H_ */

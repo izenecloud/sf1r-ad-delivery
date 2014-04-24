@@ -5,14 +5,17 @@
  *      Author: alex
  */
 
-#ifndef CLUSTERINGINFO_H_
-#define CLUSTERINGINFO_H_
-#include<string>
-#include<vector>
+#ifndef SF1R_LASER_CLUSTERINGINFO_H_
+#define SF1R_LASER_CLUSTERINGINFO_H_
+#include <string>
+#include <vector>
 #include <3rdparty/msgpack/msgpack.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/serialization.hpp>
-using std::string;
+namespace sf1r
+{
+namespace laser
+{
 namespace clustering
 {
 namespace type
@@ -41,5 +44,7 @@ struct ClusteringInfo
 }
 }
 
+}
+}
 
 #endif /* CLUSTERINGINFO_H_ */

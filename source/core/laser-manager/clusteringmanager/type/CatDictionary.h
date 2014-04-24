@@ -8,24 +8,22 @@
 #ifndef CATDICTIONARY_H_
 #define CATDICTIONARY_H_
 #include <string>
-#include "knlp/title_pca.h"
-#include "am/sequence_file/ssfr.h"
+#include <knlp/title_pca.h>
+#include <am/sequence_file/ssfr.h>
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 #include <map>
 #include <iostream>
-#include "common/constant.h"
-#include "common/utils.h"
-#include <iostream>
 #include <util/singleton.h>
+#include "laser-manager/clusteringmanager/common/constant.h"
+#include "laser-manager/clusteringmanager/common/utils.h"
+#include <iostream>
 //#include <ifstream>
 
-using namespace ilplib::knlp;
-using namespace izenelib;
-using std::string;
-using std::map;
-using std::pair;
-#include  "boost/filesystem/operations.hpp"
-#include  "boost/filesystem/path.hpp"
-
+namespace sf1r
+{
+namespace laser
+{
 namespace clustering
 {
 namespace type
@@ -190,6 +188,8 @@ public:
     }
 };
 
+}
+}
 }
 }
 #endif /* CATDICTIONARY_H_ */

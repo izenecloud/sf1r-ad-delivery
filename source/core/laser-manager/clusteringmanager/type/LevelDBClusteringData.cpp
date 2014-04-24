@@ -6,9 +6,13 @@
  */
 
 #include "LevelDBClusteringData.h"
-#include "common/utils.h"
+#include "laser-manager/clusteringmanager/common/utils.h"
 #include <3rdparty/msgpack/msgpack/type/tuple.hpp>
 #include <list>
+namespace sf1r
+{
+namespace laser
+{
 namespace clustering
 {
 namespace type
@@ -149,3 +153,5 @@ LevelDBClusteringData::~LevelDBClusteringData()
 }
 
 } /* namespace clustering */
+}
+}

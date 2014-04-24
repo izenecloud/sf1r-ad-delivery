@@ -7,10 +7,9 @@
 
 #include "service/RpcServer.h"
 #include "LaserRecommend.h"
+#include "LaserRecommendParam.h"
 
 namespace sf1r
-{
-namespace laser
 {
 
 class LaserManager
@@ -20,17 +19,15 @@ public:
         const LaserConfig& laserConfig);
     ~LaserManager();
 public:
-    bool recommend(const std::string& uuid, 
-        RawTextResultFromMIA& itemList, 
-        const std::size_t num) const; 
+    bool recommend(const laser::LaserRecommendParam& param, 
+        RawTextResultFromMIA& itemList) const; 
 private:
     boost::shared_ptr<AdSearchService> adSearchService_;
-    boost::shared_ptr<LaserConfig> conf_;
-    boost::scoped_ptr<RpcServer> rpcServer_;
-    boost::scoped_ptr<LaserRecommend> recommend_;
+    const LaserConfig& conf_;
+    boost::scoped_ptr<laser::RpcServer> rpcServer_;
+    boost::scoped_ptr<laser::LaserRecommend> recommend_;
 };
 
-}
 }
 
 #endif

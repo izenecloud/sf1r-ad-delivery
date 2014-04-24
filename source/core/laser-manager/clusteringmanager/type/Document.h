@@ -5,14 +5,18 @@
  *      Author: alex
  */
 
-#ifndef DOCUMENT_H_
-#define DOCUMENT_H_
+#ifndef SF1R_LASER_DOCUMENT_H_
+#define SF1R_LASER_DOCUMENT_H_
 #include<string>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/serialization.hpp>
 #include <3rdparty/msgpack/msgpack.hpp>
-#include "common/constant.h"
+#include "laser-manager/clusteringmanager/common/constant.h"
 
+namespace sf1r
+{
+namespace laser
+{
 namespace clustering
 {
 namespace type
@@ -37,10 +41,12 @@ public:
     }
 
     std::string doc_id;
-    typedef  std::map<clustering::hash_t, float> TermMapType;
+    typedef  std::map<hash_t, float> TermMapType;
     TermMapType terms;
     MSGPACK_DEFINE(doc_id, terms);
 };
+}
+}
 }
 }
 #endif /* DOCUMENT_H_ */

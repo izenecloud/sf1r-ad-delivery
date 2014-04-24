@@ -5,15 +5,15 @@
  *      Author: alex
  */
 
-#ifndef _CLUSTERING_UTILS_H_
-#define _CLUSTERING_UTILS_H_
+#ifndef SF1R_LASER_CLUSTERING_UTILS_H_
+#define SF1R_LASER_CLUSTERING_UTILS_H_
 #include <string>
 #include <vector>
 #include <map>
 using std::map;
 using std::string;
 using std::vector;
-#include "common/constant.h"
+#include "constant.h"
 #include "util/hashFunction.h"
 #include  "boost/filesystem/operations.hpp"
 #include  "boost/filesystem/path.hpp"
@@ -22,6 +22,10 @@ using std::vector;
 #include <boost/iostreams/stream.hpp>
 namespace  fs=boost::filesystem;
 
+namespace sf1r
+{
+namespace laser
+{
 namespace clustering
 {
 inline hash_t Hash_(const std::string& cat)
@@ -136,6 +140,6 @@ inline void deserializeFile(const string & deserialFileName, object & obj)
     ia >> obj;
 }
 
-
-
+}
+}
 #endif /* _CLUSTERING_UTILS_H_ */

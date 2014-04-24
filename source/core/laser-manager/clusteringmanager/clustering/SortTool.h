@@ -5,14 +5,18 @@
  *      Author: alex
  */
 
-#ifndef CLUSTERINGSORTTOOL_H_
-#define CLUSTERINGSORTTOOL_H_
+#ifndef SF1R_LASER_CLUSTERINGSORTTOOL_H_
+#define SF1R_LASER_CLUSTERINGSORTTOOL_H_
 
 #include <queue>
 #include <string>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
-#include "am/sequence_file/ssfr.h"
+#include <am/sequence_file/ssfr.h>
+namespace sf1r
+{
+namespace laser
+{
 using std::queue;
 using std::string;
 namespace clustering
@@ -70,4 +74,6 @@ public:
     }
 };
 } /* namespace clustering */
+}
+}
 #endif /* CLUSTERINGSORTTOOL_H_ */

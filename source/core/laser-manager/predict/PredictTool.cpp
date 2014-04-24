@@ -1,4 +1,10 @@
 #include "PredictTool.h"
+#include "laser-manager/clusteringmanager/type/LevelDBClusteringData.h"
+using namespace sf1r::laser::clustering::type;
+namespace sf1r
+{
+namespace laser
+{
 namespace predict
 {
     MinHeapDocRankType getTopN(const ClusterContainer& clusters,const PerUserOnlineModel& puseronlineModel, size_t topN)
@@ -47,4 +53,6 @@ namespace predict
         return minHeap;
 
     }
+}
+}
 }
