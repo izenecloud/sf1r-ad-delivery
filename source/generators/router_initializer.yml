@@ -3,6 +3,7 @@ headers:
   - controllers/DocumentsController.h
   - controllers/StatusController.h
   - controllers/CollectionController.h
+  - controllers/LaserController.h
 
 controllers:
   CommandsController:
@@ -46,4 +47,8 @@ controllers:
       - backup_all
       - create_collection
       - delete_collection
+  
+  LaserController:
+    actions:
+      - recommend
 

@@ -69,9 +69,9 @@ bool LaserHandler::parseSelect_()
 
 bool LaserHandler::parseLaserRecommendParam_(laser::LaserRecommendParam& param)
 {
-    const Value& recommendParam = request_["recommend"];
-    param.uuid_ = asString(recommendParam["uuid"]);
-    param.topN_ = asInt(recommendParam["topn"]);
+    const Value& recommendParam = request_[driver::Keys::recommend];
+    param.uuid_ = asString(recommendParam[driver::Keys::uuid]);
+    param.topN_ = asInt(recommendParam[driver::Keys::topn]);
     return true;
 }
 
