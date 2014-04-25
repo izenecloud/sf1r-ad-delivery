@@ -3,6 +3,7 @@
  * @author Ian Yang
  * @date Created <2010-06-01 10:26:16>
  */
+#include <laser-manager/clusteringmanager/type/LevelDBClusteringData.h>
 #include "CommandsController.h"
 #include "CollectionHandler.h"
 #include <common/JobScheduler.h>
@@ -17,7 +18,6 @@
 #include <node-manager/DistributeRequestHooker.h>
 #include <node-manager/MasterManagerBase.h>
 #include <node-manager/NodeManagerBase.h>
-#include <laser-manager/clusteringmanager/type/LevelDBClusteringData.h>
 #include <common/Keys.h>
 
 namespace sf1r
