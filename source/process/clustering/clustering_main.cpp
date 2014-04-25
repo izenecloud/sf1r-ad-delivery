@@ -13,19 +13,19 @@
 #include <unistd.h>
 #include "knlp/title_pca.h"
 #include <map>
-#include "PCAClustering.h"
-#include "OriDocument.h"
-#include "conf/Configuration.h"
-#include "type/ClusteringListDes.h"
-#include "type/ClusteringDataAdapter.h"
-#include "type/LevelDBClusteringData.h"
+#include "laser-manager/clusteringmanager/clustering/PCAClustering.h"
+#include "laser-manager/clusteringmanager/clustering/OriDocument.h"
+#include "Configuration.h"
+#include "laser-manager/clusteringmanager/type/ClusteringListDes.h"
+#include "laser-manager/clusteringmanager/type/ClusteringDataAdapter.h"
+#include "laser-manager/clusteringmanager/type/LevelDBClusteringData.h"
 #include <boost/timer.hpp>
 using namespace std;
 using namespace ilplib::knlp;
 using namespace izenelib;
-using namespace clustering;
-using namespace conf;
-
+using namespace sf1r::laser::clustering;
+using namespace sf1r::laser::conf;
+using namespace sf1r::laser::clustering::type;
 
 void printHelp()
 {
@@ -106,9 +106,9 @@ int main(int argc, char * argv[])
     int max_clustering_term_num = Configuration::get()->getClusteringResultTermNumLimit();
     int clustering_exec_threadnum = Configuration::get()->getClusteringExecThreadnum();
     fs::create_directories(clustering_root);
-    string leveldbpath =  Configuration::get()->getClusteringDBPath();
+    //string leveldbpath =  Configuration::get()->getClusteringDBPath();
     string scdsuffix = Configuration::get()->getScdFileSuffix();
-    RETURN_ON_FAILURE(LevelDBClusteringData::get()->init(leveldbpath));
+    RETURN_ON_FAILURE(LevelDBClusteringData::get()->init(clustering_root));
     vector<string> filelist = getSCDList(corpus, scdsuffix);
     PCAClustering pca_clustering(pca_directory_path, clustering_root, threhold, min_clustering_doc_num, max_clustering_doc_num, max_clustering_term_num);
     namespace pt = boost::posix_time;
