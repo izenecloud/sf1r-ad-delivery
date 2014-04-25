@@ -53,7 +53,7 @@ struct SplitTitle: public RequestData
 
 struct SplitTitleResult
 {
-    std::map<size_t, float> term_list_;
+    std::map<int, float> term_list_;
     MSGPACK_DEFINE(term_list_);
 };
 struct GetClusteringItemListRequest: public RequestData

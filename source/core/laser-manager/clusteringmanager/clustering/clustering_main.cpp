@@ -14,10 +14,12 @@
 #include "knlp/title_pca.h"
 #include <map>
 #include "PCAClustering.h"
+#include "OriDocument.h"
 #include "conf/Configuration.h"
 #include "type/ClusteringListDes.h"
 #include "type/ClusteringDataAdapter.h"
 #include "type/LevelDBClusteringData.h"
+#include <boost/timer.hpp>
 using namespace std;
 using namespace ilplib::knlp;
 using namespace izenelib;
@@ -104,18 +106,20 @@ int main(int argc, char * argv[])
     int max_clustering_doc_num = Configuration::get()->getMaxClusteringDocNum();
     int max_clustering_term_num = Configuration::get()->getClusteringResultTermNumLimit();
     int clustering_exec_threadnum = Configuration::get()->getClusteringExecThreadnum();
+    fs::create_directories(clustering_root);
     string leveldbpath =  Configuration::get()->getClusteringDBPath();
     string scdsuffix = Configuration::get()->getScdFileSuffix();
     RETURN_ON_FAILURE(LevelDBClusteringData::get()->init(leveldbpath));
     vector<string> filelist = getSCDList(corpus, scdsuffix);
     PCAClustering pca_clustering(pca_directory_path, clustering_root, threhold, min_clustering_doc_num, max_clustering_doc_num, max_clustering_term_num);
+    namespace pt = boost::posix_time;
+    pt::ptime beg = pt::microsec_clock::local_time();
+    long count  = 0;
     for(vector<string>::iterator iter = filelist.begin(); iter != filelist.end(); iter++)
     {
         ifstream scdfile((*iter).c_str());
         string line;
         map<string, int> wdt;
-//		std::cout<<"Read and parse"<<std::endl;
-        int count = 0;
 
         while(  std::getline(scdfile, line) )
         {
@@ -157,6 +161,10 @@ int main(int argc, char * argv[])
         }
     }
     pca_clustering.execute(LevelDBClusteringData::get(), clustering_exec_threadnum);
+    pt::ptime end = pt::microsec_clock::local_time();
+    pt::time_duration diff = end - beg;
+    cout<<"cost:"<< diff.total_milliseconds()<<" docnum:"<<count<<endl;
+
     LevelDBClusteringData::get()->release();
 }
 

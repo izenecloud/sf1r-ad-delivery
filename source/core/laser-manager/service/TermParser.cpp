@@ -24,38 +24,46 @@ TermParser::~TermParser()
 {
     release();
 }
-bool TermParser::init(const std::string& clusteringRootPath)
+bool TermParser::init(std::string clusteringRoot, std::string dictionPath )
 {
-    TermDictionary term_dictionary(clusteringRootPath, ONLY_READ);
+    TermDictionary term_dictionary(clusteringRoot, ONLY_READ);
     terms = term_dictionary.getTerms();
-    tok = new TitlePCA("TODO");
+    tok = new TitlePCA(dictionPath);
     return true;
 }
 SplitTitleResult TermParser::parse(SplitTitle st)
 {
     SplitTitleResult splitTitleResult;
-    cout<<"Toparse:"<<st.title_<<endl;
     if(tok == NULL)
     {
         cout<<"tok is NULL"<<endl;
         return splitTitleResult;
     }
 
-    std::vector<std::pair<std::string, float> > tks;
-    std::pair<std::string, float> tmp;
-    std::vector<std::pair<std::string, float> > subtks;
+    typedef std::pair<std::string, float> TermPair;
+    std::vector< TermPair > tks;
+    TermPair tmp;
+    std::vector<TermPair > subtks;
     std::string brand, mdt;
     tok->pca(st.title_, tks, brand, mdt, subtks, false);
-
+    float total = 0;
     for (size_t i = 0; i < tks.size(); ++i)
     {
-        map<hash_t, Term>::iterator iter = terms.find(Hash_(tks[i].first));
+        map<int, Term>::iterator iter = terms.find(Hash_(tks[i].first));
         if(iter != terms.end())
         {
-            cout<<"insert "<<iter->second.index <<" float:"<<tks[i].second<<endl;
-            splitTitleResult.term_list_.insert(make_pair<hash_t,float>( iter->second.index, tks[i].second) );
+            splitTitleResult.term_list_[iter->second.index] += tks[i].second;
+            total+=tks[i].second;
         }
     }
+    if(total != 0)
+    {
+        for (std::map<int, float>::iterator iter = splitTitleResult.term_list_.begin(); iter != splitTitleResult.term_list_.end(); iter++)
+        {
+            iter->second /= total;
+        }
+    }
+
     return splitTitleResult;
 }
 }

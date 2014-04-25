@@ -89,7 +89,7 @@ public:
         }
     }
     //get the index id, the index begin with 1, so if the return is 0, it means there is no result
-    hash_t get(string term)
+    hash_t get(string term, int count=1)
     {
         if(term.length() == 1)
             return 0;
@@ -99,7 +99,7 @@ public:
         {
             if(status != ONLY_READ)
             {
-                Term t(term, 1, term_map.size());
+                Term t(term, count, term_map.size());
                 term_map.insert(make_pair<hash_t, Term>(th, t));
             }
             else
@@ -111,7 +111,7 @@ public:
         {
             if(status != ONLY_READ)
             {
-                iter->second.term_df+=1;
+                iter->second.term_df+=count;
             }
         }
         return th;

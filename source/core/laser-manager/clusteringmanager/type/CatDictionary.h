@@ -124,7 +124,7 @@ public:
         }
     }
 
-    inline pair<hash_t, size_t> addCatHash(const string& cat, hash_t r = 0)
+    inline pair<hash_t, size_t> addCatHash(const string& cat, hash_t r = 0, int df = 1)
     {
         if (r == 0)
             r = Hash_(cat);
@@ -133,13 +133,13 @@ public:
         {
             if (status_ != ONLY_READ)
             {
-                iter->second.df++;
+                iter->second.df += df;
             }
             return make_pair<hash_t, size_t>(r, iter->second.df);
         }
         else
         {
-            cat_dic.insert(make_pair<hash_t, Category>(r, Category(cat, 1)));
+            cat_dic.insert(make_pair<hash_t, Category>(r, Category(cat, df)));
             return make_pair<hash_t, size_t>(r, 1);
         }
     }

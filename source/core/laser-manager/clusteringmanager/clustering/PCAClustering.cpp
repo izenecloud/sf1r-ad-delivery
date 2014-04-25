@@ -33,16 +33,20 @@ namespace clustering
  * cat_dic: clustering category dictionary
  */
 PCAClustering::PCAClustering(string term_directory_dir, string clustering_root_path,
-                             float threhold_, int min_doc, int max_doc, int max_term) :
-    threhold(threhold_), tok(term_directory_dir), term_dictionary(
-        clustering_root_path, TRUNCATED), min_clustering_doc_num(min_doc), max_clustering_doc_num(
-            max_doc), max_clustering_term_num(max_term)
+                             float threhold_, int min_doc, int max_doc, int max_term, int threadnum) :
+    threhold(threhold), 
+    term_dictionary(clustering_root_path, TRUNCATED),
+    min_clustering_doc_num(min_doc), 
+    max_clustering_doc_num(max_doc), 
+    max_clustering_term_num(max_term),
+    segmentTool_(threadnum, term_dictionary, term_directory_dir, threhold_, max_doc)
 {
     if (!ClusteringListDes::get()->init(clustering_root_path, TRUNCATED)
             || !CatDictionary::get()->init(clustering_root_path, TRUNCATED))
     {
         exit(0);
     }
+    segmentTool_.start();
 
 }
 
@@ -50,11 +54,12 @@ PCAClustering::~PCAClustering()
 {
     ClusteringListDes::get()->close();
     CatDictionary::get()->close();
-
+    segmentTool_.stop();
 }
 
 void PCAClustering::execute(ClusteringDataAdapter* cda, int threadnum)
 {
+    segmentTool_.stop();
     ClusteringListDes::get()->closeMidWriterFiles();
     std::map<hash_t, string> catlist = ClusteringListDes::get()->get_cat_list();
     std::map<hash_t, string> catpathlist = ClusteringListDes::get()->get_cat_path();
@@ -71,78 +76,23 @@ void PCAClustering::execute(ClusteringDataAdapter* cda, int threadnum)
 
 void PCAClustering::next(string title, string category, string docid)
 {
-    std::vector<std::pair<std::string, float> > tks;
-    std::pair<std::string, float> tmp;
-    std::vector<std::pair<std::string, float> > subtks;
-    std::string brand, mdt;
-    izene_writer_pointer iwp = ClusteringListDes::get()->get_cat_mid_writer(
-                                   category);
-    tok.pca(title, tks, brand, mdt, subtks, false);
-    double tot = 0, now = 0;
-    for (size_t i = 0; i < tks.size(); ++i)
+    OriDocument od(title, category, docid);
+    doc_map[category].push_back(od);
+    if(doc_map[category].size() > 1000)
     {
-        if (mdt == tks[i].first)
-            tks[i].second = 0;
-        tot += tks[i].second;
+        cout<<"to push"<<endl;
+        segmentTool_.pushback(category, doc_map[category]);
+        doc_map[category].clear();
+        cout<<"push over"<<endl;
     }
-    for (size_t i = 0; i < tks.size(); ++i)
+/*    for(map<string, SegmentTool::DocumentVecType>::iterator iter = doc_map.begin(); iter != doc_map.end(); iter++)
     {
-        for (size_t j = i + 1; j < tks.size(); ++j)
+        if(iter->second.size() >0)
         {
-            if (tks[i].second < tks[j].second)
-            {
-                tmp = tks[i];
-                tks[i] = tks[j];
-                tks[j] = tmp;
-            }
+            segmentTool_.pushback(iter->first, iter->second);
         }
-    }
-    std::stringstream category_merge;
-    category_merge << category;
-    Document d(docid);
-    size_t cat_limit_count = std::numeric_limits<size_t>::max();
-    hash_t cat_hash_value = 0;
-    for (size_t i = 0; i < tks.size(); ++i)
-    {
-        hash_t tid = term_dictionary.get(tks[i].first);
-        //give up the term
-        if (tid == 0)
-            continue;
-        d.add(tid, tks[i].second);
-
-        now += tks[i].second;
-        if (now > tot * threhold)   //check whether the document number in this category reach the limit
-        {
-            if (cat_limit_count > max_clustering_doc_num)   // temporary number{
-            {
-                category_merge << "<" << tks[i].first;
-                pair<hash_t, size_t> hs = CatDictionary::get()->getCatHash(
-                                              category_merge.str());
-                cat_limit_count = hs.second;
-                if (cat_limit_count < max_clustering_doc_num)
-                {
-                    //cout<<"limit count is"<<cat_limit_count<<endl;
-                    CatDictionary::get()->addCatHash(category_merge.str(),
-                                                     hs.first);
-                    cat_hash_value = hs.first;
-                }
-                else
-                {
-                    //category_merge<<"<"<<tks[i].first;
-                }
-            }
-        }
-        else
-        {
-            category_merge << "<" << tks[i].first;
-            now += tks[i].second;
-        }
-
-    }
-    //hash_t h = CatDictionary::get()->getCatHash(category_merge.str());
-    if (cat_hash_value > 0)
-        iwp->Append(cat_hash_value, d);
-
+    }*/
+    return;
 }
 }
 }

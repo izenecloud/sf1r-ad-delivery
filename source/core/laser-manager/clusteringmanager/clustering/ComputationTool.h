@@ -61,9 +61,8 @@ public:
             izene_reader_pointer reader = openFile<izene_reader>(info.clusteringMidPath, true);
             izene_writer_pointer writer = openFile<izene_writer>(info.clusteringResPath, true);
             izene_writer_pointer clustering_term_pow_writer = openFile<izene_writer>(info.clusteringPowPath, true);
-            hash_t cat;
             type::Document value("");
-            hash_t older = 0;
+            hash_t older = 0, cat = 0;
             bool next = true;
             bool last = false;
             type::ClusteringInfo clusteringInfo;

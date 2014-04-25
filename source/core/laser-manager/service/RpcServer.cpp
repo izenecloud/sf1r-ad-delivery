@@ -41,13 +41,13 @@ RpcServer::~RpcServer()
     LOG(INFO) << "~RpcServer()" << std::endl;
 }
 
-bool RpcServer::init(const std::string& clusteringRootPath, 
-    const std::string& clusteringDBPath, 
-    const std::string& perUserDBPath)
+bool RpcServer::init(const std::string& clusteringRootPath, const std::string& dictionaryPath, 
+       const std::string& clusteringDBPath, const std::string& topNClusteringPath, 
+       const std::string& perUserDBPath)
 {
-    RETURN_ON_FAILURE(TermParser::get()->init(clusteringRootPath));
-    RETURN_ON_FAILURE(LevelDBClusteringData::get()->init(clusteringRootPath));
-    RETURN_ON_FAILURE(TopNClusterContainer::get()->init(clusteringDBPath));
+    RETURN_ON_FAILURE(TermParser::get()->init(clusteringRootPath, dictionaryPath));
+    RETURN_ON_FAILURE(LevelDBClusteringData::get()->init(clusteringDBPath));
+    RETURN_ON_FAILURE(TopNClusterContainer::get()->init(topNClusteringPath));
     RETURN_ON_FAILURE(LaserOnlineModel::get()->init(perUserDBPath));
     return true;
 }

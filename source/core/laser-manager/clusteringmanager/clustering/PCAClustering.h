@@ -19,6 +19,8 @@
 #include "ComputationTool.h"
 #include "SortTool.h"
 #include "laser-manager/clusteringmanager/type/ClusteringDataAdapter.h"
+#include "OriDocument.h"
+#include "SegmentTool.h"
 using namespace izenelib;
 namespace sf1r
 {
@@ -30,7 +32,6 @@ class PCAClustering
 {
 private:
     float threhold;//the clustering threhold
-    ilplib::knlp::TitlePCA tok; //the pca
     //cat_dic will maintain the final clustering list
     //CatDictionary cat_dic_;
     //term_dictionary will maintain the term dictionary, sort and reduce the dimention
@@ -43,9 +44,11 @@ private:
     int max_clustering_doc_num;
     //max term number in the clustering
     int max_clustering_term_num;
+    map<string, SegmentTool::DocumentVecType> doc_map;
+    SegmentTool segmentTool_;
 public:
     bool loadDic(const std::string& dic_path);
-    PCAClustering(string term_directory_dir, string clustering_root_path, float threhold_= 0.1,  int min_doc=10, int max_doc=1000, int max_term=10000) ;
+    PCAClustering(string term_directory_dir, string clustering_root_path, float threhold_= 0.1,  int min_doc=10, int max_doc=1000, int max_term=10000, int threadnum=3) ;
     void next(std::string title, std::string category, std::string docid);
     void execute(type::ClusteringDataAdapter * cda, int threadnum);
     ~PCAClustering();
