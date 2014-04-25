@@ -39,7 +39,7 @@ namespace predict
     };
 
     typedef std::priority_queue<DocRank, std::vector<DocRank>, comparator> MinHeapDocRankType;
-    MinHeapDocRankType getTopN(const ClusterContainer& clusters,const PerUserOnlineModel& puseronlineModel, size_t topN);
+    void getTopN(const ClusterContainer& clusters,const PerUserOnlineModel& puseronlineModel, size_t topN, MinHeapDocRankType& minHeap);
 }
 }
 }

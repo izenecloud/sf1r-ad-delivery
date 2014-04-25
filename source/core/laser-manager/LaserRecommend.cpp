@@ -19,7 +19,8 @@ bool LaserRecommend::recommend(const std::string& uuid,
     PerUserOnlineModel puseronlineModel;
     if (TopNClusterContainer::get()->get(uuid, clusters) && LaserOnlineModel::get()->get(uuid, puseronlineModel))
     {
-        MinHeapDocRankType docrankHeap = getTopN(clusters, puseronlineModel, num);
+        MinHeapDocRankType docrankHeap;
+        getTopN(clusters, puseronlineModel, num, docrankHeap);
         while (!docrankHeap.empty())
         {
            struct DocRank doc =  docrankHeap.top();

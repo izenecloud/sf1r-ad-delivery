@@ -7,9 +7,8 @@ namespace laser
 {
 namespace predict
 {
-    MinHeapDocRankType getTopN(const ClusterContainer& clusters,const PerUserOnlineModel& puseronlineModel, size_t topN)
+    void getTopN(const ClusterContainer& clusters,const PerUserOnlineModel& puseronlineModel, size_t topN, MinHeapDocRankType& minHeap)
     {
-        MinHeapDocRankType minHeap;
         ClusterContainerIter iter = clusters.begin();
         cout<<puseronlineModel.getUserName()<<endl;
         const vector<float>& args = puseronlineModel.getArgs();
@@ -50,8 +49,6 @@ namespace predict
 
             }
         }
-        return minHeap;
-
     }
 }
 }
