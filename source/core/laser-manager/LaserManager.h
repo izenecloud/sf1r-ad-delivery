@@ -24,7 +24,7 @@ public:
 private:
     boost::shared_ptr<AdSearchService> adSearchService_;
     const LaserConfig& conf_;
-    boost::scoped_ptr<laser::RpcServer> rpcServer_;
+    boost::shared_ptr<laser::RpcServer> rpcServer_;
     boost::scoped_ptr<laser::LaserRecommend> recommend_;
 };
 
