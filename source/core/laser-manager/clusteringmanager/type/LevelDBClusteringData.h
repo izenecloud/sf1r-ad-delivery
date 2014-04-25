@@ -38,7 +38,7 @@ public:
     }
     bool init(std::string dbpath);
     void release();
-    void reload()
+    void reload(const std::string& clusteringDataPath)
     {
         //TODO for alex
     }

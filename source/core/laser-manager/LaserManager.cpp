@@ -11,7 +11,7 @@ namespace sf1r
         rpcServer_->start("0.0.0.0", 
             28611, 
             2,
-            MiningManager::system_resource_path_ + "/laser_clustering/",
+            MiningManager::system_working_path_ + "/laser_clustering/",
             MiningManager::system_working_path_ + "/laser_leveldb",
             MiningManager::system_resource_path_ + "/dict/title_pca/");
 

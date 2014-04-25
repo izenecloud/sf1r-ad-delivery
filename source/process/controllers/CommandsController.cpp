@@ -190,6 +190,14 @@ void CommandsController::train_ctr_model()
  */
 void CommandsController::load_laser_clustering()
 {
-    laser::clustering::type::LevelDBClusteringData::get()->reload();
+    const std::string& clusteringPath = asString(request()[Keys::clustering_path]);
+    if (clusteringPath.empty())
+    {
+        response().addError("missing clustering result paht");
+    }
+    else
+    {
+        laser::clustering::type::LevelDBClusteringData::get()->reload(asString(request()[Keys::clustering_path]));
+    }
 }
 } // namespace sf1r
