@@ -32,6 +32,8 @@ public:
     void optimize_index();
 
     void train_ctr_model();
+    
+    void load_laser_clustering();
 
 private:
     void indexSearch_();

@@ -12,6 +12,7 @@ controllers:
       - optimize_index
       - mining
       - train_ctr_model
+      - load_laser_clustering
 
   DocumentsController:
     actions:
@@ -51,5 +52,4 @@ controllers:
   LaserController:
     actions:
       - recommend
-      - load_clustering
 
