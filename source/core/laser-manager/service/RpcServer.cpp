@@ -7,6 +7,7 @@
 #include <boost/filesystem.hpp>
 #include <3rdparty/json/json.h>
 #include <3rdparty/msgpack/msgpack/type/tuple.hpp>
+#include <boost/thread/locks.hpp> 
 #include <sys/types.h>
 #include <ifaddrs.h>
 #include <netinet/in.h>
@@ -18,27 +19,39 @@
 #include "laser-manager/predict/TopNClusterContainer.h"
 #include "laser-manager/predict/LaserOnlineModel.h"
 
+#include <glog/logging.h>
+
 using namespace msgpack::type;
 using namespace sf1r::laser::predict;
 using namespace sf1r::laser::clustering::type;
 using namespace sf1r::laser::clustering::rpc;
-
+using namespace boost;
 namespace sf1r
 {
 namespace laser
 {
 
-RpcServer::RpcServer(const std::string& host, uint16_t port, uint32_t threadNum)
-    : host_(host)
-    , port_(port)
-    , threadNum_(threadNum)
+static shared_ptr<RpcServer> rpcServer;
+static shared_mutex mutex;
+shared_ptr<RpcServer>& RpcServer::getInstance()
 {
+    unique_lock<shared_mutex> uniqueLock(mutex);
+    if (NULL == rpcServer.get())
+    {
+        rpcServer.reset(new RpcServer());
+    }
+    return rpcServer;
+}
 
+
+RpcServer::RpcServer()
+    : isStarted_(false)
+{
 }
 
 RpcServer::~RpcServer()
 {
-    LOG(INFO) << "~RpcServer()" << std::endl;
+    stop();
 }
 
 bool RpcServer::init(const std::string& clusteringRootPath, const std::string& dictionaryPath, 
@@ -52,24 +65,41 @@ bool RpcServer::init(const std::string& clusteringRootPath, const std::string& d
     return true;
 }
 
-void RpcServer::start()
+void RpcServer::start(const std::string& host, 
+        uint16_t port, 
+        uint32_t threadNum, 
+        const std::string& clusteringRootPath, 
+        const std::string& clusteringDBPath, 
+        const std::string& perUserDBPath)
 {
-    LOG(INFO) << host_ << "  " << port_ << "  " << threadNum_ << endl;
-    instance.listen(host_, port_);
-    instance.start(threadNum_);
-}
+    boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
+    if (isStarted_)
+    {
+        return;
+    }
 
-void RpcServer::join()
-{
-    instance.join();
+    if (init(clusteringRootPath, clusteringDBPath, perUserDBPath))
+    {
+        LOG(INFO) << host << "  " << port << "  " << threadNum << endl;
+        instance.listen(host, port);
+        instance.start(threadNum);
+        isStarted_ = true;
+    }
+    else
+    {
+        LOG(ERROR)<<"init leveldb storage error.";
+    }
 }
 
 void RpcServer::stop()
 {
+    LOG(INFO)<<"release all leveldb storage";
     TermParser::get()->release();
     LevelDBClusteringData::get()->release();
     TopNClusterContainer::get()->release();
+    LOG(INFO)<<"stop msgpack server";
     instance.end();
+    instance.join();
 }
 
 void RpcServer::dispatch(msgpack::rpc::request req)
@@ -98,17 +128,6 @@ void RpcServer::dispatch(msgpack::rpc::request req)
             req.params().convert(&params);
             req.result(TermParser::get()->parse(params.get<0>()));
         }
-//        else if (method == CLUSTERINGServerRequest::method_names[CLUSTERINGServerRequest::METHOD_GETCLUSTERINGITEMLIST])
-//        {
-//            ClusteringData test;
-//            Document doc("test");
-//            doc.add(1,1.1);
-//            doc.add(2,2.2);
-//            cda
-//            test.clusteringData.push_back(doc);
-//            test.clusteringData.push_back(doc);
-//            req.result(test);
-//        }
         else if (method == CLUSTERINGServerRequest::method_names[CLUSTERINGServerRequest::METHOD_GETCLUSTERINGINFOS])
         {
             msgpack::type::tuple<GetClusteringInfoRequest> params;
@@ -116,21 +135,7 @@ void RpcServer::dispatch(msgpack::rpc::request req)
             GetClusteringInfosResult gir;
             if(params.get<0>().clusteringhash_ == 0)
             {
-                //std::vector<ClusteringInfo> list;
                 LevelDBClusteringData::get()->loadClusteringInfos(gir.info_list_);
-                /*ClusteringInfo newinfo;
-                int i = 0;
-                for (std::vector<ClusteringInfo>::const_iterator it = list.begin(); it != list.end(); it++)
-                {
-
-                    LOG(INFO)<<"docnum:"<<it->clusteringDocNum<<endl;
-                    LOG(INFO)<<"clusterHash"<<it->clusteringHash<<endl;
-                    LOG(INFO)<<"pow set"<<it->clusteringPow.size()<<endl;
-                    //gir.info_list_.push_back(newinfo);
-                    gir.info_list_.push_back(*it);  //NOT
-                    //if (i++ > 12)
-                      //  break;
-                }*/
                 LOG(INFO) << "method:" <<method <<" data req total"<< gir.info_list_.size() << std::endl;
                 req.result(gir);
             }
@@ -173,7 +178,6 @@ void RpcServer::dispatch(msgpack::rpc::request req)
     }
     catch (const std::exception& e)
     {
-        //LOG(INFO) << "exception: " << e.what() << std::endl;
         req.error(std::string(e.what()));
     }
     catch (...)

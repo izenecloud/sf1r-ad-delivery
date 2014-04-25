@@ -8,25 +8,19 @@ namespace sf1r
         : adSearchService_(adSearchService)
         , conf_(laserConfig)
     {
-        rpcServer_.reset(new RpcServer(conf_.msgpack.host, 
-            conf_.msgpack.port, conf_.msgpack.numThread));
-        LOG(INFO)<<"start msgpack server on host:"<<
-            conf_.msgpack.host<<" port: "<< conf_.msgpack.port;
-        rpcServer_->init(conf_.clustering.leveldbRootPath,
+        rpcServer_ = RpcServer::getInstance();
+        rpcServer_->start(conf_.msgpack.host, 
+            conf_.msgpack.port, 
+            conf_.msgpack.numThread,
+            conf_.clustering.leveldbRootPath,
             conf_.clustering.dbClusteringPath,
             conf_.clustering.dbPerUserModelPath);
-
-        rpcServer_->start();
 
         recommend_.reset(new LaserRecommend());
     }
    
     LaserManager::~LaserManager()
     {
-        LOG(INFO)<<"inform msgpack to exit";
-        rpcServer_->stop();
-        rpcServer_->join();
-        LOG(INFO)<<"msgpack exited";
     }
     
     bool LaserManager::recommend(const LaserRecommendParam& param, 
