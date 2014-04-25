@@ -38,6 +38,10 @@ public:
     }
     bool init(std::string dbpath);
     void release();
+    void reload()
+    {
+        //TODO for alex
+    }
     bool save(clustering::type::ClusteringData& cd, clustering::type::ClusteringInfo& ci);
     bool loadClusteringData(hash_t cat_id, clustering::type::ClusteringData& cd);
     bool loadClusteringInfo(hash_t cat_id, clustering::type::ClusteringInfo& cd);

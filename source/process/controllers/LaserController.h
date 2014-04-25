@@ -8,6 +8,7 @@ class LaserController : public Sf1Controller
 {
 public:
     void recommend();
+    void load_clustering();
 };
 }
 #endif

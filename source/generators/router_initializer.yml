@@ -51,4 +51,5 @@ controllers:
   LaserController:
     actions:
       - recommend
+      - load_clustering
 
