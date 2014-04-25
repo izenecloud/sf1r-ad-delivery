@@ -445,7 +445,7 @@ bool MiningManager::open()
             return false;
 
        /** laser */
-       laserManager_=new LaserManager(adSearchService_, mining_schema_.laser_config);
+       laserManager_=new LaserManager(adSearchService_);
     }
     catch (NotEnoughMemoryException& ex)
     {

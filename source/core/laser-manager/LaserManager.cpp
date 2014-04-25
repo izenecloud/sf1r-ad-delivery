@@ -1,20 +1,19 @@
 #include "LaserManager.h"
+#include <mining-manager/MiningManager.h>
 #include <glog/logging.h>
 using namespace sf1r::laser;
 namespace sf1r
 {
-    LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService,
-        const LaserConfig& laserConfig)
+    LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService)
         : adSearchService_(adSearchService)
-        , conf_(laserConfig)
     {
         rpcServer_ = RpcServer::getInstance();
-        rpcServer_->start(conf_.msgpack.host, 
-            conf_.msgpack.port, 
-            conf_.msgpack.numThread,
-            conf_.clustering.resultRoot,
-            conf_.clustering.leveldbRootPath,
-            conf_.clustering.dictionarypath);
+        rpcServer_->start("0.0.0.0", 
+            28611, 
+            2,
+            MiningManager::system_resource_path_ + "/laser_clustering/",
+            MiningManager::system_working_path_ + "/laser_leveldb",
+            MiningManager::system_resource_path_ + "/dict/title_pca/");
 
         recommend_.reset(new LaserRecommend());
     }
