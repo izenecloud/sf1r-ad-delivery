@@ -407,37 +407,41 @@ void AdSearchService::notifyWatcherServerChange()
     }
 }
 
+void AdSearchService::getServiceNode(SearchServiceNode& node)
+{
+    ReadLockT lock(mutex_);
+    ++counter_;
+    SearchServerListT::const_iterator it = remote_search_service_list_.begin();
+    std::size_t index = counter_ % remote_search_service_list_.size();
+    for(; it != remote_search_service_list_.end(); ++it)
+    {
+        if (index == 0)
+            break;
+        --index;
+    }
+    node = it->second;
+}
+
 bool AdSearchService::search(const KeywordSearchActionItem& action, KeywordSearchResult& ret)
 {
+    KeywordSearchActionItem tmp_action = action;
+    tmp_action.collectionName_ = search_coll_;
     if (remote_search_service_list_.empty())
     {
         LOG(INFO) << "no remote search server.";
         if (ad_local_searcher_)
         {
-            return ad_local_searcher_->doLocalSearch(action, ret);
+            return ad_local_searcher_->doLocalSearch(tmp_action, ret);
         }
         return false;
     }
     SearchServiceNode node;
-    {
-        ReadLockT lock(mutex_);
-        ++counter_;
-        SearchServerListT::const_iterator it = remote_search_service_list_.begin();
-        std::size_t index = counter_ % remote_search_service_list_.size();
-        for(; it != remote_search_service_list_.end(); ++it)
-        {
-            if (index == 0)
-                break;
-            --index;
-        }
-        node = it->second;
-    }
-
+    getServiceNode(node);
     LOG(INFO) << "begin search ad from remote : " << node.getHost();
     try
     {
         msgpack::rpc::session s = session_pool_->get_session(node.getHost(), node.master_port, RPC_TIMEOUT);
-        msgpack::rpc::future f = s.call(MasterServerConnector::Methods_[MasterServerConnector::Method_documentSearch_], action);
+        msgpack::rpc::future f = s.call(MasterServerConnector::Methods_[MasterServerConnector::Method_documentSearch_], tmp_action);
         ret = f.get<KeywordSearchResult>();
         LOG(INFO) << "end search ad from remote.";
     }
@@ -447,8 +451,53 @@ bool AdSearchService::search(const KeywordSearchActionItem& action, KeywordSearc
         return false;
     }
 
+    // for test only
+    //if (!ret.topKDocs_.empty())
+    //{
+    //    GetDocumentsByIdsActionItem t;
+    //    t.collectionName_ = tmp_action.collectionName_;
+    //    DisplayProperty docid("DOCID");
+    //    t.displayPropertyList_.push_back(docid);
+    //    t.idList_.push_back(ret.topKDocs_[0]);
+
+    //    RawTextResultFromSIA ret;
+    //    getDocumentsByIds(t, ret);
+    //    LOG(INFO) << "get documents : " << ret.idList_.size();
+    //}
     return true;
 }
 
+bool AdSearchService::getDocumentsByIds(const GetDocumentsByIdsActionItem& action, RawTextResultFromSIA& ret)
+{
+    GetDocumentsByIdsActionItem tmp_action = action;
+    tmp_action.collectionName_ = search_coll_;
+
+    if (remote_search_service_list_.empty())
+    {
+        if (ad_local_searcher_)
+        {
+            ad_local_searcher_->getDocumentsByIds(tmp_action, ret);
+            return !ret.idList_.empty();
+        }
+        return false;
+    }
+
+    SearchServiceNode node;
+    getServiceNode(node);
+    LOG(INFO) << "begin get ad documents from remote : " << node.getHost();
+    try
+    {
+        msgpack::rpc::session s = session_pool_->get_session(node.getHost(), node.master_port, RPC_TIMEOUT);
+        msgpack::rpc::future f = s.call(MasterServerConnector::Methods_[MasterServerConnector::Method_getDocumentsByIds_], tmp_action);
+        ret = f.get<RawTextResultFromSIA>();
+        LOG(INFO) << "end get ad from remote.";
+    }
+    catch(const std::exception& e)
+    {
+        LOG(WARNING) << "search rpc call error :" << e.what();
+        return false;
+    }
+    return !ret.idList_.empty();
+}
 
 }
