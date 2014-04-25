@@ -10,9 +10,6 @@
 #include <string>
 #include <vector>
 #include <map>
-using std::map;
-using std::string;
-using std::vector;
 #include "constant.h"
 #include "util/hashFunction.h"
 #include  "boost/filesystem/operations.hpp"
@@ -34,7 +31,7 @@ inline hash_t Hash_(const std::string& cat)
 }
 
 template <class izenestream>
-inline izenestream* openFile( string path, bool must)
+inline izenestream* openFile( std::string path, bool must)
 {
     izenestream *izene_ptr = new izenestream(path.c_str());
     if(izene_ptr->Open())
@@ -59,7 +56,7 @@ inline void closeFile( izenestream*&  stream_ptr)
     }
 }
 template <class izenestream>
-inline void closeFiles(map<hash_t, izenestream*>& cat_stream_map)
+inline void closeFiles(std::map<hash_t, izenestream*>& cat_stream_map)
 {
     typename std::map<hash_t, izenestream*>::iterator iter = cat_stream_map.begin();
     for(; iter != cat_stream_map.end(); iter++)
@@ -70,7 +67,7 @@ inline void closeFiles(map<hash_t, izenestream*>& cat_stream_map)
 }
 
 template<class object>
-inline void serialization(string & serial_str, const object & obj)
+inline void serialization(std::string & serial_str, const object & obj)
 {
     boost::iostreams::back_insert_device<std::string> inserter(serial_str);
     boost::iostreams::stream<boost::iostreams::back_insert_device<std::string> > s(inserter);
@@ -80,7 +77,7 @@ inline void serialization(string & serial_str, const object & obj)
 }
 
 template<class object>
-inline void deserialize(const string & serial_str, object & obj)
+inline void deserialize(const std::string & serial_str, object & obj)
 {
     boost::iostreams::basic_array_source<char> device(serial_str.data(), serial_str.size());
     boost::iostreams::stream<boost::iostreams::basic_array_source<char> > s2(device);
@@ -89,7 +86,7 @@ inline void deserialize(const string & serial_str, object & obj)
 }
 
 template<class object>
-inline void serializeFile(const string & serialFileName, object & obj)
+inline void serializeFile(const std::string & serialFileName, object & obj)
 {
     std::ofstream ifs(serialFileName.c_str());
     boost::archive::text_oarchive oa(ifs);
@@ -97,7 +94,7 @@ inline void serializeFile(const string & serialFileName, object & obj)
 }
 
 template<class Key,class Type>
-inline void serializeCollectionFile(const string & serialFileName,
+inline void serializeCollectionFile(const std::string & serialFileName,
                                     const boost::unordered_map<Key, Type> & obj)
 {
     std::ofstream ifs(serialFileName.c_str());
@@ -112,7 +109,7 @@ inline void serializeCollectionFile(const string & serialFileName,
 }
 
 template<class Key, class Type>
-inline void deserializeCollectionFile(const string & deserialFileName,
+inline void deserializeCollectionFile(const std::string & deserialFileName,
                                        boost::unordered_map<Key, Type> & obj)
 {
     std::ifstream ifs(deserialFileName.c_str(), std::ios::binary);
@@ -133,7 +130,7 @@ inline void deserializeCollectionFile(const string & deserialFileName,
 
 
 template<class object>
-inline void deserializeFile(const string & deserialFileName, object & obj)
+inline void deserializeFile(const std::string & deserialFileName, object & obj)
 {
     std::ifstream ifs(deserialFileName.c_str(), std::ios::binary);
     boost::archive::text_iarchive ia(ifs);

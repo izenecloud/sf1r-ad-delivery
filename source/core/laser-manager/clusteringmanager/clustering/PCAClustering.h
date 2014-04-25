@@ -21,7 +21,6 @@
 #include "laser-manager/clusteringmanager/type/ClusteringDataAdapter.h"
 #include "OriDocument.h"
 #include "SegmentTool.h"
-using namespace izenelib;
 namespace sf1r
 {
 namespace laser

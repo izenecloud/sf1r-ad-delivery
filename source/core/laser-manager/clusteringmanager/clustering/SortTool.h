@@ -17,8 +17,6 @@ namespace sf1r
 {
 namespace laser
 {
-using std::queue;
-using std::string;
 namespace clustering
 {
 
@@ -26,13 +24,13 @@ namespace clustering
 class ClusteringSortTool
 {
 private:
-    queue<string> paths;
+    std::queue<std::string> paths;
     int threadNum;
     boost::mutex io_mutex;
 public:
     void run()
     {
-        string path;
+        std::string path;
         while(getNext(path))
         {
             izenelib::am::ssf::Sorter<uint32_t, hash_t>::Sort(path);
@@ -55,7 +53,7 @@ public:
         }
     }
 
-    bool getNext(string& path)
+    bool getNext(std::string& path)
     {
         boost::mutex::scoped_lock lock(io_mutex);
         if(paths.empty())
@@ -67,7 +65,7 @@ public:
             return true;
         }
     }
-    ClusteringSortTool(int thread, queue<string> path)
+    ClusteringSortTool(int thread, std::queue<std::string> path)
     {
         threadNum = thread;
         paths = path;

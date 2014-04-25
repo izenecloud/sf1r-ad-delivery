@@ -16,9 +16,6 @@
 #include "laser-manager/clusteringmanager/type/ClusteringListDes.h"
 #include "laser-manager/clusteringmanager/common/utils.h"
 #include "laser-manager/clusteringmanager/type/Document.h"
-namespace fs = boost::filesystem;
-using std::string;
-using namespace sf1r::laser::clustering::type;
 
 namespace sf1r
 {
@@ -26,6 +23,9 @@ namespace laser
 {
 namespace clustering
 {
+using namespace sf1r::laser::clustering::type;
+namespace fs = boost::filesystem;
+using std::string;
 /**
  * dic: pca dictionary path
  * f: threhold for pca clustering

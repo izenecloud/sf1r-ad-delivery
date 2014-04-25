@@ -25,15 +25,12 @@ namespace laser
 {
 namespace fs = boost::filesystem;
 
-using std::fstream;
-using std::string;
-using std::map;
 
 namespace clustering
 {
 namespace type
 {
-
+using std::string;
 /**
  *@Description CatFiles maintains the middle result for
  */
@@ -42,46 +39,46 @@ class ClusteringListDes
 private:
     //we split all the item with their orignal category, it aims to reduce the sort time and supply the possiblity to parrel merge
     //clustering_dir: represents the clustering root dir
-    string clustering_dir;
+    std::string clustering_dir;
     //clustering_res_dir: represents the clustering result dir
-    string clustering_res_dir;
-    string cat_file_list_des_filename;
-    string mid_suffix;
-    string res_suffix;
-    string pow_suffix;
-    fstream cat_file_list_des;
+    std::string clustering_res_dir;
+    std::string cat_file_list_des_filename;
+    std::string mid_suffix;
+    std::string res_suffix;
+    std::string pow_suffix;
+    std::fstream cat_file_list_des;
     /**
      * mid result writer
      */
-    map<hash_t, izene_writer_pointer> cat_mid_clustering_writers_;
+    std::map<hash_t, izene_writer_pointer> cat_mid_clustering_writers_;
     /**
      * mid result writer
      */
-    map<hash_t, izene_reader_pointer> cat_mid_clustering_readers_;
+    std::map<hash_t, izene_reader_pointer> cat_mid_clustering_readers_;
 
     /**
      * final result writer
      */
-    map<hash_t, izene_writer_pointer> cat_final_clustering_writers_;
+    std::map<hash_t, izene_writer_pointer> cat_final_clustering_writers_;
     /**
      * final result writer
      */
-    map<hash_t, izene_reader_pointer> cat_final_clustering_readers_;
+    std::map<hash_t, izene_reader_pointer> cat_final_clustering_readers_;
 
-    map<hash_t, string> cat_name_map;
+    std::map<hash_t, std::string> cat_name_map;
     /**
      * map from orignal cat hash to mid clustering result path
      */
-    map<hash_t, string> cat_path_map;
+    std::map<hash_t, std::string> cat_path_map;
     /**
      * rebuild or append
      */
     STATUS clustering_file_status;
     template<class izenestream>
-    izenestream* init_stream(hash_t hnum, string path,
-                             map<hash_t, izenestream*>& clustering, bool must)
+    izenestream* init_stream(hash_t hnum, std::string path,
+                             std::map<hash_t, izenestream*>& clustering, bool must)
     {
-        typename map<hash_t, izenestream*>::iterator iter = clustering.find(hnum);
+        typename std::map<hash_t, izenestream*>::iterator iter = clustering.find(hnum);
         izenestream* izene_ptr = NULL;
         if (iter == clustering.end())
         {
@@ -97,35 +94,35 @@ private:
     }
     inline izene_writer_pointer get_mid_cat_writer(hash_t hnum)
     {
-        string cat_mid_res_path = generate_clustering_mid_result_path(hnum);
+        std::string cat_mid_res_path = generate_clustering_mid_result_path(hnum);
         return init_stream<izene_writer>(hnum, cat_mid_res_path,
                                          cat_mid_clustering_writers_, true);
     }
 
     inline izene_reader_pointer get_mid_cat_reader(hash_t hnum)
     {
-        string cat_mid_path = generate_clustering_mid_result_path(hnum);
+        std::string cat_mid_path = generate_clustering_mid_result_path(hnum);
         return init_stream<izene_reader>(hnum, cat_mid_path,
                                          cat_mid_clustering_readers_, false);
     }
 
     inline izene_writer_pointer get_final_cat_writer(hash_t hnum)
     {
-        string cat_final_res_path = generate_clustering_final_result_path(hnum);
+        std::string cat_final_res_path = generate_clustering_final_result_path(hnum);
         return init_stream<izene_writer>(hnum, cat_final_res_path,
                                          cat_final_clustering_writers_, true);
     }
 
     inline izene_reader_pointer get_final_cat_reader(hash_t hnum)
     {
-        string cat_final_res_path = generate_clustering_final_result_path(hnum);
+        std::string cat_final_res_path = generate_clustering_final_result_path(hnum);
         return init_stream<izene_reader>(hnum, cat_final_res_path,
                                          cat_final_clustering_readers_, false);
     }
     void save_cats()
     {
         cat_file_list_des.open(cat_file_list_des_filename.c_str(), ios::out);
-        for(map<hash_t, string>::iterator iter = cat_name_map.begin(); iter != cat_name_map.end(); iter++)
+        for(map<hash_t, std::string>::iterator iter = cat_name_map.begin(); iter != cat_name_map.end(); iter++)
         {
             cat_file_list_des<<iter->first<<"\t"<<iter->second<<endl;
         }
@@ -133,7 +130,7 @@ private:
     }
     void load_cats()
     {
-        string line;
+        std::string line;
         cat_file_list_des.open(cat_file_list_des_filename.c_str(), ios::in);
         //cat_file_list_des.seekg(0, std::fstream::beg);
         while (getline(cat_file_list_des, line))
@@ -145,9 +142,9 @@ private:
                                         10);
             //init_cat_writer(cat_h);
             generate_clustering_mid_result_path(cat_h);
-            //cat_midpath_map.insert(make_pair<hash_t, string> (cat_h,cat_path));
+            //cat_midpath_map.insert(make_pair<hash_t,string> (cat_h,cat_path));
             cat_name_map.insert(
-                std::make_pair<hash_t, string>(cat_h,
+                std::make_pair<hash_t, std::string>(cat_h,
                                                line.substr(index + 1)));
         }
         cat_file_list_des.close();
@@ -162,9 +159,9 @@ public:
      * mid_suffix_: suffix for mid clustering result path
      */
 
-    bool init(string clustering_dir_, STATUS is_rebuild = ONLY_READ,
-              string mid_suffix_ = ".mid", string res_suffix_ = ".res",
-              string pow_suffix_ = ".pow");
+    bool init(std::string clustering_dir_, STATUS is_rebuild = ONLY_READ,
+              std::string mid_suffix_ = ".mid", std::string res_suffix_ = ".res",
+              std::string pow_suffix_ = ".pow");
 
     //singleton module
     inline static ClusteringListDes* get()
