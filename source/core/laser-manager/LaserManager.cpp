@@ -12,9 +12,9 @@ namespace sf1r
         rpcServer_->start(conf_.msgpack.host, 
             conf_.msgpack.port, 
             conf_.msgpack.numThread,
+            conf_.clustering.resultRoot,
             conf_.clustering.leveldbRootPath,
-            conf_.clustering.dbClusteringPath,
-            conf_.clustering.dbPerUserModelPath);
+            conf_.clustering.dictionarypath);
 
         recommend_.reset(new LaserRecommend());
     }

@@ -27,7 +27,7 @@ LevelDBClusteringData::LevelDBClusteringData():db(NULL),dbpath_("")
 
 bool LevelDBClusteringData::init(std::string dbpath)
 {
-    dbpath_ = dbpath;
+    dbpath_ = dbpath+"/clustering";
     leveldb::Options options;
     options.create_if_missing = true;
     leveldb::Status status = leveldb::DB::Open(options, dbpath_, &db);

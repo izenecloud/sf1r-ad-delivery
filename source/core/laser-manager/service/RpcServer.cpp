@@ -54,14 +54,14 @@ RpcServer::~RpcServer()
     stop();
 }
 
-bool RpcServer::init(const std::string& clusteringRootPath, const std::string& dictionaryPath, 
-       const std::string& clusteringDBPath, const std::string& topNClusteringPath, 
-       const std::string& perUserDBPath)
+bool RpcServer::init(const std::string& clusteringRootPath,
+       const std::string& clusteringDBPath,
+       const std::string& pcaPath)
 {
-    RETURN_ON_FAILURE(TermParser::get()->init(clusteringRootPath, dictionaryPath));
+    RETURN_ON_FAILURE(TermParser::get()->init(clusteringRootPath, pcaPath));
     RETURN_ON_FAILURE(LevelDBClusteringData::get()->init(clusteringDBPath));
-    RETURN_ON_FAILURE(TopNClusterContainer::get()->init(topNClusteringPath));
-    RETURN_ON_FAILURE(LaserOnlineModel::get()->init(perUserDBPath));
+    RETURN_ON_FAILURE(TopNClusterContainer::get()->init(clusteringDBPath));
+    RETURN_ON_FAILURE(LaserOnlineModel::get()->init(clusteringDBPath));
     return true;
 }
 
@@ -69,8 +69,8 @@ void RpcServer::start(const std::string& host,
         uint16_t port, 
         uint32_t threadNum, 
         const std::string& clusteringRootPath, 
-        const std::string& clusteringDBPath, 
-        const std::string& perUserDBPath)
+        const std::string& clusteringDBRootPath, 
+        const std::string& pcaPath)
 {
     boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
     if (isStarted_)
@@ -78,7 +78,7 @@ void RpcServer::start(const std::string& host,
         return;
     }
 
-    if (init(clusteringRootPath, clusteringDBPath, perUserDBPath))
+    if (init(clusteringRootPath, clusteringDBRootPath, pcaPath))
     {
         LOG(INFO) << host << "  " << port << "  " << threadNum << endl;
         instance.listen(host, port);

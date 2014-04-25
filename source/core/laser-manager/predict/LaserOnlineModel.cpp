@@ -17,7 +17,7 @@ namespace predict
 
     bool LaserOnlineModel::init(std::string path)
     {
-        dbpath_ = path;
+        dbpath_ = path+"/perusermodel";
         db_ = new PerUserOnlineModelDBType(dbpath_);
         if(db_->open())
         {

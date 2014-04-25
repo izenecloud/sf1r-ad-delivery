@@ -30,8 +30,7 @@ using namespace conf;
 void printHelp()
 {
     cout << "./title_pca_util\n"
-         << "\t-d\t dictionary path\n \
-        \t-c\tcorpus path\n \
+         << "-c\tcorpus path\n \
 		\t-C\tconfig path\n";
 }
 vector<string> getSCDList(string dic, string suffix)
