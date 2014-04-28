@@ -57,6 +57,20 @@ private:
     }
 };
 
+struct VirtualConfig
+{
+    std::string virtualName;
+    std::vector<std::string> virtual_properties;
+
+    template <typename Archive>
+    void serialize(Archive & ar, const unsigned int version)
+    {
+        ar & virtualName;
+        ar & virtual_properties;
+    }
+
+};
+
 class SuffixMatchConfig
 {
 public:
@@ -76,6 +90,7 @@ public:
     std::vector<std::string> date_filter_properties;
     std::vector<NumericFilterConfig> num_filter_properties;
     std::vector<std::string> searchable_properties;
+    VirtualConfig virtual_property;
     FuzzyNormalizerConfig normalizer_config;
 
 private:
@@ -93,6 +108,7 @@ private:
         ar & date_filter_properties;
         ar & num_filter_properties;
         ar & searchable_properties;
+        ar & virtual_property;
         ar & normalizer_config;
     }
 };
