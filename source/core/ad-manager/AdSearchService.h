@@ -23,7 +23,9 @@ namespace sf1r
 {
 
 class KeywordSearchActionItem;
+class GetDocumentsByIdsActionItem;
 class KeywordSearchResult;
+class RawTextResultFromSIA;
 class SearchWorker;
 class ServiceWatcher;
 
@@ -53,6 +55,8 @@ public:
         const std::string& search_coll);
 
     bool search(const KeywordSearchActionItem& action, KeywordSearchResult& ret);
+    bool getDocumentsByIds(const GetDocumentsByIdsActionItem& action, RawTextResultFromSIA& ret);
+
     bool watchServerChange(const std::string& cb_id, const ServerChangedCBT& cb);
     void unwatchServerChange(const std::string& cb_id);
     void getServiceServerList(std::map<std::string, SearchServiceNode>& server_list);
@@ -71,6 +75,8 @@ private:
     void updateNodeData(const std::string& path, bool notify = true);
     void removeSearchServiceNode(const std::string& path, bool notify = true);
     void notifyWatcherServerChange();
+    void getServiceNode(SearchServiceNode& node);
+
     SearchWorker* ad_local_searcher_;
     boost::shared_ptr<izenelib::zookeeper::ZooKeeper> zookeeper_;
     boost::shared_ptr<ServiceWatcher> zoo_watcher_;
