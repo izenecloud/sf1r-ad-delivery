@@ -12,7 +12,8 @@
 #include <string>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
-#include "am/sequence_file/ssfr.h"
+#include <am/sequence_file/ssfr.h>
+#include <util/functional.h>
 #include <map>
 #include "laser-manager/clusteringmanager/common/utils.h"
 namespace sf1r
@@ -136,6 +137,7 @@ public:
     }
     void calc(DocumentVecType& docv, CoverNumType& ccnt, CoverNumType& termlist )
     {
+        typedef izenelib::util::second_greater<std::pair<std::string, float> > greater_than;
         if(docv.size() == 0)
             return ;
         izene_writer_pointer iwp = type::ClusteringListDes::get()->get_cat_mid_writer(
@@ -154,22 +156,14 @@ public:
                     tks[i].second = 0;
                 tot += tks[i].second;
             }
-            for (size_t i = 0; i < tks.size(); ++i)
-            {
-                for (size_t j = i + 1; j < tks.size(); ++j)
-                {
-                    if (tks[i].second < tks[j].second)
-                    {
-                        tmp = tks[i];
-                        tks[i] = tks[j];
-                        tks[j] = tmp;
-                    }
-                }
-            }
+
             if(tot == 0)
             {
                 continue;
             }
+            
+            std::sort(tks.begin(), tks.end(), greater_than());
+            
             std::stringstream category_merge;
             category_merge << iter->category;
             type::Document d(iter->docid);
