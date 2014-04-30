@@ -1,5 +1,7 @@
 #include "LaserManager.h"
 #include <mining-manager/MiningManager.h>
+#include <query-manager/ActionItem.h>
+#include <ad-manager/AdSearchService.h>
 #include <glog/logging.h>
 using namespace sf1r::laser;
 namespace sf1r
@@ -23,14 +25,18 @@ namespace sf1r
     }
     
     bool LaserManager::recommend(const LaserRecommendParam& param, 
-        RawTextResultFromMIA& itemList) const 
+        RawTextResultFromMIA& res) const 
     {
         std::vector<std::string> docIdList;
         std::vector<float> itemScoreList;
         if (!recommend_->recommend(param.uuid_, docIdList, itemScoreList, param.topN_))
             return false;
-        //TODO
-        //miningManager_.GetAdSearchService()->getDocument(docIdList, itemList);
+        GetDocumentsByIdsActionItem actionItem;
+        for (std::size_t i = 0; i < docIdList.size(); ++i)
+        {
+            actionItem.docIdList_.push_back(docIdList[i]);
+        }
+        adSearchService_->getDocumentsByIds(actionItem, res);
         return true;
     }
 }
