@@ -96,7 +96,6 @@ namespace faceted
 class GroupManager;
 class AttrManager;
 class OntologyManager;
-class CTRManager;
 class GroupFilterBuilder;
 class AttrTable;
 }
