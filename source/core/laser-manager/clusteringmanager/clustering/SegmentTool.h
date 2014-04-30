@@ -14,6 +14,7 @@
 #include <boost/thread/mutex.hpp>
 #include <am/sequence_file/ssfr.h>
 #include <util/functional.h>
+#include <boost/unordered_map.hpp>
 #include <map>
 #include "laser-manager/clusteringmanager/common/utils.h"
 namespace sf1r
@@ -33,12 +34,12 @@ enum PSTATUS
 class SegmentTool
 {
 public:
-    typedef std::map<std::string, PSTATUS> StatusMapType;
-    typedef std:: map<std::string, std::vector<OriDocument> > DocumentMapType;
+    typedef boost::unordered_map<std::string, PSTATUS> StatusMapType;
+    typedef boost::unordered_map<std::string, std::vector<OriDocument> > DocumentMapType;
     typedef vector<OriDocument> DocumentVecType;
-    typedef std::map<hash_t, std::pair<std::string, int> > CoverNumType;
+    typedef boost::unordered_map<hash_t, std::pair<std::string, int> > CoverNumType;
 private:
-    std::map<hash_t, CoverNumType > cat_limit_count;
+    boost::unordered_map<hash_t, CoverNumType > cat_limit_count;
     StatusMapType operationMap_;
     DocumentMapType documentPool_;
     queue<std::string> paths;
