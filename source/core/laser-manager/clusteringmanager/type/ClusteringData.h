@@ -45,7 +45,7 @@ struct ClusteringData
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version)
     {
-//        ar & clusteringHash;
+        ar & clusteringHash;
         ar & clusteringData;
     }
     MSGPACK_DEFINE(clusteringData);

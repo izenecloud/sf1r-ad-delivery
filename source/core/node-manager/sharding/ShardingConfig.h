@@ -15,12 +15,13 @@
 
 namespace sf1r
 {
-typedef uint8_t shardid_t; // xxx, shard id start with 1 (1, ..., n)
-typedef uint16_t vnodeid_t; // xxx, virtual shard node id
+typedef boost::uint8_t shardid_t; // xxx, shard id start with 1 (1, ..., n)
+typedef boost::uint16_t vnodeid_t; // xxx, virtual shard node id
 
 class ShardingConfig
 {
 public:
+
     typedef std::vector<int>  RangeListT;
     typedef std::map<std::string, RangeListT> RangeShardKeyContainerT;
     typedef std::vector<std::string> AttrListT;

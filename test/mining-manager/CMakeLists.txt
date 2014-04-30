@@ -140,7 +140,13 @@ IF(Boost_FOUND AND Boost_UNIT_TEST_FRAMEWORK_FOUND)
     )
   ADD_TEST(product_score "${SF1RENGINE_ROOT}/testbin/t_ProductScoreAverage")
 
-  ADD_EXECUTABLE(t_ProductRanker
+  ADD_EXECUTABLE(t_leveldb
+    t_level_db_for_res.cpp)
+  TARGET_LINK_LIBRARIES(t_leveldb ${libs})
+  SET_TARGET_PROPERTIES(t_leveldb PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${SF1RENGINE_ROOT}/testbin)
+  
+ADD_EXECUTABLE(t_ProductRanker
     Runner.cpp
     t_ProductRanker.cpp
     ProductRankerTestFixture.cpp)

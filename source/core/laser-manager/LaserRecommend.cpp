@@ -1,6 +1,6 @@
 #include "LaserRecommend.h"
-#include "predict/PredictTool.h"
-#include "predict/LaserOnlineModel.h"
+#include "./predict/PredictTool.h"
+#include "./predict/LaserOnlineModel.h"
 #include <glog/logging.h>
 
 using namespace sf1r::laser::predict;

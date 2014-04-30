@@ -13,6 +13,7 @@
 #include <string>
 #include <list>
 #include <util/singleton.h>
+#include "ModelType.h"
 namespace sf1r
 {
 namespace laser
@@ -26,7 +27,7 @@ namespace type
 class LevelDBClusteringData: public ClusteringDataAdapter
 {
 private:
-    leveldb::DB* db;
+    //leveldb::DB* db;
     std::string dbpath_;
     static const char* suffix_data;
     static const char* suffix_info;
@@ -38,23 +39,11 @@ public:
     }
     bool init(std::string dbpath);
     void release();
-    void reload(const std::string& clusteringDataPath)
-    {
-        //TODO for alex
-    }
-    bool save(clustering::type::ClusteringData& cd, clustering::type::ClusteringInfo& ci);
+    void reload(const std::string& clusteringPath);
+    bool save(ClusteringData& cd, ClusteringInfo& ci);
     bool loadClusteringData(hash_t cat_id, clustering::type::ClusteringData& cd);
     bool loadClusteringInfo(hash_t cat_id, clustering::type::ClusteringInfo& cd);
-    bool loadClusteringData(hash_t cat_id, string&);
-    bool loadClusteringInfo(hash_t cat_id, string&);
     bool loadClusteringInfos(vector<clustering::type::ClusteringInfo>& ci);
-    bool loadLevelDBData(const string&, string&);
-    inline string getKey(const std::string& suffix, hash_t cat_id)
-    {
-        stringstream cdkeystream;
-        cdkeystream<<suffix<<cat_id;
-        return cdkeystream.str();
-    }
     virtual ~LevelDBClusteringData();
 };
 }

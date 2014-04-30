@@ -23,8 +23,8 @@ private:
     RpcServer();
 public:
     void start(const std::string& host, 
-        uint16_t port, 
-        uint32_t threadNum, 
+        int port, 
+        int threadNum, 
         const std::string& clusteringRootPath, 
         const std::string& clusteringDBPath, 
         const std::string& perUserDBPath);

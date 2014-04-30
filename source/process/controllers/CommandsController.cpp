@@ -197,7 +197,7 @@ void CommandsController::load_laser_clustering()
     }
     else
     {
-        laser::clustering::type::LevelDBClusteringData::get()->reload(asString(request()[Keys::clustering_path]));
+//        laser::clustering::type::LevelDBClusteringData::get()->reload(asString(request()[Keys::clustering_path]));
     }
 }
 } // namespace sf1r
