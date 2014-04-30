@@ -31,20 +31,6 @@ public:
 
     bool parse(const std::string& cfgFile);
 
-    inline const std::string& getHost() const
-    {
-        return host_;
-    }
-
-    inline unsigned int getPort() const
-    {
-        return rpcPort_;
-    }
-
-    inline unsigned int getRpcThreadNum() const
-    {
-        return rpcThreadNum_;
-    }
     const std::string& getDictionaryPath() const
     {
         return dictionaryPath_;
@@ -54,12 +40,6 @@ public:
     {
         return pcaThrehold_;
     }
-
-    unsigned int getRpcPort() const
-    {
-        return rpcPort_;
-    }
-
 
     const std::string& getClusteringRootPath() const
     {
@@ -189,8 +169,6 @@ private:
 
     std::string cfgFile_;
     std::string host_;
-    unsigned int rpcPort_;
-    unsigned int rpcThreadNum_;
     //threhold for pca clustering,  T split to (w1,w2,w3,w4),  if (w1+w2)/(w1+w2+w3) > pcathrehold , the w1w2 will be the category name
     float pcaThrehold_;
     //pca dictionary path

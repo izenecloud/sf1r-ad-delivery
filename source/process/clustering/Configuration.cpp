@@ -19,8 +19,7 @@ namespace conf
 
 static const unsigned int DEFAULT_FLUSH_CHECK_INTERVAL = 60;
 
-Configuration::Configuration() :
-    rpcPort_(0)
+Configuration::Configuration()
 {
 }
 
@@ -93,12 +92,6 @@ void Configuration::parseCfg(properties& props)
 
 void Configuration::parseServerCfg(properties& props)
 {
-    if (!props.getValue("host", host_))
-    {
-        host_ = "localhost";
-    }
-    getValue(props, "rpc.port", rpcPort_);
-    getValue(props, "rpc.thread_num", rpcThreadNum_);
     getValue(props, "clustering.dictionarypath", dictionaryPath_);
     getValue(props, "clustering.result.root", clusteringRootPath_);
 

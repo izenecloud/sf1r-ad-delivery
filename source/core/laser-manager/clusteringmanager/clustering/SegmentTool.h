@@ -270,7 +270,7 @@ public:
             *iter = NULL;
         }
         thread_array.clear();
-        for(map<hash_t, CoverNumType >::iterator iter = cat_limit_count.begin(); iter != cat_limit_count.end(); iter++)
+        for(boost::unordered_map<hash_t, CoverNumType >::iterator iter = cat_limit_count.begin(); iter != cat_limit_count.end(); iter++)
         {
             for(CoverNumType::iterator in =iter->second.begin(); in != iter->second.end(); in++){
                 type::CatDictionary::get()->addCatHash(in->second.first, in->first, in->second.second);
