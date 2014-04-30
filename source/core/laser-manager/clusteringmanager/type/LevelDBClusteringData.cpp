@@ -34,9 +34,9 @@ bool LevelDBClusteringData::init(std::string dbpath)
     if(!status.ok())
     {
         LOG(INFO)<<status.ToString()<<endl;
-        delete db;
-        db = NULL;
-        return false;
+        //delete db;
+        //db = NULL;
+        //return false;
     }
     return true;
 }
