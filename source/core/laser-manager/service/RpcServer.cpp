@@ -161,9 +161,12 @@ void RpcServer::dispatch(msgpack::rpc::request req)
         }
         else if (method == CLUSTERINGServerRequest::method_names[CLUSTERINGServerRequest::METHOD_UPDATEPERUSERMODEL])
         {
-            msgpack::type::tuple<PerUserOnlineModel> params;
+            msgpack::type::tuple<std::string, std::vector<float> > params;
             req.params().convert(&params);
-            bool res = LaserOnlineModel::get()->update(params.get<0>());
+            PerUserOnlineModel userModel;
+            userModel.setUserName(params.get<0>());
+            userModel.setArgs(params.get<1>());
+            bool res = LaserOnlineModel::get()->update(userModel);
             req.result(res);
         }
         else
