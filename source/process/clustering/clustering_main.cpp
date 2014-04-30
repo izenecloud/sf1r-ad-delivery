@@ -18,7 +18,7 @@
 #include "Configuration.h"
 #include "laser-manager/clusteringmanager/type/ClusteringListDes.h"
 #include "laser-manager/clusteringmanager/type/ClusteringDataAdapter.h"
-#include "laser-manager/clusteringmanager/type/LevelDBClusteringData.h"
+#include "laser-manager/clusteringmanager/type/ClusteringDataStorage.h"
 #include <boost/timer.hpp>
 using namespace std;
 using namespace ilplib::knlp;
@@ -108,7 +108,7 @@ int main(int argc, char * argv[])
     fs::create_directories(clustering_root);
     //string leveldbpath =  Configuration::get()->getClusteringDBPath();
     string scdsuffix = Configuration::get()->getScdFileSuffix();
-    RETURN_ON_FAILURE(LevelDBClusteringData::get()->init(clustering_root));
+    RETURN_ON_FAILURE(ClusteringDataStorage::get()->init(clustering_root));
     vector<string> filelist = getSCDList(corpus, scdsuffix);
     PCAClustering pca_clustering(pca_directory_path, clustering_root, threhold, min_clustering_doc_num, max_clustering_doc_num, max_clustering_term_num);
     namespace pt = boost::posix_time;
@@ -159,11 +159,11 @@ int main(int argc, char * argv[])
 
         }
     }
-    pca_clustering.execute(LevelDBClusteringData::get(), clustering_exec_threadnum);
+    pca_clustering.execute(ClusteringDataStorage::get(), clustering_exec_threadnum);
     pt::ptime end = pt::microsec_clock::local_time();
     pt::time_duration diff = end - beg;
     cout<<"cost:"<< diff.total_milliseconds()<<" docnum:"<<count<<endl;
 
-    LevelDBClusteringData::get()->release();
+    ClusteringDataStorage::get()->release();
 }
 

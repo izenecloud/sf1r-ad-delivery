@@ -13,7 +13,7 @@
 #include "TopNClusterContainer.h"
 #include "PerUserOnlineModel.h"
 #include "laser-manager/clusteringmanager/type/ClusteringInfo.h"
-#include "laser-manager/clusteringmanager/type/LevelDBClusteringData.h"
+#include "laser-manager/clusteringmanager/type/ClusteringDataStorage.h"
 #include "laser-manager/clusteringmanager/type/Document.h"
 namespace sf1r
 {

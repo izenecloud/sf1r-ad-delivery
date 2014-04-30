@@ -3,7 +3,7 @@
  * @author Ian Yang
  * @date Created <2010-06-01 10:26:16>
  */
-#include <laser-manager/clusteringmanager/type/LevelDBClusteringData.h>
+#include <laser-manager/clusteringmanager/type/ClusteringDataStorage.h>
 #include "CommandsController.h"
 #include "CollectionHandler.h"
 #include <common/JobScheduler.h>
@@ -197,7 +197,7 @@ void CommandsController::load_laser_clustering()
     }
     else
     {
-//        laser::clustering::type::LevelDBClusteringData::get()->reload(asString(request()[Keys::clustering_path]));
+//        laser::clustering::type::ClusteringDataStorage::get()->reload(asString(request()[Keys::clustering_path]));
     }
 }
 } // namespace sf1r

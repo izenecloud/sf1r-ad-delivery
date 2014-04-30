@@ -23,7 +23,7 @@
 #include <vector>
 #include "laser-manager/clusteringmanager/common/utils.h"
 #include <boost/test/unit_test.hpp>
-#include "laser-manager/clusteringmanager/type/LevelDBClusteringData.h"
+#include "laser-manager/clusteringmanager/type/ClusteringDataStorage.h"
 #include "laser-manager/service/DataType.h"
 #include <sstream>
 using namespace std;
@@ -62,11 +62,11 @@ void test()
     newdata.output();
     delete db;
 }
-//test the basic operation of LevelDBClusteringData
+//test the basic operation of ClusteringDataStorage
 void test2()
 {
     bfs::remove_all(HOME_STR2);
-    LevelDBClusteringData levelDBClusteringData;
+    ClusteringDataStorage levelDBClusteringData;
     bfs::create_directories(HOME_STR2);
     if(levelDBClusteringData.init(HOME_STR2))
     {
@@ -122,7 +122,7 @@ void test2()
 void test4()
 {
      bfs::remove_all(HOME_STR2);
-    LevelDBClusteringData levelDBClusteringData;
+    ClusteringDataStorage levelDBClusteringData;
     
     if(levelDBClusteringData.init(HOME_STR2))
     {

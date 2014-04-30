@@ -1,12 +1,12 @@
 /*
- * LevelDBClusteringData.h
+ * ClusteringDataStorage.h
  *
  *  Created on: Apr 10, 2014
  *      Author: alex
  */
 
-#ifndef SF1R_LASER_LEVELDBCLUSTERINGDATA_H_
-#define SF1R_LASER_LEVELDBCLUSTERINGDATA_H_
+#ifndef SF1R_LASER_CLUSTERINGDATASTORAGE_H_
+#define SF1R_LASER_CLUSTERINGDATASTORAGE_H_
 
 #include "ClusteringDataAdapter.h"
 #include <3rdparty/am/leveldb/db.h>
@@ -24,7 +24,7 @@ namespace type
 {
 
 
-class LevelDBClusteringData: public ClusteringDataAdapter
+class ClusteringDataStorage: public ClusteringDataAdapter
 {
 private:
     //leveldb::DB* db;
@@ -32,10 +32,10 @@ private:
     static const char* suffix_data;
     static const char* suffix_info;
 public:
-    LevelDBClusteringData();
-    inline static LevelDBClusteringData* get()
+    ClusteringDataStorage();
+    inline static ClusteringDataStorage* get()
     {
-        return izenelib::util::Singleton<LevelDBClusteringData>::get();
+        return izenelib::util::Singleton<ClusteringDataStorage>::get();
     }
     bool init(std::string dbpath);
     void release();
@@ -44,10 +44,10 @@ public:
     bool loadClusteringData(hash_t cat_id, clustering::type::ClusteringData& cd);
     bool loadClusteringInfo(hash_t cat_id, clustering::type::ClusteringInfo& cd);
     bool loadClusteringInfos(vector<clustering::type::ClusteringInfo>& ci);
-    virtual ~LevelDBClusteringData();
+    virtual ~ClusteringDataStorage();
 };
 }
 } /* namespace clustering */
 }
 }
-#endif /* LEVELDBCLUSTERINGDATA_H_ */
+#endif /* SF1R_LASER_CLUSTERINGDATASTORAGE_H_ */

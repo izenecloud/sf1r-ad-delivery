@@ -1,6 +1,6 @@
 #include "TopNClusterContainer.h"
 #include "laser-manager/clusteringmanager/common/utils.h"
-#include "laser-manager/clusteringmanager/type/LevelDBClusteringData.h"
+#include "laser-manager/clusteringmanager/type/ClusteringDataStorage.h"
 #include <am/range/AmIterator.h>
 using namespace izenelib::am;
 using namespace sf1r::laser::clustering::type;

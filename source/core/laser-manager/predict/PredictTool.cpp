@@ -1,5 +1,5 @@
 #include "PredictTool.h"
-#include "laser-manager/clusteringmanager/type/LevelDBClusteringData.h"
+#include "laser-manager/clusteringmanager/type/ClusteringDataStorage.h"
 using namespace sf1r::laser::clustering::type;
 namespace sf1r
 {
@@ -22,7 +22,7 @@ namespace predict
         {
             clustering::type::ClusteringData cd;
             //cout<<"To find "<<iter->first<<endl;
-            LevelDBClusteringData::get()->loadClusteringData(iter->first, cd);
+            ClusteringDataStorage::get()->loadClusteringData(iter->first, cd);
             for(std::vector<Document>::iterator doc_iter = cd.clusteringData.begin(); doc_iter != cd.clusteringData.end(); doc_iter++)
             {
                 Document::TermMapType::const_iterator term_iter = doc_iter->terms.begin();

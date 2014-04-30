@@ -15,7 +15,7 @@
 #include "DataType.h"
 #include "laser-manager/clusteringmanager/type/ClusteringData.h"
 #include "laser-manager/clusteringmanager/type/ClusteringInfo.h"
-#include "laser-manager/clusteringmanager/type/LevelDBClusteringData.h"
+#include "laser-manager/clusteringmanager/type/ClusteringDataStorage.h"
 #include "laser-manager/predict/TopNClusterContainer.h"
 #include "laser-manager/predict/LaserOnlineModel.h"
 
@@ -59,7 +59,7 @@ bool RpcServer::init(const std::string& clusteringRootPath,
        const std::string& pcaPath)
 {
     RETURN_ON_FAILURE(TermParser::get()->init(clusteringRootPath, pcaPath));
-    RETURN_ON_FAILURE(LevelDBClusteringData::get()->init(clusteringDBPath));
+    RETURN_ON_FAILURE(ClusteringDataStorage::get()->init(clusteringDBPath));
     RETURN_ON_FAILURE(TopNClusterContainer::get()->init(clusteringDBPath));
     RETURN_ON_FAILURE(LaserOnlineModel::get()->init(clusteringDBPath));
     return true;
@@ -95,7 +95,7 @@ void RpcServer::stop()
 {
     LOG(INFO)<<"release all leveldb storage";
     TermParser::get()->release();
-    LevelDBClusteringData::get()->release();
+    ClusteringDataStorage::get()->release();
     TopNClusterContainer::get()->release();
     LOG(INFO)<<"stop msgpack server";
     instance.end();
@@ -135,14 +135,14 @@ void RpcServer::dispatch(msgpack::rpc::request req)
             GetClusteringInfosResult gir;
             if(params.get<0>().clusteringhash_ == 0)
             {
-                LevelDBClusteringData::get()->loadClusteringInfos(gir.info_list_);
+                ClusteringDataStorage::get()->loadClusteringInfos(gir.info_list_);
                 LOG(INFO) << "method:" <<method <<" data req total"<< gir.info_list_.size() << std::endl;
                 req.result(gir);
             }
             else
             {
                 ClusteringInfo newinfo;
-                bool res = LevelDBClusteringData::get()->loadClusteringInfo(params.get<0>().clusteringhash_, newinfo);
+                bool res = ClusteringDataStorage::get()->loadClusteringInfo(params.get<0>().clusteringhash_, newinfo);
                 LOG(INFO) << "method:" <<method <<" data req one"<< res << std::endl;
                 if(res == true)
                 {

@@ -1,11 +1,11 @@
 /*
- * LevelDBClusteringData.cpp
+ * ClusteringDataStorage.cpp
  *
  *  Created on: Apr 10, 2014
  *      Author: alex
  */
 
-#include "LevelDBClusteringData.h"
+#include "ClusteringDataStorage.h"
 #include "laser-manager/clusteringmanager/common/utils.h"
 #include <3rdparty/msgpack/msgpack/type/tuple.hpp>
 #include <list>
@@ -18,17 +18,18 @@ namespace clustering
 namespace type
 {
 
-const char* LevelDBClusteringData::suffix_data="clusteringdata";
-const char* LevelDBClusteringData::suffix_info="clusteringinfo";
-LevelDBClusteringData::LevelDBClusteringData(): dbpath_("")
+const char* ClusteringDataStorage::suffix_data="clusteringdata";
+const char* ClusteringDataStorage::suffix_info="clusteringinfo";
+ClusteringDataStorage::ClusteringDataStorage(): dbpath_("")
 {
 
 }
 
-bool LevelDBClusteringData::init(std::string dbpath)
+bool ClusteringDataStorage::init(std::string dbpath)
 {
     dbpath_ = dbpath;
-    if(DBModelType<ClusteringInfo>::get()->init(suffix_info, dbpath_) && DBModelType<ClusteringData>::get()->init(suffix_data,dbpath_) )
+    if(DBModelType<ClusteringInfo>::get()->init(suffix_info, dbpath_) && 
+        DBModelType<ClusteringData>::get()->init(suffix_data,dbpath_) )
     {
         return true;
     }
@@ -39,13 +40,13 @@ bool LevelDBClusteringData::init(std::string dbpath)
     }
 }
 
-void LevelDBClusteringData::release()
+void ClusteringDataStorage::release()
 {
     DBModelType<ClusteringInfo>::get()->release();
     DBModelType<ClusteringData>::get()->release();
 }
 
-void LevelDBClusteringData::reload(const std::string& clusteringPath)
+void ClusteringDataStorage::reload(const std::string& clusteringPath)
 {
     set<std::string> newdataset;
     set<std::string> newinfoset;
@@ -101,7 +102,7 @@ void LevelDBClusteringData::reload(const std::string& clusteringPath)
         DBModelType<ClusteringInfo>::get()->del(*iter);
     }
 }
-bool LevelDBClusteringData::save(ClusteringData& cd, ClusteringInfo& ci)
+bool ClusteringDataStorage::save(ClusteringData& cd, ClusteringInfo& ci)
 {
     if(cd.clusteringHash != ci.clusteringHash)
     {
@@ -109,7 +110,8 @@ bool LevelDBClusteringData::save(ClusteringData& cd, ClusteringInfo& ci)
     }
     stringstream hashstr;
     hashstr<<cd.clusteringHash;
-    return DBModelType<ClusteringInfo>::get()->update(hashstr.str(), ci) && DBModelType<ClusteringData>::get()->update(hashstr.str(), cd);
+    return DBModelType<ClusteringInfo>::get()->update(hashstr.str(), ci) && 
+                DBModelType<ClusteringData>::get()->update(hashstr.str(), cd);
 //    DBModelType<ClusteringInfo>::get()->release();
 //    DBModelType<ClusteringData>::get()->release();
 
@@ -143,20 +145,20 @@ bool LevelDBClusteringData::save(ClusteringData& cd, ClusteringInfo& ci)
 }
 
 
-bool LevelDBClusteringData::loadClusteringData(hash_t cat_id, clustering::type::ClusteringData& cd)
+bool ClusteringDataStorage::loadClusteringData(hash_t cat_id, clustering::type::ClusteringData& cd)
 {
     stringstream hashstr;
     hashstr<<cat_id;
     return DBModelType<ClusteringData>::get()->get(hashstr.str(), cd);
 }
-bool LevelDBClusteringData::loadClusteringInfos(vector<clustering::type::ClusteringInfo>& ci)
+bool ClusteringDataStorage::loadClusteringInfos(vector<clustering::type::ClusteringInfo>& ci)
 {
     return DBModelType<ClusteringInfo>::get()->get(ci);
     /*    leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
         // cout<<"to read"<<endl;
         for (it->SeekToFirst(); it->Valid(); it->Next())
         {
-            if(it->key().ToString().find(LevelDBClusteringData::suffix_info) == string::npos)
+            if(it->key().ToString().find(ClusteringDataStorage::suffix_info) == string::npos)
             {
                 continue;
             }
@@ -170,7 +172,7 @@ bool LevelDBClusteringData::loadClusteringInfos(vector<clustering::type::Cluster
         delete it;
         return true;*/
 }
-bool LevelDBClusteringData::loadClusteringInfo(hash_t cat_id, clustering::type::ClusteringInfo& ci)
+bool ClusteringDataStorage::loadClusteringInfo(hash_t cat_id, clustering::type::ClusteringInfo& ci)
 {
     stringstream hashstr;
     hashstr<<cat_id;
@@ -184,7 +186,7 @@ bool LevelDBClusteringData::loadClusteringInfo(hash_t cat_id, clustering::type::
         return true;*/
 }
 
-LevelDBClusteringData::~LevelDBClusteringData()
+ClusteringDataStorage::~ClusteringDataStorage()
 {
     DBModelType<ClusteringInfo>::get()->release();
     DBModelType<ClusteringData>::get()->release();

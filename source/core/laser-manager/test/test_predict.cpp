@@ -23,7 +23,7 @@
 #include <vector>
 #include "common/utils.h"
 #include <boost/test/unit_test.hpp>
-#include "type/LevelDBClusteringData.h"
+#include "type/ClusteringDataStorage.h"
 #include "service/DataType.h"
 #include <sstream>
 
@@ -103,7 +103,7 @@ void initClustering(int truncted=1)
     if(truncted)
     {
     bfs::remove_all(HOME_STR2);
-    if(LevelDBClusteringData::get()->init(HOME_STR2))
+    if(ClusteringDataStorage::get()->init(HOME_STR2))
     {
         for(int i =0; i < clusternum; i++)
         {
@@ -141,7 +141,7 @@ void initClustering(int truncted=1)
             oriinfo.clusteringname = ssc.str();
             oriinfo.clusteringDocNum = perdocnum;
 
-            if(!LevelDBClusteringData::get()->save(oridata, oriinfo))
+            if(!ClusteringDataStorage::get()->save(oridata, oriinfo))
             {
                 cout<<"save fail!"<<endl;
             }
@@ -150,7 +150,7 @@ void initClustering(int truncted=1)
     }
     else
     {
-        LevelDBClusteringData::get()->init(HOME_STR2);
+        ClusteringDataStorage::get()->init(HOME_STR2);
     }
 }
 
@@ -193,7 +193,7 @@ initClustering(atoi(argv[1]));
     }
     LaserOnlineModel::get()->release();
     TopNClusterContainer::get()->release();
-    LevelDBClusteringData::get()->release();
+    ClusteringDataStorage::get()->release();
 }
 
 

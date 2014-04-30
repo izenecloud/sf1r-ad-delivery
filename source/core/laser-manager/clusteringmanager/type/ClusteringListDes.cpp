@@ -14,7 +14,12 @@ namespace clustering
 namespace type
 {
 
-bool ClusteringListDes::init(string clustering_dir_, STATUS is_rebuild, string mid_suffix_, string res_suffix_, string pow_suffix_)
+bool ClusteringListDes::init(
+        string clustering_dir_, 
+        STATUS is_rebuild, 
+        string mid_suffix_, 
+        string res_suffix_, 
+        string pow_suffix_)
 {
     clustering_dir = clustering_dir_;
     clustering_res_dir = clustering_dir_+"/data/";

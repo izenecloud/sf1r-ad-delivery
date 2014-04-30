@@ -29,7 +29,7 @@
 #include <vector>
 #include "common/utils.h"
 #include <boost/test/unit_test.hpp>
-#include "type/LevelDBClusteringData.h"
+#include "type/ClusteringDataStorage.h"
 #include "service/DataType.h"
 using namespace std;
 using namespace leveldb;
