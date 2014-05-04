@@ -10,6 +10,7 @@
 #include <string>
 #include <knlp/title_pca.h>
 #include <util/singleton.h>
+#include <boost/thread/mutex.hpp>
 
 #include "laser-manager/clusteringmanager/type/CatDictionary.h"
 #include "laser-manager/clusteringmanager/type/TermDictionary.h"
@@ -29,7 +30,15 @@ class TermParser
 public:
     TermParser();
     ~TermParser();
-    bool init(std::string clusteringRoot, std::string dictionPath);
+    
+    static TermParser* get()
+    {
+        return izenelib::util::Singleton<TermParser>::get();
+    }
+
+    bool init(const std::string& clusteringRoot, const std::string& dictionPath);
+    void reload(const std::string& clusteringRoot);
+    
     void release()
     {
         if(tok != NULL)
@@ -38,17 +47,14 @@ public:
             tok = NULL;
         }
     }
-    clustering::rpc::SplitTitleResult parse(clustering::rpc::SplitTitle title);
-    static TermParser* get()
-    {
-        return izenelib::util::Singleton<TermParser>::get();
-    }
-
+    void parse(const clustering::rpc::SplitTitle& title, clustering::rpc::SplitTitleResult& res) const;
+    
 private:
     ilplib::knlp::TitlePCA* tok; //the pca
     //term_dictionary will maintain the term dictionary, sort and reduce the dimention
     //TermDictionary term_dictionary;
     boost::unordered_map<clustering::hash_t, clustering::type::Term> terms;
+    mutable boost::shared_mutex mutex_;
 };
 }
 }

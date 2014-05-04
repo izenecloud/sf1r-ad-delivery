@@ -126,7 +126,9 @@ void RpcServer::dispatch(msgpack::rpc::request req)
             // SplitTitle params;
             msgpack::type::tuple<SplitTitle> params;
             req.params().convert(&params);
-            req.result(TermParser::get()->parse(params.get<0>()));
+            clustering::rpc::SplitTitleResult res;
+            TermParser::get()->parse(params.get<0>(), res);
+            req.result(res);
         }
         else if (method == CLUSTERINGServerRequest::method_names[CLUSTERINGServerRequest::METHOD_GETCLUSTERINGINFOS])
         {

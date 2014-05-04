@@ -4,6 +4,7 @@
  * @date Created <2010-06-01 10:26:16>
  */
 #include <laser-manager/clusteringmanager/type/ClusteringDataStorage.h>
+#include <laser-manager/service/TermParser.h>
 #include "CommandsController.h"
 #include "CollectionHandler.h"
 #include <common/JobScheduler.h>
@@ -197,7 +198,9 @@ void CommandsController::load_laser_clustering()
     }
     else
     {
-//        laser::clustering::type::ClusteringDataStorage::get()->reload(asString(request()[Keys::clustering_path]));
+        const std::string& clusteringPath = asString(request()[Keys::clustering_path]);
+        laser::clustering::type::ClusteringDataStorage::get()->reload(clusteringPath);
+        laser::clustering::rpc::TermParser::get()->reload(clusteringPath);
     }
 }
 } // namespace sf1r
