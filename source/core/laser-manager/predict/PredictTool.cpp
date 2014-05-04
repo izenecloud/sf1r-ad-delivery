@@ -30,8 +30,10 @@ namespace predict
                 for(; term_iter != doc_iter->terms.end(); term_iter++)
                 {
               //      cout<<"iter:"<<term_iter->first<<"term feature"<<term_iter->second<<" args:"<<args[term_iter->first]<<endl;
-                    docrank +=term_iter->second*args[term_iter->first];
+                    // 0th is delta
+                    docrank +=term_iter->second*args[term_iter->first + 1];
                 }
+                docrank += args[0];
                 if(minHeap.size() > topN)
                 {
                     if(docrank > minHeap.top().rank_)
