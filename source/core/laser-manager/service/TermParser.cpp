@@ -31,6 +31,7 @@ bool TermParser::init(std::string clusteringRoot, std::string dictionPath )
     tok = new TitlePCA(dictionPath);
     return true;
 }
+
 SplitTitleResult TermParser::parse(SplitTitle st)
 {
     SplitTitleResult splitTitleResult;
@@ -49,7 +50,7 @@ SplitTitleResult TermParser::parse(SplitTitle st)
     float total = 0;
     for (size_t i = 0; i < tks.size(); ++i)
     {
-        map<int, Term>::iterator iter = terms.find(Hash_(tks[i].first));
+        boost::unordered_map<int, Term>::iterator iter = terms.find(Hash_(tks[i].first));
         if(iter != terms.end())
         {
             splitTitleResult.term_list_[iter->second.index] += tks[i].second;

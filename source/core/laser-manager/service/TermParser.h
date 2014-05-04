@@ -48,7 +48,7 @@ private:
     ilplib::knlp::TitlePCA* tok; //the pca
     //term_dictionary will maintain the term dictionary, sort and reduce the dimention
     //TermDictionary term_dictionary;
-    std::map<clustering::hash_t, clustering::type::Term> terms;
+    boost::unordered_map<clustering::hash_t, clustering::type::Term> terms;
 };
 }
 }

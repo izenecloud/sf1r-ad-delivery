@@ -65,7 +65,7 @@ void PCAClustering::execute(ClusteringDataAdapter* cda, int threadnum)
     std::map<hash_t, string> catpathlist = ClusteringListDes::get()->get_cat_path();
     //limit the term number
     term_dictionary.sort(max_clustering_term_num);
-    map<hash_t, Term> terms = term_dictionary.getTerms();
+    boost::unordered_map<hash_t, Term> terms = term_dictionary.getTerms();
     std::queue<string> paths= ClusteringListDes::get()->generate_clustering_mid_result_paths();
     ClusteringSortTool st(threadnum, paths);
     //sort the file

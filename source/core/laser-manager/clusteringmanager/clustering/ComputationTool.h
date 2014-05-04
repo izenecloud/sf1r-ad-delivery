@@ -35,14 +35,14 @@ private:
     int threadNum;
     std::queue<type::ClusteringInfo> infos;
     type::ClusteringDataAdapter* clusteringDataAdpater;
-    const std::map<hash_t, type::Term>& terms_;
+    const boost::unordered_map<hash_t, type::Term>& terms_;
     boost::mutex io_mutex;
 
 public:
     ComputationTool(int thread, std::queue<type::ClusteringInfo> path,
                     size_t min_clustering_doc_num_,
                     size_t max_clustering_doc_num_,
-                    const std::map<hash_t, type::Term>& terms,
+                    const boost::unordered_map<hash_t, type::Term>& terms,
                     type::ClusteringDataAdapter* clusteringDataAdpater_)
         :min_clustering_doc_num(min_clustering_doc_num_),
         max_clustering_doc_num(max_clustering_doc_num_),
@@ -112,7 +112,7 @@ public:
                         iter != tf.end(); iter++)
                 {
                     //erase the term which is not in the dictionary
-                    std::map<hash_t, type::Term>::const_iterator finder = terms_.find(iter->first);
+                    boost::unordered_map<hash_t, type::Term>::const_iterator finder = terms_.find(iter->first);
                     if (finder != terms_.end())
                     {
                         new_value.add(finder->second.index, iter->second);

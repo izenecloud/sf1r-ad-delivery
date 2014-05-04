@@ -9,11 +9,11 @@
 #define SF1R_LASER_TERM_DICTIONARY_H__
 #include <string>
 #include <fstream>
-#include <map>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 #include <stack>
 #include <algorithm>
+#include <boost/unordered_map.hpp>
 
 #include "Term.h"
 #include "laser-manager/clusteringmanager/common/constant.h"
@@ -38,7 +38,7 @@ private:
     //fstream dictionary_file;
     STATUS status;
     //int dictionary_limit;
-    map<hash_t, Term> term_map;
+    boost::unordered_map<hash_t, Term> term_map;
 public:
     TermDictionary(string clustering_path, STATUS s)
         :dictionary_dir_path(clustering_path+"/terms/"),
@@ -50,16 +50,7 @@ public:
         load();
         cout<<"TermDictionary init over"<<endl;
     }
-    /*
-    	//singleton module
-    	inline static TermDictionary* get() {
-    		return izenelib::util::Singleton<TermDictionary>::get();
-    	}
-
-    	bool init(){
-
-    	}*/
-
+    
     void load()
     {
         if(status == TRUNCATED)
@@ -76,7 +67,7 @@ public:
             Term value;
             while(iz->Next(key, value))
             {
-                map<hash_t, Term>::iterator iter = term_map.find(key);
+                boost::unordered_map<hash_t, Term>::iterator iter = term_map.find(key);
                 if(iter == term_map.end())
                 {
                     term_map.insert(make_pair<hash_t, Term> (key, value));
@@ -94,7 +85,7 @@ public:
         if(term.length() == 1)
             return 0;
         hash_t th = Hash_(term);
-        map<hash_t, Term>::iterator iter = term_map.find(th);
+        boost::unordered_map<hash_t, Term>::iterator iter = term_map.find(th);
         if(iter == term_map.end())
         {
             if(status != ONLY_READ)
@@ -142,13 +133,13 @@ public:
 
     void output()
     {
-        for(map<hash_t,Term>::iterator iter = term_map.begin(); iter != term_map.end(); iter++)
+        for(boost::unordered_map<hash_t,Term>::iterator iter = term_map.begin(); iter != term_map.end(); iter++)
         {
             cout<<iter->first<<" "<<iter->second<<endl;
         }
     }
 
-    map<hash_t, Term> getTerms()
+    boost::unordered_map<hash_t, Term> getTerms()
     {
         return term_map;
     }
@@ -158,7 +149,7 @@ public:
         string filebak =  dictionary_path+".bak";
         cout<<"to writer to :"<<filebak<<" term_map size"<<term_map.size()<< endl;
         izene_writer_pointer izw = openFile<izene_writer>(filebak, true);
-        for(map<hash_t,Term>::iterator iter = term_map.begin(); iter != term_map.end(); iter++)
+        for(boost::unordered_map<hash_t,Term>::iterator iter = term_map.begin(); iter != term_map.end(); iter++)
         {
             izw->Append(iter->first, iter->second);
         }
@@ -192,12 +183,12 @@ public:
         this->status = status;
     }
 
-    map<hash_t, Term>& getTermMap()
+    boost::unordered_map<hash_t, Term>& getTermMap()
     {
         return term_map;
     }
 
-    void setTermMap( map<hash_t, Term> termMap)
+    void setTermMap(boost::unordered_map<hash_t, Term>& termMap)
     {
         term_map = termMap;
     }
