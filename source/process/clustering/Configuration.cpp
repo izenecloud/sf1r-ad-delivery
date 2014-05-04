@@ -106,26 +106,6 @@ void Configuration::parseServerCfg(properties& props)
     getValue(props, "clustering.result.mintermnum", clusteringResultMintermnum);
 
     getValue(props, "clustering.exec.threadnum", clusteringExecThreadnum);
-
-    //getValue(props, "clustering.db.leveldbpath", levelDBPath_);
-
-    getValue(props, "clustering.db.cache", clusteringLevelDBCache);
-
-    getValue(props, "clustering.scd.suffix", scdFileSuffix);
-
-/*    getValue(props, "db.leveldbrootpath", leveldbRoot_);
-
-    getValue(props, "db.clusteringpath", clusteringDBPath_);
-
-    clusteringDBPath_ = leveldbRoot_+clusteringDBPath_;
-
-    getValue(props, "db.topnclusterpath", topNClusterDBPath_);
-
-    topNClusterDBPath_ = leveldbRoot_+topNClusterDBPath_;
-
-    getValue(props, "db.perusermodelpath", perUserDBPath_);
-
-    perUserDBPath_ = leveldbRoot_+perUserDBPath_;*/
 }
 }
 }

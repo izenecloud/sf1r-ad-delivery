@@ -36,24 +36,17 @@ public:
         return izenelib::util::Singleton<TermParser>::get();
     }
 
-    bool init(const std::string& clusteringRoot, const std::string& dictionPath);
+    bool init(const std::string& workdir, const std::string& dictionPath);
     void reload(const std::string& clusteringRoot);
+    void save();
     
-    void release()
-    {
-        if(tok != NULL)
-        {
-            delete tok;
-            tok = NULL;
-        }
-    }
     void parse(const clustering::rpc::SplitTitle& title, clustering::rpc::SplitTitleResult& res) const;
     
 private:
     ilplib::knlp::TitlePCA* tok; //the pca
     //term_dictionary will maintain the term dictionary, sort and reduce the dimention
     //TermDictionary term_dictionary;
-    boost::unordered_map<clustering::hash_t, clustering::type::Term> terms;
+    type::TermDictionary* termDict_;
     mutable boost::shared_mutex mutex_;
 };
 }

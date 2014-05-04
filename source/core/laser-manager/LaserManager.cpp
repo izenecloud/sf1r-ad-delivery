@@ -10,6 +10,16 @@ namespace sf1r
         : adSearchService_(adSearchService)
     {
         rpcServer_ = RpcServer::getInstance();
+        if (!boost::filesystem::exists(MiningManager::system_working_path_ + "/laser_clustering"))
+        {
+            boost::filesystem::create_directory(MiningManager::system_working_path_ + "/laser_clustering");
+        }
+        
+        if (!boost::filesystem::exists(MiningManager::system_working_path_ + "/laser_leveldb"))
+        {
+            boost::filesystem::create_directory(MiningManager::system_working_path_ + "/laser_leveldb");
+        }
+
         rpcServer_->start("0.0.0.0", 
             28611, 
             2,

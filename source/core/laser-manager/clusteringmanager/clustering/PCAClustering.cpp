@@ -35,7 +35,7 @@ using std::string;
 PCAClustering::PCAClustering(string term_directory_dir, string clustering_root_path,
                              float threhold_, int min_doc, int max_doc, int max_term, int threadnum) :
     threhold(threhold), 
-    term_dictionary(clustering_root_path, TRUNCATED),
+    term_dictionary(clustering_root_path),
     min_clustering_doc_num(min_doc), 
     max_clustering_doc_num(max_doc), 
     max_clustering_term_num(max_term),
@@ -52,6 +52,7 @@ PCAClustering::PCAClustering(string term_directory_dir, string clustering_root_p
 
 PCAClustering::~PCAClustering()
 {
+    term_dictionary.save();
     ClusteringListDes::get()->close();
     CatDictionary::get()->close();
     segmentTool_.stop();

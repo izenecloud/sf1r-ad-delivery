@@ -121,7 +121,7 @@ public:
         boost::mutex::scoped_lock lock(documentPools_mutex_);
         for(CoverNumType::iterator iter = termlist.begin(); iter != termlist.end(); iter++)
         {
-            term_dictionary.get(iter->second.first, iter->second.second);
+            term_dictionary.set(iter->second.first, iter->second.second);
         }
     }
     void pushback(std::string cat, DocumentVecType& vec)

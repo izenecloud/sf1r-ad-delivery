@@ -20,6 +20,8 @@
 #include "laser-manager/clusteringmanager/type/ClusteringDataAdapter.h"
 #include "laser-manager/clusteringmanager/type/ClusteringDataStorage.h"
 #include <boost/timer.hpp>
+#include <glog/logging.h>
+
 using namespace std;
 using namespace ilplib::knlp;
 using namespace izenelib;
@@ -49,10 +51,10 @@ vector<string> getSCDList(string dic, string suffix)
             else
             {
                 string filename = item_begin->path().c_str();
-                cout<<filename<<endl;
+                LOG(INFO)<<filename<<"\t"<<suffix<<endl;
                 if(filename.length() - filename.find_last_of(suffix) == 1 )
                 {
-                    cout<<"To load data:"<<filename<<endl;
+                    LOG(INFO)<<"To load data:"<<filename<<endl;
                     filelist.push_back(filename);
                 }
             }
@@ -106,8 +108,7 @@ int main(int argc, char * argv[])
     int max_clustering_term_num = Configuration::get()->getClusteringResultTermNumLimit();
     int clustering_exec_threadnum = Configuration::get()->getClusteringExecThreadnum();
     fs::create_directories(clustering_root);
-    //string leveldbpath =  Configuration::get()->getClusteringDBPath();
-    string scdsuffix = Configuration::get()->getScdFileSuffix();
+    string scdsuffix = "SCD";
     RETURN_ON_FAILURE(ClusteringDataStorage::get()->init(clustering_root));
     vector<string> filelist = getSCDList(corpus, scdsuffix);
     PCAClustering pca_clustering(pca_directory_path, clustering_root, threhold, min_clustering_doc_num, max_clustering_doc_num, max_clustering_term_num);
@@ -120,7 +121,7 @@ int main(int argc, char * argv[])
         string line;
         map<string, int> wdt;
 
-        while(  std::getline(scdfile, line) )
+        while(std::getline(scdfile, line) )
         {
             int len = line.length();
             if (len > 7 && line.substr(0, 7) == "<DOCID>")

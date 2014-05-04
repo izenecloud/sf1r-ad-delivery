@@ -33,11 +33,11 @@ bool ClusteringDataStorage::init(std::string dbpath)
     {
         return true;
     }
-    else
-    {
-        release();
-        return false;
-    }
+    //else
+    //{
+    //    release();
+    //    return false;
+    //}
 }
 
 void ClusteringDataStorage::release()

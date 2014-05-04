@@ -101,32 +101,6 @@ public:
         this->clusteringResultMintermnum = clusteringResultMintermnum;
     }
 
-    unsigned int getClusteringLevelDbCache() const
-    {
-        return clusteringLevelDBCache;
-    }
-
-    std::string getScdFileSuffix()
-    {
-        return scdFileSuffix;
-    }
-    /*std::string getLevelDbRoot()
-    {
-        return leveldbRoot_;
-    }
-    std::string getClusteringDBPath()
-    {
-        return clusteringDBPath_;
-    }
-    std::string getTopNClusterDBPath()
-    {
-        return topNClusterDBPath_;
-    }
-    std::string getPerUserDBPath()
-    {
-        return perUserDBPath_;
-    }*/
-
 private:
     bool parseCfgFile_(const std::string& cfgFile);
 
@@ -185,14 +159,6 @@ private:
     unsigned int clusteringResultMintermnum;
     //the thread number for clustering
     unsigned int clusteringExecThreadnum;
-    //std::string levelDBPath_;
-    unsigned int clusteringLevelDBCache;
-    //only parse the scd file with scdFileSuffix
-    std::string scdFileSuffix;
-    /*std::string leveldbRoot_;
-    std::string clusteringDBPath_;
-    std::string topNClusterDBPath_;
-    std::string perUserDBPath_;*/
 };
 
 } //namespace conf

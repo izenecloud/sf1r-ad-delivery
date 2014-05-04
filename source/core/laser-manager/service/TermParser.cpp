@@ -17,26 +17,42 @@ namespace clustering
 namespace rpc
 {
 TermParser::TermParser()
+    : termDict_(NULL)
+    , tok(NULL)
 {
-    tok = NULL;
 }
 TermParser::~TermParser()
 {
-    release();
+    if (NULL != termDict_)
+    {
+        delete termDict_;
+        termDict_ = NULL;
+    }
+
+    if(tok != NULL)
+    {
+        delete tok;
+        tok = NULL;
+    }
 }
-bool TermParser::init(const std::string& clusteringRoot, const std::string& dictionPath )
+bool TermParser::init(const std::string& workdir, const std::string& dictionPath )
 {
-    TermDictionary term_dictionary(clusteringRoot, ONLY_READ);
-    terms = term_dictionary.getTerms();
+    termDict_ = new TermDictionary(workdir);
+    termDict_->load();
     tok = new TitlePCA(dictionPath);
     return true;
 }
 
 void TermParser::reload(const std::string& clusteringRoot)
 {
-    TermDictionary term_dictionary(clusteringRoot, ONLY_READ);
     boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
-    terms = term_dictionary.getTerms();
+    termDict_->load(clusteringRoot);
+    //TODO to move to save function
+    termDict_->save();
+}
+    
+void TermParser::save()
+{
 }
 
 void TermParser::parse(const clustering::rpc::SplitTitle& st, 
@@ -63,8 +79,8 @@ void TermParser::parse(const clustering::rpc::SplitTitle& st,
     float total = 0;
     for (size_t i = 0; i < tks.size(); ++i)
     {
-        boost::unordered_map<clustering::hash_t, Term>::const_iterator iter = terms.find(Hash_(tks[i].first));
-        if(iter != terms.end())
+        boost::unordered_map<hash_t, Term>::const_iterator iter = termDict_->getTerms().find(Hash_(tks[i].first));
+        if(iter != termDict_->getTerms().end())
         {
             res.term_list_[iter->second.index] += tks[i].second;
             total+=tks[i].second;

@@ -19,183 +19,126 @@
 #include "laser-manager/clusteringmanager/common/constant.h"
 #include "laser-manager/clusteringmanager/common/utils.h"
 
-namespace sf1r
-{
-namespace laser
-{
-namespace clustering
-{
-namespace type
-{
+#include <string>
+#include <boost/serialization/unordered_map.hpp>
+#include <boost/serialization/string.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 
+#include <glog/logging.h>
+
+namespace sf1r { namespace laser { namespace clustering { namespace type {
 
 class TermDictionary
 {
-private:
-    string dictionary_dir_path;
-    string dictionary_path;
-
-    //fstream dictionary_file;
-    STATUS status;
-    //int dictionary_limit;
-    boost::unordered_map<hash_t, Term> term_map;
 public:
-    TermDictionary(string clustering_path, STATUS s)
-        :dictionary_dir_path(clustering_path+"/terms/"),
-        dictionary_path(dictionary_dir_path+"dic.dat"), status(s)
+    TermDictionary(const std::string& workdir)
+        : workdir_ (workdir + "/terms/")
     {
-        cout<<"TermDictionary init"<<endl;
-
-        fs::create_directories(dictionary_dir_path);
-        load();
-        cout<<"TermDictionary init over"<<endl;
+        if (!boost::filesystem::exists(workdir_))
+        {
+            boost::filesystem::create_directory(workdir_);
+        }
     }
     
-    void load()
+    void load(const std::string& dictPath = "")
     {
-        if(status == TRUNCATED)
+        LOG(INFO)<<"load term dictionary from: " <<dictPath;
+        if (dictPath.empty() && boost::filesystem::exists((workdir_ + "/dic.dat").c_str()))
         {
-            fstream dictionary_file(dictionary_path.c_str(),ios::out);
-            dictionary_file.close();
+            std::ifstream ifs((workdir_ + "/dic.dat").c_str(), std::ios::binary);
+            boost::archive::text_iarchive ia(ifs);
+            ia >> terms_;
         }
-        else
+        else if (boost::filesystem::exists((dictPath + "/terms/dic.dat").c_str()))
         {
-            izene_reader_pointer iz = openFile<izene_reader>(dictionary_path, false);
-            if(iz == NULL)
-                return;
-            hash_t key;
-            Term value;
-            while(iz->Next(key, value))
-            {
-                boost::unordered_map<hash_t, Term>::iterator iter = term_map.find(key);
-                if(iter == term_map.end())
-                {
-                    term_map.insert(make_pair<hash_t, Term> (key, value));
-                }
-                else
-                {
-                }
-            }
-            closeFile<izene_reader>(iz);
+            std::ifstream ifs((dictPath + "/terms/dic.dat").c_str(), std::ios::binary);
+            boost::archive::text_iarchive ia(ifs);
+            ia >> terms_;
         }
+        LOG(INFO)<<"terms number = "<<terms_.size();
     }
     //get the index id, the index begin with 1, so if the return is 0, it means there is no result
-    hash_t get(string term, int count=1)
+    bool get(const std::string& term, Term& t) const
     {
         if(term.length() == 1)
             return 0;
         hash_t th = Hash_(term);
-        boost::unordered_map<hash_t, Term>::iterator iter = term_map.find(th);
-        if(iter == term_map.end())
+        boost::unordered_map<hash_t, Term>::const_iterator iter = terms_.find(th);
+        if(iter == terms_.end())
         {
-            if(status != ONLY_READ)
-            {
-                Term t(term, count, term_map.size());
-                term_map.insert(make_pair<hash_t, Term>(th, t));
-            }
-            else
-            {
-                th = 0;
-            }
+            return false;
+        }
+        t = iter->second;
+        return true;
+    }
+
+    void set(const std::string& term, int count)
+    {
+        hash_t th = Hash_(term);
+        boost::unordered_map<hash_t, Term>::iterator iter = terms_.find(th);
+        if(iter == terms_.end())
+        {
+            Term t(term, count, terms_.size());
+            terms_.insert(std::make_pair(th, t));
         }
         else
         {
-            if(status != ONLY_READ)
-            {
-                iter->second.term_df+=count;
-            }
+            iter->second.term_df += count;
         }
-        return th;
+         
     }
 
     void sort(size_t limit= 0)
     {
-        if(status == ONLY_READ)
-            return;
-        vector<pair<hash_t,Term> > terms(term_map.begin(),term_map.end());
+        std::vector<std::pair<hash_t,Term> > terms(terms_.begin(),terms_.end());
         std::sort(terms.begin(),terms.end(), Term::compare);
-        vector<pair<hash_t,Term> > toMove;
+        std::vector<std::pair<hash_t,Term> > toMove;
         //index begin with 1!!!
         size_t count = 1;
         for(vector< pair<hash_t,Term> >::iterator iter = terms.begin(); iter != terms.end(); iter++)
         {
             if(limit != 0 && count > limit)
             {
-                term_map.erase(iter->first);
+                terms_.erase(iter->first);
             }
             else
             {
-                term_map[iter->first].index = count;
+                terms_[iter->first].index = count;
             }
             count++;
         }
     }
 
-    void output()
+    boost::unordered_map<hash_t, Term>& getTerms()
     {
-        for(boost::unordered_map<hash_t,Term>::iterator iter = term_map.begin(); iter != term_map.end(); iter++)
-        {
-            cout<<iter->first<<" "<<iter->second<<endl;
-        }
-    }
-
-    boost::unordered_map<hash_t, Term> getTerms()
-    {
-        return term_map;
+        return terms_;
     }
 
     void save()
     {
-        string filebak =  dictionary_path+".bak";
-        cout<<"to writer to :"<<filebak<<" term_map size"<<term_map.size()<< endl;
-        izene_writer_pointer izw = openFile<izene_writer>(filebak, true);
-        for(boost::unordered_map<hash_t,Term>::iterator iter = term_map.begin(); iter != term_map.end(); iter++)
+        LOG(INFO)<<"save term dictionary, term number = "<<terms_.size();
+        std::ofstream ofs((workdir_ + "/dic.dat").c_str(), std::ofstream::binary | std::ofstream::trunc);
+        boost::archive::text_oarchive oa(ofs);
+        try
         {
-            izw->Append(iter->first, iter->second);
+            oa << terms_;
         }
-        closeFile<izene_writer>(izw);
-        fs::rename(filebak, dictionary_path);
+        catch(std::exception& e)
+        {
+            LOG(INFO)<<e.what();
+        }
+        ofs.close();
     }
 
     ~TermDictionary()
     {
-        if(status != ONLY_READ)
-            save();
     }
 
-    string  getDictionaryPath()
-    {
-        return dictionary_path;
-    }
-
-    void setDictionaryPath(  string  dictionaryPath)
-    {
-        dictionary_path = dictionaryPath;
-    }
-
-    STATUS getStatus() const
-    {
-        return status;
-    }
-
-    void setStatus(STATUS status)
-    {
-        this->status = status;
-    }
-
-    boost::unordered_map<hash_t, Term>& getTermMap()
-    {
-        return term_map;
-    }
-
-    void setTermMap(boost::unordered_map<hash_t, Term>& termMap)
-    {
-        term_map = termMap;
-    }
+private:
+    boost::unordered_map<hash_t, Term> terms_;;
+    const std::string workdir_;
 };
 
-}
-}
-}
-}
+} } } }
 #endif /* TERM_DICTIONARY_H_ */

@@ -10,6 +10,8 @@
 #include <string>
 #include <ostream>
 #include <boost/serialization/access.hpp>
+#include <boost/serialization/utility.hpp>
+#include <boost/serialization/string.hpp>
 #include <boost/serialization/serialization.hpp>
 #include "laser-manager/clusteringmanager/common/constant.h"
 namespace sf1r
@@ -73,9 +75,9 @@ public:
     {
         term_str = termStr;
     }
-    friend class boost::serialization::access;
+    
     template<class Archive>
-    void serialize(Archive & ar, const unsigned int version)
+    void serialize(Archive& ar, const unsigned int version)
     {
         ar & term_str;
         ar & term_df;
