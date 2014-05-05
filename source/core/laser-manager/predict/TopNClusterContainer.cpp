@@ -40,7 +40,7 @@ namespace predict
     }
     bool TopNClusterContainer::init(std::string topNClusterPath)
     {
-        topNClusterPath_ = topNClusterPath+"./topncluster";
+        topNClusterPath_ = topNClusterPath+"/topncluster";
         topNclusterLeveldb_ = new TopNclusterLeveldbType(topNClusterPath_);
         if(topNclusterLeveldb_->open())
         {
