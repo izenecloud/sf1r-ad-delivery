@@ -94,9 +94,7 @@ void RpcServer::start(const std::string& host,
 void RpcServer::stop()
 {
     LOG(INFO)<<"release all leveldb storage";
-    
-    TermParser::get()->save();
-    //delete TermParser::get();
+    delete TermParser::get();
     LOG(INFO)<<"flush ClusteringDataStorage";
     ClusteringDataStorage::get()->release();
     LOG(INFO)<<"flush TopNClusterContainer";

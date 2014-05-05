@@ -47,14 +47,10 @@ void TermParser::reload(const std::string& clusteringRoot)
 {
     boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
     termDict_->load(clusteringRoot);
-    //TODO to move to save function
+    // serialization for next start
     termDict_->save();
 }
     
-void TermParser::save()
-{
-}
-
 void TermParser::parse(const clustering::rpc::SplitTitle& st, 
     clustering::rpc::SplitTitleResult& res) const
 {

@@ -38,8 +38,6 @@ public:
 
     bool init(const std::string& workdir, const std::string& dictionPath);
     void reload(const std::string& clusteringRoot);
-    void save();
-    
     void parse(const clustering::rpc::SplitTitle& title, clustering::rpc::SplitTitleResult& res) const;
     
 private:
