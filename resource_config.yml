@@ -6,6 +6,8 @@ branch_suffix: resource
 sub_modules:
     - dict
     - ad_resource
+    - stress_resource
 push_sub_modules:
     - dict
     - ad_resource
+    - stress_resource
