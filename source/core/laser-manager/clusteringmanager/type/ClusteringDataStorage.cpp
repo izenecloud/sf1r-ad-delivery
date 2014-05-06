@@ -8,42 +8,88 @@
 #include "ClusteringDataStorage.h"
 #include "laser-manager/clusteringmanager/common/utils.h"
 #include <3rdparty/msgpack/msgpack/type/tuple.hpp>
+#include <sstream>
 #include <list>
 #include <boost/filesystem.hpp>
 
 using namespace boost;
 
-namespace sf1r
-{
-namespace laser
-{
-namespace clustering
-{
-namespace type
-{
+
+namespace sf1r { namespace laser { namespace clustering { namespace type {
+
 
 const char* ClusteringDataStorage::suffix_data="clusteringdata";
 const char* ClusteringDataStorage::suffix_info="clusteringinfo";
-ClusteringDataStorage::ClusteringDataStorage(): dbpath_("")
+
+ClusteringDataStorage::ClusteringDataStorage()
+    : clusteringInfo_(NULL)
+    , clusteringData_(NULL)
 {
 
 }
 
-bool ClusteringDataStorage::init(std::string dbpath)
+bool ClusteringDataStorage::init(const std::string& dbpath)
 {
+    // this directory should contain only sub-directory;
     dbpath_ = dbpath;
-    if(DBModelType<ClusteringInfo>::get()->init(suffix_info, dbpath_) && 
-        DBModelType<ClusteringData>::get()->init(suffix_data,dbpath_) )
+    if (NULL == clusteringInfo_)
     {
-        return true;
+        clusteringInfo_ = new DBModelType<ClusteringInfo>();
     }
-    return false;
+    if (NULL == clusteringData_)
+    {
+        clusteringData_ = new DBModelType<ClusteringData>();
+    }
+    filesystem::path path(dbpath_);
+    filesystem::directory_iterator it(path);
+    for (; it != filesystem::directory_iterator(); ++it)
+    {
+        if (filesystem::is_directory(it->path()))
+        {
+            std::string dir = it->path().string();
+            LOG(INFO)<<"data storage path = "<<it->path().string();
+            if (!clusteringInfo_->init(suffix_info, dir) ||
+                clusteringData_->init(suffix_data, dir))
+            {
+                release();
+                return false;
+            }
+            break;
+        }
+    }
+    
+    // empty
+    if (it == filesystem::directory_iterator())
+    {
+        std::stringstream ss;
+        ss<<dbpath_<<"/"<<rand();
+        const std::string dir = ss.str();
+        filesystem::create_directory(dir);
+        if (!clusteringInfo_->init(suffix_info, dir) ||
+            clusteringData_->init(suffix_data, dir))
+        {
+            release();
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void ClusteringDataStorage::release()
 {
-    DBModelType<ClusteringInfo>::get()->release();
-    DBModelType<ClusteringData>::get()->release();
+    if (NULL != clusteringInfo_)
+    {
+        clusteringInfo_->release();
+        delete clusteringInfo_;
+        clusteringInfo_ = NULL;
+    }
+    if (NULL != clusteringData_)
+    {
+        clusteringData_->release();
+        delete clusteringData_;
+        clusteringData_ = NULL;
+    }
 }
 
 void ClusteringDataStorage::reload(const std::string& clusteringPath)
@@ -53,86 +99,64 @@ void ClusteringDataStorage::reload(const std::string& clusteringPath)
     {
         return;
     }
-    boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
-    release();
-    filesystem::path dataFrom(clusteringPath + "/" +suffix_data);
-    filesystem::path dataTo(dbpath_ + "/" + suffix_data + "/");
+    
+    std::string previous;
+    filesystem::path path(dbpath_);
+    filesystem::directory_iterator it(path);
+    for (; it != filesystem::directory_iterator(); ++it)
+    {
+        if (filesystem::is_directory(it->path()))
+        {
+            previous = it->path().string();
+        }
+    }
+    std::string dir = "";
+    do
+    {
+        std::stringstream ss;
+        ss<<dbpath_<<"/"<<rand();
+        dir = ss.str();
+    } 
+    while (filesystem::exists(dir));
+    
+    filesystem::create_directory(dir);
+    filesystem::create_directory(dir + "/" + suffix_info);
+    filesystem::create_directory(dir + "/" + suffix_data);
+
     
     filesystem::path infoFrom(clusteringPath + "/" +suffix_info);
-    filesystem::path infoTo(dbpath_ + "/" + suffix_info + "/");
-    filesystem::remove_all(dataTo);
-    filesystem::remove_all(infoTo);
-    filesystem::create_directory(dataTo);
-    filesystem::create_directory(infoTo);
-
+    filesystem::path dataFrom(clusteringPath + "/" +suffix_data);
+    
     for (filesystem::directory_iterator it(dataFrom); it != filesystem::directory_iterator(); ++it)
     {
-        filesystem::path dataTo(dbpath_ + "/" + suffix_data + "/" + it->path().filename().string());
+        filesystem::path dataTo(dir + "/" + suffix_data + "/" + it->path().filename().string());
         filesystem::copy_file(it->path(), dataTo);
     }
     for (filesystem::directory_iterator it(infoFrom); it != filesystem::directory_iterator(); ++it)
     {
-        filesystem::path infoTo(dbpath_ + "/" + suffix_info + "/" + it->path().filename().string());
+        filesystem::path infoTo(dir + "/" + suffix_info + "/" + it->path().filename().string());
         filesystem::copy_file(it->path(), infoTo);
     }
-    if(!DBModelType<ClusteringInfo>::get()->init(suffix_info, dbpath_) ||
-        DBModelType<ClusteringData>::get()->init(suffix_data,dbpath_))
+    
+
+    DBModelType<ClusteringInfo>* clusteringInfo = new DBModelType<ClusteringInfo>();
+    DBModelType<ClusteringData>* clusteringData = new DBModelType<ClusteringData>();
+    if (!clusteringInfo->init(suffix_info, dir) || 
+        !clusteringData->init(suffix_data, dir))
     {
         LOG(ERROR)<<"reload clustering error";
     }
-    /*set<std::string> newdataset;
-    set<std::string> newinfoset;
-    set<std::string> olddataset;
-    set<std::string> oldinfoset;
-    set<std::string> todeldataset;
-    set<std::string> todelinfoset;
-    std::string clusteringInfoPath = clusteringPath+"/infos";
-    std::string clusteringDataPath = clusteringPath+"/data";
-    izene_reader_pointer iDataFile = openFile<izene_reader>(clusteringDataPath, false);
-    izene_reader_pointer iInfoFile = openFile<izene_reader>(clusteringInfoPath, false);
-    if(iDataFile == NULL || iInfoFile == NULL)
-        return;
-    hash_t key;
-    ClusteringData cd;
-    ClusteringInfo ci;
-    while(iDataFile->Next(key, cd)) {
-        stringstream ss;
-        ss<<key;
-        newdataset.insert(ss.str());
-        DBModelType<ClusteringData>::get()->update(key, cd);
-    }
-    while(iInfoFile->Next(key, ci)) {
-        stringstream ss;
-        ss<<key;
-        newinfoset.insert(ss.str());
-        DBModelType<ClusteringInfo>::get()->update(key, ci);
-    }
-    closeFile<izene_reader>(iDataFile);
-    closeFile<izene_reader>(iInfoFile);
-    DBModelType<ClusteringInfo>::get()->getKeys(oldinfoset);
-    DBModelType<ClusteringData>::get()->getKeys(olddataset);
-    for(set<std::string>::iterator iter = oldinfoset.begin(); iter != oldinfoset.end(); iter++)
+
     {
-        if(newinfoset.find(*iter) == newinfoset.end())
-        {
-            todelinfoset.insert(*iter);
-        }
+        LOG(INFO)<<"ClustringDataStorage switch to "<<dir;
+        // lock and switch
+        boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
+        release();
+        clusteringInfo_ = clusteringInfo;
+        clusteringData_ = clusteringData;
     }
-    for(set<std::string>::iterator iter = olddataset.begin(); iter != olddataset.end(); iter++)
-    {
-        if(newdataset.find(*iter) == newdataset.end())
-        {
-            todeldataset.insert(*iter);
-        }
-    }
-    for(set<std::string>::iterator iter = todeldataset.begin(); iter != todeldataset.end(); iter++)
-    {
-        DBModelType<ClusteringData>::get()->del(*iter);
-    }
-    for(set<std::string>::iterator iter = todelinfoset.begin(); iter != todelinfoset.end(); iter++)
-    {
-        DBModelType<ClusteringInfo>::get()->del(*iter);
-    }*/
+
+    filesystem::remove_all(previous);
 }
 bool ClusteringDataStorage::save(ClusteringData& cd, ClusteringInfo& ci)
 {
@@ -191,8 +215,4 @@ ClusteringDataStorage::~ClusteringDataStorage()
     DBModelType<ClusteringData>::get()->release();
 }
 
-}
-
-} /* namespace clustering */
-}
-}
+} } } }

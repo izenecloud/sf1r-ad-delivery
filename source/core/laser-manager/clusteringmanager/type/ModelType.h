@@ -25,7 +25,7 @@ public:
     {
 
     }
-    bool init(std::string suffix, std::string path)
+    bool init(const std::string& suffix, const std::string& path)
     {
         dbpath_ = path+"/"+suffix;
         db_ = new ModelDBTableType(dbpath_);

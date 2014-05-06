@@ -194,12 +194,16 @@ void CommandsController::load_laser_clustering()
     const std::string& clusteringPath = asString(request()[Keys::clustering_path]);
     if (clusteringPath.empty())
     {
-        response().addError("missing clustering result paht");
+        response().addError("missing clustering result path");
     }
     else
     {
         const std::string& clusteringPath = asString(request()[Keys::clustering_path]);
-        laser::clustering::type::ClusteringDataStorage::get()->reload(clusteringPath);
+        if (!laser::clustering::type::ClusteringDataStorage::get()->reload(clusteringPath))
+        {
+            response().addError("invalid clustering data");
+            return;
+        }
         laser::clustering::rpc::TermParser::get()->reload(clusteringPath);
     }
 }

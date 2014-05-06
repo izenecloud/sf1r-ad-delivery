@@ -14,30 +14,19 @@
 #include <list>
 #include <util/singleton.h>
 #include "ModelType.h"
-namespace sf1r
-{
-namespace laser
-{
-namespace clustering
-{
-namespace type
-{
+
+namespace sf1r { namespace laser { namespace clustering { namespace type {
 
 
 class ClusteringDataStorage: public ClusteringDataAdapter
 {
-private:
-    //leveldb::DB* db;
-    std::string dbpath_;
-    static const char* suffix_data;
-    static const char* suffix_info;
 public:
     ClusteringDataStorage();
     inline static ClusteringDataStorage* get()
     {
         return izenelib::util::Singleton<ClusteringDataStorage>::get();
     }
-    bool init(std::string dbpath);
+    bool init(const std::string& dbpath);
     void release();
     void reload(const std::string& clusteringPath);
     bool save(ClusteringData& cd, ClusteringInfo& ci);
@@ -47,9 +36,13 @@ public:
     virtual ~ClusteringDataStorage();
 private:
     boost::shared_mutex mutex_;
+    std::string dbpath_;
+    
+    DBModelType<ClusteringInfo>* clusteringInfo_;
+    DBModelType<ClusteringData>* clusteringData_;
+    
+    static const char* suffix_data;
+    static const char* suffix_info;
 };
-}
-} /* namespace clustering */
-}
-}
+} } } }
 #endif /* SF1R_LASER_CLUSTERINGDATASTORAGE_H_ */
