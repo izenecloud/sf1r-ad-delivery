@@ -28,7 +28,7 @@ public:
     }
     bool init(const std::string& dbpath);
     void release();
-    void reload(const std::string& clusteringPath);
+    bool reload(const std::string& clusteringPath);
     bool save(ClusteringData& cd, ClusteringInfo& ci);
     bool loadClusteringData(hash_t cat_id, clustering::type::ClusteringData& cd);
     bool loadClusteringInfo(hash_t cat_id, clustering::type::ClusteringInfo& cd);

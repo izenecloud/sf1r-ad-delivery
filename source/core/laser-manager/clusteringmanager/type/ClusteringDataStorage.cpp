@@ -92,12 +92,12 @@ void ClusteringDataStorage::release()
     }
 }
 
-void ClusteringDataStorage::reload(const std::string& clusteringPath)
+bool ClusteringDataStorage::reload(const std::string& clusteringPath)
 {
     if (!filesystem::exists(clusteringPath + "/" + suffix_data) ||
         !filesystem::exists(clusteringPath + "/" + suffix_info))
     {
-        return;
+        return false;
     }
     
     std::string previous;
@@ -145,6 +145,7 @@ void ClusteringDataStorage::reload(const std::string& clusteringPath)
         !clusteringData->init(suffix_data, dir))
     {
         LOG(ERROR)<<"reload clustering error";
+        return false;
     }
 
     {
@@ -157,6 +158,7 @@ void ClusteringDataStorage::reload(const std::string& clusteringPath)
     }
 
     filesystem::remove_all(previous);
+    return true;
 }
 bool ClusteringDataStorage::save(ClusteringData& cd, ClusteringInfo& ci)
 {
