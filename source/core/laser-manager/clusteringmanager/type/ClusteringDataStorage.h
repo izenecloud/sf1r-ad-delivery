@@ -45,6 +45,8 @@ public:
     bool loadClusteringInfo(hash_t cat_id, clustering::type::ClusteringInfo& cd);
     bool loadClusteringInfos(vector<clustering::type::ClusteringInfo>& ci);
     virtual ~ClusteringDataStorage();
+private:
+    boost::shared_mutex mutex_;
 };
 }
 } /* namespace clustering */

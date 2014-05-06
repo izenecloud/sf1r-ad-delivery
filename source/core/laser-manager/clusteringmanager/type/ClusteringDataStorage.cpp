@@ -9,6 +9,10 @@
 #include "laser-manager/clusteringmanager/common/utils.h"
 #include <3rdparty/msgpack/msgpack/type/tuple.hpp>
 #include <list>
+#include <boost/filesystem.hpp>
+
+using namespace boost;
+
 namespace sf1r
 {
 namespace laser
@@ -33,11 +37,7 @@ bool ClusteringDataStorage::init(std::string dbpath)
     {
         return true;
     }
-    //else
-    //{
-    //    release();
-    //    return false;
-    //}
+    return false;
 }
 
 void ClusteringDataStorage::release()
@@ -48,7 +48,39 @@ void ClusteringDataStorage::release()
 
 void ClusteringDataStorage::reload(const std::string& clusteringPath)
 {
-    set<std::string> newdataset;
+    if (!filesystem::exists(clusteringPath + "/" + suffix_data) ||
+        !filesystem::exists(clusteringPath + "/" + suffix_info))
+    {
+        return;
+    }
+    boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
+    release();
+    filesystem::path dataFrom(clusteringPath + "/" +suffix_data);
+    filesystem::path dataTo(dbpath_ + "/" + suffix_data + "/");
+    
+    filesystem::path infoFrom(clusteringPath + "/" +suffix_info);
+    filesystem::path infoTo(dbpath_ + "/" + suffix_info + "/");
+    filesystem::remove_all(dataTo);
+    filesystem::remove_all(infoTo);
+    filesystem::create_directory(dataTo);
+    filesystem::create_directory(infoTo);
+
+    for (filesystem::directory_iterator it(dataFrom); it != filesystem::directory_iterator(); ++it)
+    {
+        filesystem::path dataTo(dbpath_ + "/" + suffix_data + "/" + it->path().filename().string());
+        filesystem::copy_file(it->path(), dataTo);
+    }
+    for (filesystem::directory_iterator it(infoFrom); it != filesystem::directory_iterator(); ++it)
+    {
+        filesystem::path infoTo(dbpath_ + "/" + suffix_info + "/" + it->path().filename().string());
+        filesystem::copy_file(it->path(), infoTo);
+    }
+    if(!DBModelType<ClusteringInfo>::get()->init(suffix_info, dbpath_) ||
+        DBModelType<ClusteringData>::get()->init(suffix_data,dbpath_))
+    {
+        LOG(ERROR)<<"reload clustering error";
+    }
+    /*set<std::string> newdataset;
     set<std::string> newinfoset;
     set<std::string> olddataset;
     set<std::string> oldinfoset;
@@ -100,7 +132,7 @@ void ClusteringDataStorage::reload(const std::string& clusteringPath)
     for(set<std::string>::iterator iter = todelinfoset.begin(); iter != todelinfoset.end(); iter++)
     {
         DBModelType<ClusteringInfo>::get()->del(*iter);
-    }
+    }*/
 }
 bool ClusteringDataStorage::save(ClusteringData& cd, ClusteringInfo& ci)
 {
@@ -110,38 +142,14 @@ bool ClusteringDataStorage::save(ClusteringData& cd, ClusteringInfo& ci)
     }
     stringstream hashstr;
     hashstr<<cd.clusteringHash;
+    
+    boost::shared_lock<boost::shared_mutex> sharedLock(mutex_, boost::try_to_lock);
+    if (!sharedLock)
+    {
+        return false;
+    }
     return DBModelType<ClusteringInfo>::get()->update(hashstr.str(), ci) && 
                 DBModelType<ClusteringData>::get()->update(hashstr.str(), cd);
-//    DBModelType<ClusteringInfo>::get()->release();
-//    DBModelType<ClusteringData>::get()->release();
-
-    /*    if(db == NULL)
-            return false;
-        string cdstr;
-        string cistr;
-        serialization<clustering::type::ClusteringData>(cdstr, cd);
-        serialization<clustering::type::ClusteringInfo>(cistr, ci);
-        string cdkeystr = getKey(suffix_data, cd.clusteringHash);
-        string cikeystr = getKey(suffix_info, ci.clusteringHash);
-        leveldb::Slice cdkey(cdkeystr);
-        leveldb::Slice cikey(cikeystr);
-        leveldb::WriteOptions write_options;
-        leveldb::Status cdstatus = db->Put(write_options, cdkey, cdstr);
-        leveldb::Status cistatus = db->Put(write_options, cikey, cistr);
-        if(!cdstatus.ok() || !cistatus.ok())
-        {
-            cout<<"check fail reason: clusteringdata:"<<cdstatus.ToString()<<"clusteringinfo"<<cistatus.ToString()<<endl;
-            if(cdstatus.ok())
-            {
-                db->Delete(leveldb::WriteOptions(), cdkey);
-            }
-            if(cistatus.ok())
-            {
-                db->Delete(leveldb::WriteOptions(), cikey);
-            }
-            return false;
-        }
-        return true;*/
 }
 
 
@@ -149,52 +157,38 @@ bool ClusteringDataStorage::loadClusteringData(hash_t cat_id, clustering::type::
 {
     stringstream hashstr;
     hashstr<<cat_id;
+    boost::shared_lock<boost::shared_mutex> sharedLock(mutex_, boost::try_to_lock);
+    if (!sharedLock)
+    {
+        return false;
+    }
     return DBModelType<ClusteringData>::get()->get(hashstr.str(), cd);
 }
 bool ClusteringDataStorage::loadClusteringInfos(vector<clustering::type::ClusteringInfo>& ci)
 {
+    boost::shared_lock<boost::shared_mutex> sharedLock(mutex_, boost::try_to_lock);
+    if (!sharedLock)
+    {
+        return false;
+    }
     return DBModelType<ClusteringInfo>::get()->get(ci);
-    /*    leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
-        // cout<<"to read"<<endl;
-        for (it->SeekToFirst(); it->Valid(); it->Next())
-        {
-            if(it->key().ToString().find(ClusteringDataStorage::suffix_info) == string::npos)
-            {
-                continue;
-            }
-            const string& value = it->value().ToString() ;
-            ClusteringInfo newinfo;
-            deserialize<ClusteringInfo>(value, newinfo);
-    	LOG(INFO)<<newinfo.clusteringHash<<endl;
-            ci.push_back(newinfo);
-        }
-        ci.reserve(ci.size());
-        delete it;
-        return true;*/
 }
 bool ClusteringDataStorage::loadClusteringInfo(hash_t cat_id, clustering::type::ClusteringInfo& ci)
 {
     stringstream hashstr;
     hashstr<<cat_id;
+    boost::shared_lock<boost::shared_mutex> sharedLock(mutex_, boost::try_to_lock);
+    if (!sharedLock)
+    {
+        return false;
+    }
     return DBModelType<ClusteringInfo>::get()->get(hashstr.str(), ci);
-
-    /*    std::string propertyValue;
-        bool res = loadClusteringInfo(cat_id, propertyValue);
-        if(res == false)
-            return false;
-        deserialize<clustering::type::ClusteringInfo>(propertyValue, ci);
-        return true;*/
 }
 
 ClusteringDataStorage::~ClusteringDataStorage()
 {
     DBModelType<ClusteringInfo>::get()->release();
     DBModelType<ClusteringData>::get()->release();
-    /*    if(db != NULL)
-        {
-            delete db;
-            db = NULL;
-        }*/
 }
 
 }
