@@ -61,7 +61,7 @@ bool ClusteringDataStorage::init(const std::string& dbpath)
                 filesystem::create_directory(dir + "/" + suffix_data);
             }
             if (!clusteringInfo_->init(suffix_info, dir) ||
-                clusteringData_->init(suffix_data, dir))
+                !clusteringData_->init(suffix_data, dir))
             {
                 release();
                 return false;
