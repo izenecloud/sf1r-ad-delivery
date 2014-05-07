@@ -34,7 +34,7 @@ namespace predict
                     docrank +=term_iter->second*args[term_iter->first + 1];
                 }
                 docrank += args[0];
-                if(minHeap.size() > topN)
+                if(minHeap.size() >= topN)
                 {
                     if(docrank > minHeap.top().rank_)
                     {

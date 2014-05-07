@@ -105,15 +105,17 @@ void RpcServer::start(const std::string& host,
 
 void RpcServer::stop()
 {
+    // stop msgpack at first
+    LOG(INFO)<<"stop msgpack server";
+    instance.end();
+    instance.join();
+    
     LOG(INFO)<<"release all leveldb storage";
     delete TermParser::get();
     LOG(INFO)<<"flush ClusteringDataStorage";
     ClusteringDataStorage::get()->release();
     LOG(INFO)<<"flush TopNClusterContainer";
     TopNClusterContainer::get()->release();
-    LOG(INFO)<<"stop msgpack server";
-    instance.end();
-    instance.join();
 }
 
 void RpcServer::dispatch(msgpack::rpc::request req)
