@@ -62,7 +62,7 @@ bool RpcServer::init(const std::string& clusteringRootPath,
     {
         LOG(ERROR)<<"Init TermParser Failed";
     }
-    if (!ClusteringDataStorage::get()->init(clusteringDBPath))
+    if (!ClusteringDataStorage::get()->init(clusteringDBPath, true))
     {
         LOG(ERROR)<<"Init ClusteringDataStorage Failed";
     }

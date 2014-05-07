@@ -26,7 +26,7 @@ public:
     {
         return izenelib::util::Singleton<ClusteringDataStorage>::get();
     }
-    bool init(const std::string& dbpath);
+    bool init(const std::string& dbpath, bool clusteringService = false);
     void release();
     bool reload(const std::string& clusteringPath);
     bool save(ClusteringData& cd, ClusteringInfo& ci);

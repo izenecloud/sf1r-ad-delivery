@@ -28,14 +28,8 @@ ClusteringDataStorage::ClusteringDataStorage()
 
 }
 
-bool ClusteringDataStorage::init(const std::string& dbpath)
+bool ClusteringDataStorage::init(const std::string& dbpath, bool clusteringService)
 {
-    // this directory should contain only sub-directory;
-    dbpath_ = dbpath + "/ClusteringDataStorage/";
-    if (!filesystem::exists(dbpath_))
-    {
-        filesystem::create_directory(dbpath_);
-    }
     if (NULL == clusteringInfo_)
     {
         clusteringInfo_ = new DBModelType<ClusteringInfo>();
@@ -44,14 +38,47 @@ bool ClusteringDataStorage::init(const std::string& dbpath)
     {
         clusteringData_ = new DBModelType<ClusteringData>();
     }
-    filesystem::path path(dbpath_);
-    filesystem::directory_iterator it(path);
-    for (; it != filesystem::directory_iterator(); ++it)
+    if (clusteringService)
     {
-        if (filesystem::is_directory(it->path()))
+        // this directory should contain only sub-directory;
+        dbpath_ = dbpath + "/ClusteringDataStorage/";
+        if (!filesystem::exists(dbpath_))
         {
-            std::string dir = it->path().string();
-            LOG(INFO)<<"data storage path = "<<it->path().string();
+            filesystem::create_directory(dbpath_);
+        }
+        filesystem::path path(dbpath_);
+        filesystem::directory_iterator it(path);
+        for (; it != filesystem::directory_iterator(); ++it)
+        {
+            if (filesystem::is_directory(it->path()))
+            {
+                std::string dir = it->path().string();
+                LOG(INFO)<<"data storage path = "<<it->path().string();
+                if (!filesystem::exists(dir + "/" + suffix_info))
+                {
+                    filesystem::create_directory(dir + "/" + suffix_info);
+                }
+                if (!filesystem::exists(dir + "/" + suffix_data))
+                {
+                    filesystem::create_directory(dir + "/" + suffix_data);
+                }
+                if (!clusteringInfo_->init(suffix_info, dir) ||
+                    !clusteringData_->init(suffix_data, dir))
+                {
+                    release();
+                    return false;
+                }
+                break;
+            }
+        }
+    
+        // empty
+        if (it == filesystem::directory_iterator())
+        {
+            std::stringstream ss;
+            ss<<dbpath_<<"/"<<rand();
+            const std::string dir = ss.str();
+            filesystem::create_directory(dir);
             if (!filesystem::exists(dir + "/" + suffix_info))
             {
                 filesystem::create_directory(dir + "/" + suffix_info);
@@ -66,34 +93,20 @@ bool ClusteringDataStorage::init(const std::string& dbpath)
                 release();
                 return false;
             }
-            break;
         }
+
+        return true;
     }
-    
-    // empty
-    if (it == filesystem::directory_iterator())
+    else
     {
-        std::stringstream ss;
-        ss<<dbpath_<<"/"<<rand();
-        const std::string dir = ss.str();
-        filesystem::create_directory(dir);
-        if (!filesystem::exists(dir + "/" + suffix_info))
-        {
-            filesystem::create_directory(dir + "/" + suffix_info);
-        }
-        if (!filesystem::exists(dir + "/" + suffix_data))
-        {
-            filesystem::create_directory(dir + "/" + suffix_data);
-        }
-        if (!clusteringInfo_->init(suffix_info, dir) ||
-            !clusteringData_->init(suffix_data, dir))
+        if (!clusteringInfo_->init(suffix_info, dbpath_) ||
+            !clusteringData_->init(suffix_data, dbpath_))
         {
             release();
             return false;
         }
+        return true;
     }
-
-    return true;
 }
 
 void ClusteringDataStorage::release()
@@ -194,8 +207,8 @@ bool ClusteringDataStorage::save(ClusteringData& cd, ClusteringInfo& ci)
     {
         return false;
     }
-    return DBModelType<ClusteringInfo>::get()->update(hashstr.str(), ci) && 
-                DBModelType<ClusteringData>::get()->update(hashstr.str(), cd);
+    return clusteringInfo_->update(hashstr.str(), ci) && 
+                clusteringData_->update(hashstr.str(), cd);
 }
 
 
@@ -208,7 +221,7 @@ bool ClusteringDataStorage::loadClusteringData(hash_t cat_id, clustering::type::
     {
         return false;
     }
-    return DBModelType<ClusteringData>::get()->get(hashstr.str(), cd);
+    return clusteringData_->get(hashstr.str(), cd);
 }
 bool ClusteringDataStorage::loadClusteringInfos(vector<clustering::type::ClusteringInfo>& ci)
 {
@@ -217,7 +230,7 @@ bool ClusteringDataStorage::loadClusteringInfos(vector<clustering::type::Cluster
     {
         return false;
     }
-    return DBModelType<ClusteringInfo>::get()->get(ci);
+    return clusteringInfo_->get(ci);
 }
 bool ClusteringDataStorage::loadClusteringInfo(hash_t cat_id, clustering::type::ClusteringInfo& ci)
 {
@@ -228,13 +241,12 @@ bool ClusteringDataStorage::loadClusteringInfo(hash_t cat_id, clustering::type::
     {
         return false;
     }
-    return DBModelType<ClusteringInfo>::get()->get(hashstr.str(), ci);
+    return clusteringInfo_->get(hashstr.str(), ci);
 }
 
 ClusteringDataStorage::~ClusteringDataStorage()
 {
-    DBModelType<ClusteringInfo>::get()->release();
-    DBModelType<ClusteringData>::get()->release();
+    release();
 }
 
 } } } }
