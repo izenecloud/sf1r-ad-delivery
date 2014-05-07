@@ -1,4 +1,5 @@
 #include "LaserOnlineModel.h"
+#include <boost/filesystem.hpp>
 
 namespace sf1r
 {
@@ -18,6 +19,11 @@ namespace predict
     bool LaserOnlineModel::init(std::string path)
     {
         dbpath_ = path+"/perusermodel";
+        if (!boost::filesystem::exists(dbpath_))
+        {
+            boost::filesystem::create_directory(dbpath_);
+        }
+
         db_ = new PerUserOnlineModelDBType(dbpath_);
         if(db_->open())
         {

@@ -31,7 +31,11 @@ ClusteringDataStorage::ClusteringDataStorage()
 bool ClusteringDataStorage::init(const std::string& dbpath)
 {
     // this directory should contain only sub-directory;
-    dbpath_ = dbpath;
+    dbpath_ = dbpath + "/ClusteringDataStorage/";
+    if (!filesystem::exists(dbpath_))
+    {
+        filesystem::create_directory(dbpath_);
+    }
     if (NULL == clusteringInfo_)
     {
         clusteringInfo_ = new DBModelType<ClusteringInfo>();
@@ -48,6 +52,14 @@ bool ClusteringDataStorage::init(const std::string& dbpath)
         {
             std::string dir = it->path().string();
             LOG(INFO)<<"data storage path = "<<it->path().string();
+            if (!filesystem::exists(dir + "/" + suffix_info))
+            {
+                filesystem::create_directory(dir + "/" + suffix_info);
+            }
+            if (!filesystem::exists(dir + "/" + suffix_data))
+            {
+                filesystem::create_directory(dir + "/" + suffix_data);
+            }
             if (!clusteringInfo_->init(suffix_info, dir) ||
                 clusteringData_->init(suffix_data, dir))
             {
@@ -65,8 +77,16 @@ bool ClusteringDataStorage::init(const std::string& dbpath)
         ss<<dbpath_<<"/"<<rand();
         const std::string dir = ss.str();
         filesystem::create_directory(dir);
+        if (!filesystem::exists(dir + "/" + suffix_info))
+        {
+            filesystem::create_directory(dir + "/" + suffix_info);
+        }
+        if (!filesystem::exists(dir + "/" + suffix_data))
+        {
+            filesystem::create_directory(dir + "/" + suffix_data);
+        }
         if (!clusteringInfo_->init(suffix_info, dir) ||
-            clusteringData_->init(suffix_data, dir))
+            !clusteringData_->init(suffix_data, dir))
         {
             release();
             return false;

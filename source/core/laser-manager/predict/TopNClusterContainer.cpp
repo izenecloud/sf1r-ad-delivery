@@ -2,6 +2,8 @@
 #include "laser-manager/clusteringmanager/common/utils.h"
 #include "laser-manager/clusteringmanager/type/ClusteringDataStorage.h"
 #include <am/range/AmIterator.h>
+#include <boost/filesystem.hpp>
+
 using namespace izenelib::am;
 using namespace sf1r::laser::clustering::type;
 namespace sf1r
@@ -41,6 +43,12 @@ namespace predict
     bool TopNClusterContainer::init(std::string topNClusterPath)
     {
         topNClusterPath_ = topNClusterPath+"/topncluster";
+        LOG(INFO)<<"TopNClusterContainer path = "<<topNClusterPath_;
+        if (!boost::filesystem::exists(topNClusterPath_))
+        {
+            boost::filesystem::create_directory(topNClusterPath_);
+        }
+
         topNclusterLeveldb_ = new TopNclusterLeveldbType(topNClusterPath_);
         if(topNclusterLeveldb_->open())
         {

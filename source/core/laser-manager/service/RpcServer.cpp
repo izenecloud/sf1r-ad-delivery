@@ -58,10 +58,22 @@ bool RpcServer::init(const std::string& clusteringRootPath,
        const std::string& clusteringDBPath,
        const std::string& pcaPath)
 {
-    RETURN_ON_FAILURE(TermParser::get()->init(clusteringRootPath, pcaPath));
-    RETURN_ON_FAILURE(ClusteringDataStorage::get()->init(clusteringDBPath));
-    RETURN_ON_FAILURE(TopNClusterContainer::get()->init(clusteringDBPath));
-    RETURN_ON_FAILURE(LaserOnlineModel::get()->init(clusteringDBPath));
+    if(!TermParser::get()->init(clusteringRootPath, pcaPath))
+    {
+        LOG(ERROR)<<"Init TermParser Failed";
+    }
+    if (!ClusteringDataStorage::get()->init(clusteringDBPath))
+    {
+        LOG(ERROR)<<"Init ClusteringDataStorage Failed";
+    }
+    if (!TopNClusterContainer::get()->init(clusteringDBPath))
+    {
+        LOG(ERROR)<<"Init TopNClusterContainer Failed";
+    }
+    if (!LaserOnlineModel::get()->init(clusteringDBPath))
+    {
+        LOG(ERROR)<<"Init LaserOnlineModel Failed";
+    }
     return true;
 }
 
