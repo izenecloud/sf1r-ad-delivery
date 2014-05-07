@@ -99,6 +99,7 @@ bool ClusteringDataStorage::init(const std::string& dbpath, bool clusteringServi
     }
     else
     {
+        dbpath_ = dbpath;
         if (!clusteringInfo_->init(suffix_info, dbpath_) ||
             !clusteringData_->init(suffix_data, dbpath_))
         {
