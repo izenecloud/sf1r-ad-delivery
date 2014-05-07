@@ -1,24 +1,9 @@
-/*
- * catdictionary.h
- *
- *  Created on: Mar 28, 2014
- *      Author: alex
- */
-
-#ifndef CATDICTIONARY_H_
-#define CATDICTIONARY_H_
-#include <string>
-#include <knlp/title_pca.h>
-#include <am/sequence_file/ssfr.h>
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
-#include <map>
+#ifndef SF1R_LASER_CAT_DICTIONARY_H
+#define SF1R_LASER_CAT_DICTIONARY_H
+#include <boost/unordered_map.hpp>
 #include <iostream>
 #include <util/singleton.h>
-#include "laser-manager/clusteringmanager/common/constant.h"
-#include "laser-manager/clusteringmanager/common/utils.h"
-#include <iostream>
-//#include <ifstream>
+#include <fstream>
 
 namespace sf1r
 {
@@ -28,28 +13,6 @@ namespace clustering
 {
 namespace type
 {
-struct Category
-{
-    string value;
-    size_t df;
-    Category(string v, size_t d)
-    {
-        value = v;
-        df = d;
-    }
-    Category()
-    {
-        value = "";
-        df = 0;
-    }
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version)
-    {
-        ar & value;
-        ar & df;
-    }
-};
 /**
  * CatDictionary store the final category information,
  * It contains a file which record a list of catfile (catfile contains the clusteringresult in a certain orignal cat)
@@ -58,37 +21,21 @@ struct Category
 class CatDictionary
 {
 private:
-    /**
-     *
-     */
     string dic_path_;
-    std::map<hash_t, Category> cat_dic;
-    STATUS status_;
+    boost::unordered_map<std::string, int> catDic_;
 public:
-    /**
-     *
-     */
-    CatDictionary() :
-        status_(ONLY_READ)
-    {
-    }
-    ~CatDictionary()
-    {
-
-    }
     void close()
     {
-        string bak = dic_path_ + ".bak";
-        izene_writer* cat_writer_ = openFile<izene_writer>(bak, true);
-        cout << "save CatDictionary to local" << endl;
-        for (std::map<hash_t, Category>::iterator iter = cat_dic.begin();
-                iter != cat_dic.end(); iter++)
+        std::ofstream ofs(dicPath_, std::ofstream::binary | std::ofstream::trunc);
+        boost::archive::text_oarchive oa(ofs);
+        try
         {
-            cat_writer_->Append(iter->first, iter->second);
+            oa << catDic_;
         }
-        cout << "save and rename CatDictionary to local" << endl;
-        closeFile<izene_writer>(cat_writer_);
-        fs::rename(bak, dic_path_);
+        catch(std::exception& e)
+        {
+            LOG(INFO)<<e.what();
+        }
     }
 
     inline static CatDictionary* get()
@@ -96,100 +43,69 @@ public:
         return izenelib::util::Singleton<CatDictionary>::get();
     }
 
-    bool init(string dicpath, STATUS status = TRUNCATED)
+    bool init(string dicpath, bool load = false)
     {
-        dic_path_ = (dicpath + "/category_dic.dat");
-        status_ = status;
-        if (status == TRUNCATED)
-        {
-            ofstream is(dic_path_.c_str(), ios::trunc);
-            is.close();
-        }
-        bool result = load_dic(dic_path_);
-        //bool result2 = cat_writer_ = openFile<izene_writer>(dic_path_, true);
-        return result;
+        dicPath_ = (dicpath + "/category_dic.dat");
+        if (!load)
+            return true;
+        return load(dicPath_);
     }
 
-    inline pair<hash_t, size_t> getCatHash(const string& cat)
+    inline int get(const string& cat)
     {
-        hash_t h = Hash_(cat);
-        std::map<hash_t, Category>::iterator iter = cat_dic.find(h);
-        if (iter != cat_dic.end())
+        boost::unordered_map<std::string, int>::iterator iter = catDic_.find(cat);
+        if (iter != catDic_.end())
         {
-            return make_pair<hash_t, size_t>(h, iter->second.df);
+            return iter->second;
         }
         else
         {
-            return make_pair<hash_t, size_t>(h, 0);
+            return make_pair<std::string, size_t>(h, 0);
         }
     }
 
-    inline pair<hash_t, size_t> addCatHash(const string& cat, hash_t r = 0, int df = 1)
+    inline int add(const string& cat, int df = 1)
     {
-        if (r == 0)
-            r = Hash_(cat);
-        std::map<hash_t, Category>::iterator iter = cat_dic.find(r);
-        if (iter != cat_dic.end())
+        boost::unordered_map<std::string, int>::iterator iter = catDic_.find(r);
+        if (iter != catDic_.end())
         {
-            if (status_ != ONLY_READ)
-            {
-                iter->second.df += df;
-            }
-            return make_pair<hash_t, size_t>(r, iter->second.df);
+            iter->second += df;
+            return it->second;
         }
         else
         {
-            cat_dic.insert(make_pair<hash_t, Category>(r, Category(cat, df)));
-            return make_pair<hash_t, size_t>(r, 1);
+            catDic_[cat] = df;
+            return df;
         }
     }
 
-    bool load_dic(const std::string& dic_path)
+    bool load(const std::string& dicPath)
     {
-        izene_reader_pointer reader = openFile<izene_reader>(dic_path, false);
-        hash_t h;
-        Category v;
-        if (reader == NULL)
+        if (boost::filesystem::exists(dicPath))
         {
-            return false;
+            std::ifstream ifs(dic_path.c_str(), std::ios::binary);
+            boost::archive::text_iarchive ia(ifs);
+            ia >> catDic_;
+            return true;
         }
-        else
-        {
-            while (reader->Next(h, v))
-            {
-                cat_dic.insert(make_pair<hash_t, Category>(h, v));
-            }
-            closeFile<izene_reader>(reader);
-        }
-        return true;
+        return false;
     }
 
-    std::map<hash_t, Category> getCatDic()
+    boost::unordered_map<std::string, Category>& getCatDic()
     {
-        return cat_dic;
-    }/*
-
-	 izene_writer* getCatWriter()   {
-	 return cat_writer_;
-	 }
-
-	 void setCatWriter( izene_writer* catWriter) {
-	 cat_writer_ = catWriter;
-	 }*/
+        return catDic_;
+    }
 
     string getDicPath() const
     {
-        return dic_path_;
+        return dicPath_;
     }
 
     void setDicPath(string dicPath)
     {
-        dic_path_ = dicPath;
+        dicPath_ = dicPath;
     }
 };
 
-}
-}
-}
-}
+} } } }
 #endif /* CATDICTIONARY_H_ */
