@@ -5,42 +5,36 @@
  *      Author: alex
  */
 #include "ClusteringListDes.h"
-namespace sf1r
-{
-namespace laser
-{
-namespace clustering
-{
-namespace type
-{
+#include <boost/filesystem.hpp>
 
-bool ClusteringListDes::init(
-        string clustering_dir_, 
-        STATUS is_rebuild, 
-        string mid_suffix_, 
-        string res_suffix_, 
-        string pow_suffix_)
+namespace sf1r { namespace laser { namespace clustering { namespace type {
+
+const std::string ClusteringListDes::MID_SUFFIX = ".mid";
+const std::string ClusteringListDes::RES_SUFFIX = ".res";
+const std::string ClusteringListDes::POW_SUFFIX = ".pow";
+
+bool ClusteringListDes::init(const std::string& clustering_dir)
+//        STATUS is_rebuild) 
 {
-    clustering_dir = clustering_dir_;
-    clustering_res_dir = clustering_dir_+"/data/";
-    cat_file_list_des_filename = clustering_res_dir+"/clustering.des";
-    mid_suffix = mid_suffix_;
-    res_suffix = res_suffix_;
-    pow_suffix = pow_suffix_;
-    clustering_file_status = is_rebuild;
-    cout<<"ClusteringListDes init"<<endl;
-    if(is_rebuild == TRUNCATED)
+    workdir_ = clustering_dir + "/data/";
+    if (!boost::filesystem(workdir_))
     {
-        fs::remove_all(clustering_res_dir);
+        boost::filesystem::create_directory(workdir_);
     }
-    fs::create_directories(clustering_res_dir);
-    load_cats();
-    cout<<"ClusteringListDes init over"<<endl;
     return true;
+    //clustering_res_dir = clustering_dir_+"/data/";
+    //cat_file_list_des_filename = clustering_res_dir+"/clustering.des";
+    //clustering_file_status = is_rebuild;
+    
+    //cout<<"ClusteringListDes init"<<endl;
+    //if(is_rebuild == TRUNCATED)
+    //{
+    //    fs::remove_all(clustering_res_dir);
+    //}
+    //fs::create_directories(clustering_res_dir);
+    //load_cats();
+    //cout<<"ClusteringListDes init over"<<endl;
+    //return true;
 }
 
-}//namespace type
-}//namespace clustering
-}
-}
-
+} } } }
