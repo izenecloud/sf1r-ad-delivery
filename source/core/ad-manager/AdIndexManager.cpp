@@ -8,6 +8,8 @@
 #include "AdClickPredictor.h"
 #include "AdFeedbackMgr.h"
 #include "AdSearchService.h"
+#include "sponsored-ad-search/AdAucationLogMgr.h"
+#include "sponsored-ad-search/AdSponsoredMgr.h"
 #include <common/ResultType.h>
 #include <mining-manager/group-manager/GroupManager.h>
 #include <query-manager/ActionItem.h>
@@ -26,6 +28,7 @@ static const int MAX_SELECT_AD_COUNT = 20;
 static const int MAX_RECOMMEND_ITEM_NUM = 10;
 static const std::string adlog_topic = "b5manlog";
 
+using namespace sponsored;
 
 AdIndexManager::AdIndexManager(
         const std::string& ad_resource_path,
@@ -111,9 +114,17 @@ void AdIndexManager::onAdStreamMessage(const std::vector<AdMessage>& msg_list)
     std::vector<AdClickPredictor::AssignmentT> user_segs;
     feedback_info_list.resize(msg_list.size());
     // read from stream msg and convert it to assignment list.
+    BidPhraseT bidphrase;
     for (size_t i = 0; i < msg_list.size(); ++i)
     {
         AdFeedbackMgr::get()->parserFeedbackLog(msg_list[i].body, feedback_info_list[i]);
+        if (feedback_info_list[i].action == AdFeedbackMgr::Click)
+        {
+            ad_sponsored_mgr_->getBidPhrase(feedback_info_list[i].ad_id, bidphrase);
+            AdAucationLogMgr::get()->updateAucationLogData(feedback_info_list[i].ad_id,
+                bidphrase,
+                feedback_info_list[i].click_cost, feedback_info_list[i].click_slot);
+        }
     }
     
     for(size_t i = 0; i < feedback_info_list.size(); ++i)
@@ -293,10 +304,12 @@ bool AdIndexManager::searchByRecommend(const SearchKeywordOperation& actionOpera
         rec_query_str += rec_items[i] + " ";
     }
     LOG(INFO) << "recommend feature items are: ";
-    KeywordSearchActionItem rec_search_query(actionOperation.actionItem_);
-    rec_search_query.env_.queryString_ = rec_query_str;
-    rec_search_query.searchingMode_.mode_ = SearchingMode::SUFFIX_MATCH;
-    bool ret = ad_searcher_->search(rec_search_query, searchResult);
+    //KeywordSearchActionItem rec_search_query(actionOperation.actionItem_);
+    //rec_search_query.env_.queryString_ = rec_query_str;
+    //rec_search_query.searchingMode_.mode_ = SearchingMode::SUFFIX_MATCH;
+    (*const_cast<SearchKeywordOperation*>(&actionOperation)).actionItem_.searchingMode_.mode_ = SearchingMode::SUFFIX_MATCH;
+    (*const_cast<SearchKeywordOperation*>(&actionOperation)).actionItem_.env_.queryString_ = rec_query_str;
+    bool ret = ad_searcher_->search(actionOperation.actionItem_, searchResult);
     if (ret)
     {
         rankAndSelect(userinfo, searchResult.topKDocs_, searchResult.topKRankScoreList_, searchResult.totalCount_);

@@ -25,7 +25,7 @@ FILE(GLOB_RECURSE query_SRC "query-manager/*.cpp")
 FILE(GLOB_RECURSE aggregator_SRC "aggregator-manager/*.cpp")
 FILE(GLOB_RECURSE node_SRC "node-manager/*.cpp")
 FILE(GLOB sf1r_net_SRC "sf1r-net/*.cpp")
-FILE(GLOB ad_SRC "ad-manager/*.cpp")
+FILE(GLOB ad_SRC "ad-manager/*.cpp" "ad-manager/sponsored-ad-search/*.cpp")
 
 FILE(GLOB index_SRC
   "index-manager/zambezi-manager/*.cpp"

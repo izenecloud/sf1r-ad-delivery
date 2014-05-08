@@ -431,6 +431,8 @@ bool AdSearchService::search(const KeywordSearchActionItem& action, KeywordSearc
         LOG(INFO) << "no remote search server.";
         if (ad_local_searcher_)
         {
+            // local search will get docs from local after rank and select.
+            tmp_action.disableGetDocs_ = true;
             return ad_local_searcher_->doLocalSearch(tmp_action, ret);
         }
         return false;
@@ -444,6 +446,8 @@ bool AdSearchService::search(const KeywordSearchActionItem& action, KeywordSearc
         msgpack::rpc::future f = s.call(MasterServerConnector::Methods_[MasterServerConnector::Method_documentSearch_], tmp_action);
         ret = f.get<KeywordSearchResult>();
         LOG(INFO) << "end search ad from remote.";
+        // remote search result contains the docs data and no need to get docs on the local.
+        const_cast<KeywordSearchActionItem&>(action).disableGetDocs_ = true;
     }
     catch(const std::exception& e)
     {
