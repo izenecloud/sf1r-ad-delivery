@@ -7,9 +7,10 @@ namespace sf1r { namespace laser { namespace clustering {
 void SegmentTool::calc_(DocumentVecType& docv, std::size_t size, Dictionary& ccnt, Dictionary& termList)
 {
     typedef izenelib::util::second_greater<std::pair<std::string, float> > greater_than;
+    DocumentVecType::iterator iter = docv.begin();
     for (std::size_t i = 0; i < size; ++i)
     {
-        const OriDocument* iter = &(docv[i]);
+        //const OriDocument* iter = &(docv[i]);
         std::vector<std::pair<std::string, float> > tks;
         std::pair<std::string, float> tmp;
         std::vector<std::pair<std::string, float> > subtks;
@@ -65,6 +66,7 @@ void SegmentTool::calc_(DocumentVecType& docv, std::size_t size, Dictionary& ccn
         }
         type::ClusteringListDes::get()->get_cat_mid_writer(
             iter->category)->Append(cateMerge, d);
+        iter = docv.erase(iter);
     }
 }
 
@@ -89,7 +91,7 @@ void SegmentTool::run(ThreadContext* context)
         {
             calc_(*docs, size, *cat, *terms);
             boost::unique_lock<boost::shared_mutex> uniqueLock(*mutex);
-            docs->erase(docs->begin(), docs->begin() + size);
+            //docs->erase(docs->begin(), docs->begin() + size);
         }
     }
 }

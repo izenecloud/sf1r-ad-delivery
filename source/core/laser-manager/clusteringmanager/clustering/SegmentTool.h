@@ -2,6 +2,7 @@
 #define SF1R_LASER_SEGMENT_TOOL_H
 
 #include <queue>
+#include <list>
 #include <string>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
@@ -18,7 +19,7 @@ namespace sf1r { namespace laser { namespace clustering {
 class SegmentTool
 {
 public:
-    typedef std::vector<OriDocument> DocumentVecType;
+    typedef std::list<OriDocument> DocumentVecType;
 
 private:
     typedef boost::unordered_map<std::string, int> Dictionary;
