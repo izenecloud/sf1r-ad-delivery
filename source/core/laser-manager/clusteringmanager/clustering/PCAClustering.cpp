@@ -78,17 +78,26 @@ void PCAClustering::execute(ClusteringDataAdapter* cda, int threadnum)
     ct.start();
 }
 
-void PCAClustering::next(string title, string category, string docid)
+void PCAClustering::next(const std::string& title, const std::string& category, const std::string& docid)
 {
-    OriDocument od(title, category, docid);
-    doc_map[category].push_back(od);
-    if(doc_map[category].size() > 1000)
+    std::string refineCategory = "";
+    const char* pos = category.c_str();
+    const char* end = pos + category.size();
+    for (; pos < end; ++pos)
+    {
+        if ('\\' == *pos)
+            refineCategory += *pos;
+    }
+    OriDocument od(title, refineCategory, docid);
+    segmentTool_.push_back(refineCategory, od);
+
+    /*doc_map[refineCategory].push_back(od);
+    if(doc_map[refineCategory].size() > 1000)
     {
         cout<<"to push"<<endl;
-        segmentTool_.push_back(category, doc_map[category]);
-        doc_map[category].clear();
+        doc_map[refineCategory].clear();
         cout<<"push over"<<endl;
-    }
+    }*/
     return;
 }
 }

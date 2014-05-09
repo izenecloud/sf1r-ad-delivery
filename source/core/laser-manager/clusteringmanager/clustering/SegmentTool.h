@@ -100,13 +100,14 @@ public:
 
     friend class ComputationTool;
 public:
-    void push_back(std::string cat, DocumentVecType& vec)
+    void push_back(std::string cat, OriDocument& doc)
     {
         int index = Hash_(cat) % THREAD_NUM_;
         boost::shared_mutex* mutex = (*context_)[index]->mutex_;
         DocumentVecType* docs = (*context_)[index]->docs_;
         boost::unique_lock<boost::shared_mutex> uniqueLock(*mutex);
-        docs->insert(docs->end(),vec.begin(), vec.end()); 
+        //docs->insert(docs->end(),vec.begin(), vec.end()); 
+        docs->push_back(doc);
     }
     
     

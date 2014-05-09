@@ -42,12 +42,12 @@ private:
     int max_clustering_doc_num;
     //max term number in the clustering
     int max_clustering_term_num;
-    boost::unordered_map<std::string, SegmentTool::DocumentVecType> doc_map;
+    
     SegmentTool segmentTool_;
 public:
     bool loadDic(const std::string& dic_path);
     PCAClustering(string term_directory_dir, string clustering_root_path, float threhold_= 0.1,  int min_doc=10, int max_doc=1000, int max_term=10000, int threadnum=3) ;
-    void next(std::string title, std::string category, std::string docid);
+    void next(const std::string& title, const std::string& category, const std::string& docid);
     void execute(type::ClusteringDataAdapter * cda, int threadnum);
     ~PCAClustering();
     bool init();
