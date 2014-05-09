@@ -11,15 +11,12 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/serialization.hpp>
 #include <3rdparty/msgpack/msgpack.hpp>
+#include <boost/unordered_map.hpp>
+#include <boost/serialization/unordered_map.hpp>
+#include <boost/serialization/string.hpp>
 #include "laser-manager/clusteringmanager/common/constant.h"
 
-namespace sf1r
-{
-namespace laser
-{
-namespace clustering
-{
-namespace type
+namespace sf1r { namespace laser { namespace clustering { namespace type
 {
 class Document
 {
@@ -35,18 +32,15 @@ public:
         ar & doc_id;
         ar & terms;
     }
-    void add(hash_t term, float value)
+    void add(const std::string& term, float value)
     {
         terms[term] = value;
     }
 
     std::string doc_id;
-    typedef  std::map<hash_t, float> TermMapType;
+    typedef  boost::unordered_map<std::string, float> TermMapType;
     TermMapType terms;
     MSGPACK_DEFINE(doc_id, terms);
 };
-}
-}
-}
-}
+} } } }
 #endif /* DOCUMENT_H_ */

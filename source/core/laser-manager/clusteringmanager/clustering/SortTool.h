@@ -33,7 +33,7 @@ public:
         std::string path;
         while(getNext(path))
         {
-            izenelib::am::ssf::Sorter<uint32_t, hash_t>::Sort(path);
+            izenelib::am::ssf::Sorter<uint32_t, std::string>::Sort(path);
         }
     }
     void start()

@@ -245,6 +245,23 @@ bool ClusteringDataStorage::loadClusteringInfo(hash_t cat_id, clustering::type::
     return clusteringInfo_->get(hashstr.str(), ci);
 }
 
+void ClusteringDataStorage::similarClustering(const ClusteringInfo& origVal, ClusteringInfo& simVar)
+{
+    /*
+    std::vector<ClusteringInfo> infos;
+    if (!loadClusteringInfos(infos))
+    {
+        return ;
+    }
+    std::size_t size = infos.size();
+    for (std::size_t i = 0; i < size; ++i)
+    {
+        ClusteringInfo& info = infos[i];
+        const std::map<hash_t, float>& infoVec = info.clusteringPow;
+        const std::map<hash_t, float>& origVec = origVal.clusteringPow;
+    }*/
+}
+
 ClusteringDataStorage::~ClusteringDataStorage()
 {
     release();

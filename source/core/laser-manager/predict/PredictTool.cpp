@@ -1,14 +1,12 @@
 #include "PredictTool.h"
 #include "laser-manager/clusteringmanager/type/ClusteringDataStorage.h"
+#include "laser-manager/clusteringmanager/common/utils.h"
 using namespace sf1r::laser::clustering::type;
-namespace sf1r
+using namespace sf1r::laser::clustering;
+
+namespace sf1r { namespace laser { namespace predict {
+void getTopN(const ClusterContainer& clusters,const PerUserOnlineModel& puseronlineModel, size_t topN, MinHeapDocRankType& minHeap)
 {
-namespace laser
-{
-namespace predict
-{
-    void getTopN(const ClusterContainer& clusters,const PerUserOnlineModel& puseronlineModel, size_t topN, MinHeapDocRankType& minHeap)
-    {
         ClusterContainerIter iter = clusters.begin();
         cout<<puseronlineModel.getUserName()<<endl;
         const vector<float>& args = puseronlineModel.getArgs();
@@ -31,7 +29,7 @@ namespace predict
                 {
               //      cout<<"iter:"<<term_iter->first<<"term feature"<<term_iter->second<<" args:"<<args[term_iter->first]<<endl;
                     // 0th is delta
-                    docrank +=term_iter->second*args[term_iter->first + 1];
+                    docrank +=term_iter->second*args[Hash_(term_iter->first) + 1];
                 }
                 docrank += args[0];
                 if(minHeap.size() >= topN)
@@ -52,6 +50,4 @@ namespace predict
             }
         }
     }
-}
-}
-}
+} } }

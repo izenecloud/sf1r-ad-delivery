@@ -1,18 +1,13 @@
 #ifndef SF1R_LASER_CAT_DICTIONARY_H
 #define SF1R_LASER_CAT_DICTIONARY_H
 #include <boost/unordered_map.hpp>
+#include <boost/filesystem.hpp>
 #include <iostream>
 #include <util/singleton.h>
 #include <fstream>
+#include <glog/logging.h>
 
-namespace sf1r
-{
-namespace laser
-{
-namespace clustering
-{
-namespace type
-{
+namespace sf1r { namespace laser { namespace clustering { namespace type {
 /**
  * CatDictionary store the final category information,
  * It contains a file which record a list of catfile (catfile contains the clusteringresult in a certain orignal cat)
@@ -21,12 +16,12 @@ namespace type
 class CatDictionary
 {
 private:
-    string dic_path_;
+    string dicPath_;
     boost::unordered_map<std::string, int> catDic_;
 public:
     void close()
     {
-        std::ofstream ofs(dicPath_, std::ofstream::binary | std::ofstream::trunc);
+        std::ofstream ofs(dicPath_.c_str(), std::ofstream::binary | std::ofstream::trunc);
         boost::archive::text_oarchive oa(ofs);
         try
         {
@@ -43,10 +38,10 @@ public:
         return izenelib::util::Singleton<CatDictionary>::get();
     }
 
-    bool init(string dicpath, bool load = false)
+    bool init(string dicpath, bool isLoad = false)
     {
         dicPath_ = (dicpath + "/category_dic.dat");
-        if (!load)
+        if (!isLoad)
             return true;
         return load(dicPath_);
     }
@@ -60,17 +55,17 @@ public:
         }
         else
         {
-            return make_pair<std::string, size_t>(h, 0);
+            return -1;
         }
     }
 
     inline int add(const string& cat, int df = 1)
     {
-        boost::unordered_map<std::string, int>::iterator iter = catDic_.find(r);
+        boost::unordered_map<std::string, int>::iterator iter = catDic_.find(cat);
         if (iter != catDic_.end())
         {
             iter->second += df;
-            return it->second;
+            return iter->second;
         }
         else
         {
@@ -83,7 +78,7 @@ public:
     {
         if (boost::filesystem::exists(dicPath))
         {
-            std::ifstream ifs(dic_path.c_str(), std::ios::binary);
+            std::ifstream ifs(dicPath.c_str(), std::ios::binary);
             boost::archive::text_iarchive ia(ifs);
             ia >> catDic_;
             return true;
@@ -91,7 +86,7 @@ public:
         return false;
     }
 
-    boost::unordered_map<std::string, Category>& getCatDic()
+    boost::unordered_map<std::string, int>& getCatDic()
     {
         return catDic_;
     }

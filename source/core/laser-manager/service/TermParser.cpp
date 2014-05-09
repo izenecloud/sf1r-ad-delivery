@@ -75,10 +75,10 @@ void TermParser::parse(const clustering::rpc::SplitTitle& st,
     float total = 0;
     for (size_t i = 0; i < tks.size(); ++i)
     {
-        boost::unordered_map<hash_t, Term>::const_iterator iter = termDict_->getTerms().find(Hash_(tks[i].first));
+        boost::unordered_map<std::string, std::pair<int, int> >::const_iterator iter = termDict_->getTerms().find(tks[i].first);
         if(iter != termDict_->getTerms().end())
         {
-            res.term_list_[iter->second.index] += tks[i].second;
+            res.term_list_[iter->second.second] += tks[i].second;
             total+=tks[i].second;
         }
     }

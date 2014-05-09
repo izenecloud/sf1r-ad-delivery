@@ -14,7 +14,6 @@
 
 #include "laser-manager/clusteringmanager/type/CatDictionary.h"
 #include "laser-manager/clusteringmanager/type/TermDictionary.h"
-#include "laser-manager/clusteringmanager/type/Term.h"
 #include "DataType.h"
 
 namespace sf1r

@@ -33,6 +33,8 @@ public:
     bool loadClusteringData(hash_t cat_id, clustering::type::ClusteringData& cd);
     bool loadClusteringInfo(hash_t cat_id, clustering::type::ClusteringInfo& cd);
     bool loadClusteringInfos(vector<clustering::type::ClusteringInfo>& ci);
+
+    void similarClustering(const ClusteringInfo& origVal, ClusteringInfo& simVar);
     virtual ~ClusteringDataStorage();
 private:
     boost::shared_mutex mutex_;

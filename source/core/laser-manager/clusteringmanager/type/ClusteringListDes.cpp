@@ -17,7 +17,7 @@ bool ClusteringListDes::init(const std::string& clustering_dir)
 //        STATUS is_rebuild) 
 {
     workdir_ = clustering_dir + "/data/";
-    if (!boost::filesystem(workdir_))
+    if (!boost::filesystem::exists(workdir_))
     {
         boost::filesystem::create_directory(workdir_);
     }

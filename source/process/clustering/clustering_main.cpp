@@ -11,8 +11,6 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "knlp/title_pca.h"
-#include <map>
 #include "laser-manager/clusteringmanager/clustering/PCAClustering.h"
 #include "laser-manager/clusteringmanager/clustering/OriDocument.h"
 #include "Configuration.h"
@@ -28,7 +26,7 @@ using namespace izenelib;
 using namespace sf1r::laser::clustering;
 using namespace sf1r::laser::conf;
 using namespace sf1r::laser::clustering::type;
-
+using namespace boost::filesystem;
 void printHelp()
 {
     cout << "./title_pca_util\n"
@@ -38,14 +36,14 @@ void printHelp()
 vector<string> getSCDList(string dic, string suffix)
 {
     vector<string> filelist;
-    fs::path full_path(dic);
-    if(fs::exists(full_path))
+    path full_path(dic);
+    if(exists(full_path))
     {
-        fs::directory_iterator item_begin(full_path);
-        fs::directory_iterator item_end;
+        directory_iterator item_begin(full_path);
+        directory_iterator item_end;
         for ( ; item_begin !=  item_end; item_begin ++ )
         {
-            if (fs::is_directory( *item_begin))
+            if (is_directory( *item_begin))
             {
             }
             else
@@ -107,7 +105,7 @@ int main(int argc, char * argv[])
     int max_clustering_doc_num = Configuration::get()->getMaxClusteringDocNum();
     int max_clustering_term_num = Configuration::get()->getClusteringResultTermNumLimit();
     int clustering_exec_threadnum = Configuration::get()->getClusteringExecThreadnum();
-    fs::create_directories(clustering_root);
+    create_directories(clustering_root);
     string scdsuffix = "SCD";
     RETURN_ON_FAILURE(ClusteringDataStorage::get()->init(clustering_root));
     vector<string> filelist = getSCDList(corpus, scdsuffix);

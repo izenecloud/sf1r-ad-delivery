@@ -17,16 +17,18 @@ void ComputationTool::run()
         std::vector<type::Document>& c_cat_vector = clusteringData.clusteringData;
         c_cat_vector.reserve(max_clustering_doc_num);
         boost::unordered_map<std::string, float>& mean_pow = clusteringInfo.clusteringPow;
+        std::string cat = "";
         do 
         {
             type::Document value("");
-            std::string cat = "";
             next = reader->Next(cat, value);
             if (older != cat)   //new clustering or the last document
             {
                 if (c_cat_vector.size() > min_clustering_doc_num)
                 {
-                    clusteringData.clusteringHash = clusteringInfo.clusteringHash = older;
+                    int id = map(older);
+                    clusteringData.clusteringHash = id;
+                    clusteringInfo.clusteringHash = id;
                     clusteringInfo.clusteringname = "";
                     for (std::vector<type::Document>::iterator iter =
                                     c_cat_vector.begin(); iter != c_cat_vector.end();
@@ -55,10 +57,10 @@ void ComputationTool::run()
                         iter != tf.end(); iter++)
             {
                     //erase the term which is not in the dictionary
-                boost::unordered_map<std::string, type::Term>::const_iterator finder = terms_.find(iter->first);
+                boost::unordered_map<std::string, std::pair<int, int> >::const_iterator finder = terms_.find(iter->first);
                 if (finder != terms_.end())
                 {
-                    new_value.add(finder->second.index, iter->second);
+                    new_value.add(finder->first, iter->second);
                 }
             }
             if (new_value.terms.size() < 2)
@@ -81,7 +83,8 @@ void ComputationTool::run()
             // code for last category
                 if (c_cat_vector.size() > min_clustering_doc_num)
                 {
-                    clusteringData.clusteringHash = clusteringInfo.clusteringHash = older;
+                    clusteringData.clusteringHash = Hash_(older);
+                    clusteringInfo.clusteringHash = Hash_(older);
                     clusteringInfo.clusteringname = "";
                     for (std::vector<type::Document>::iterator iter =
                                     c_cat_vector.begin(); iter != c_cat_vector.end();

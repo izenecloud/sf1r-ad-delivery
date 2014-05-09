@@ -10,10 +10,9 @@
 #include <string>
 #include <knlp/title_pca.h>
 #include <am/sequence_file/ssfr.h>
-#include <map>
+#include <boost/unordered_map.hpp>
 #include "util/hashFunction.h"
 #include "laser-manager/clusteringmanager/type/CatDictionary.h"
-#include "laser-manager/clusteringmanager/type/Term.h"
 #include "laser-manager/clusteringmanager/type/ClusteringListDes.h"
 #include "laser-manager/clusteringmanager/type/TermDictionary.h"
 #include "ComputationTool.h"
@@ -43,7 +42,7 @@ private:
     int max_clustering_doc_num;
     //max term number in the clustering
     int max_clustering_term_num;
-    map<string, SegmentTool::DocumentVecType> doc_map;
+    boost::unordered_map<std::string, SegmentTool::DocumentVecType> doc_map;
     SegmentTool segmentTool_;
 public:
     bool loadDic(const std::string& dic_path);

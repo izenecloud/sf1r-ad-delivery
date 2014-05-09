@@ -27,7 +27,7 @@ struct ClusteringData
 {
     std::vector<Document> clusteringData;
     hash_t clusteringHash;
-    void output()
+    /*void output()
     {
         cout<<"clusteringHash:"<<clusteringHash<<std::endl;
         cout<<"output clusteringData"<<std::endl;
@@ -40,7 +40,7 @@ struct ClusteringData
             }
         }
         cout<<"output clusteringData over"<<endl;
-    }
+    }*/
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version)

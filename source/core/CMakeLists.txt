@@ -60,7 +60,7 @@ FILE(GLOB laser_SRC
     "laser-manager/*.cpp"
     "laser-manager/predict/*.cpp"
     "laser-manager/service/*.cpp"
-    "laser-manager/clusteringmanager/clustering/PCAClustering.cpp"
+    "laser-manager/clusteringmanager/clustering/*.cpp"
     "laser-manager/clusteringmanager/common/*.cpp"
     "laser-manager/clusteringmanager/type/*.cpp"
 )

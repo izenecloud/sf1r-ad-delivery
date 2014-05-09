@@ -59,7 +59,7 @@ void test()
     msgpack::unpack(&msg, value.data(), value.size());
     msg.get().convert(&newdata);
     cout<<newdata.clusteringData.size()<<endl;
-    newdata.output();
+    //newdata.output();
     delete db;
 }
 //test the basic operation of ClusteringDataStorage
@@ -73,11 +73,11 @@ void test2()
         ClusteringData oridata;
         ClusteringInfo oriinfo;
         Document doc("doctest");
-        doc.add(1,1.1);
-        doc.add(2,2.2);
+        doc.add("1",1.1);
+        doc.add("2",2.2);
         Document doc2("doctest2");
-        doc2.add(1,2.1);
-        doc2.add(2,3.2);
+        doc2.add("1",2.1);
+        doc2.add("2",3.2);
         oridata.clusteringData.push_back(doc);
         oridata.clusteringData.push_back(doc2);
         std::string catname = "cattest";
@@ -85,8 +85,8 @@ void test2()
         oriinfo.clusteringDocNum = 2;
         oriinfo.clusteringHash = oridata.clusteringHash = cathash;
         oriinfo.clusteringname = catname;
-        oriinfo.clusteringPow[1]=1;
-        oriinfo.clusteringPow[2]=2;
+        oriinfo.clusteringPow["1"]=1;
+        oriinfo.clusteringPow["2"]=2;
 
         cout<<"to save the data"<<endl;
         if(!levelDBClusteringData.save(oridata, oriinfo))
@@ -102,7 +102,7 @@ void test2()
         }
         else
         {
-            newdata.output();
+            //newdata.output();
         }
 
         if(!levelDBClusteringData.loadClusteringInfo(cathash, newinfo))
@@ -146,7 +146,7 @@ void test4()
                 int maxfeature = rand()%5+2;
                 Document doc(ss.str());
                 for(int k = 0; k < maxfeature; k++){
-                    doc.add(rand()%10000, rand()%1000);
+                    //doc.add(rand()%10000, rand()%1000);
                 }
                 oridata.clusteringData.push_back(doc);
             }
@@ -176,7 +176,7 @@ void test4()
             }
             else
             {
-                newdata.output();
+                //newdata.output();
             }
         }
         end = time(0);

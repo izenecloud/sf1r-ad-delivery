@@ -17,14 +17,8 @@
 #include <boost/iostreams/device/back_inserter.hpp>
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/stream.hpp>
-namespace  fs=boost::filesystem;
 
-namespace sf1r
-{
-namespace laser
-{
-namespace clustering
-{
+namespace sf1r { namespace laser { namespace clustering {
 inline hash_t Hash_(const std::string& cat)
 {
     return (hash_t)izenelib::util::HashFunction<std::string>::generateHash32(cat);
@@ -63,7 +57,6 @@ inline void closeFiles(std::map<hash_t, izenestream*>& cat_stream_map)
     {
         closeFile<izenestream> (iter->second);
     }
-}
 }
 
 template<class object>
@@ -137,6 +130,5 @@ inline void deserializeFile(const std::string & deserialFileName, object & obj)
     ia >> obj;
 }
 
-}
-}
+} } }
 #endif /* _CLUSTERING_UTILS_H_ */

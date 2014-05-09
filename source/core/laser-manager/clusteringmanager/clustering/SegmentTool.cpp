@@ -1,8 +1,10 @@
 #include "SegmentTool.h"
+#include "laser-manager/clusteringmanager/type/Document.h"
+#include "laser-manager/clusteringmanager/type/ClusteringListDes.h"
 
 namespace sf1r { namespace laser { namespace clustering {
 
-void SegmentTool::calc_(DocumentVecType& docv, std::size_t size; CatDictionary& terms, CatDictionary& ccnt)
+void SegmentTool::calc_(DocumentVecType& docv, std::size_t size, Dictionary& ccnt, Dictionary& termList)
 {
     typedef izenelib::util::second_greater<std::pair<std::string, float> > greater_than;
     for (std::size_t i = 0; i < size; ++i)
@@ -34,20 +36,20 @@ void SegmentTool::calc_(DocumentVecType& docv, std::size_t size; CatDictionary& 
         {
             if(tks[i].first.length() == 1)
                 continue;
-            if(terms.find(tks[i].first) == terms.end())
+            if(termList.find(tks[i].first) == termList.end())
             {
-                terms[tks[i].first] = 1;
+                termList[tks[i].first] = 1;
             }
             else
             {
-                terms[th].second++;
+                termList[tks[i].first]++;
             }
-            d.add(th, tks[i].second/tot);
-            now += tks[i].second
+            d.add(tks[i].first, tks[i].second/tot);
+            now += tks[i].second;
             cateMerge += tks[i].first;
             if (now > tot * THRESHOLD_)   //check whether the document number in this category reach the limit
             {
-                CatDictionary::iterator it = ccnt.find(cateMerge);
+                Dictionary::iterator it = ccnt.find(cateMerge);
                 if (ccnt.end() == it)
                 {
                     ccnt[cateMerge] = 1;
@@ -62,16 +64,16 @@ void SegmentTool::calc_(DocumentVecType& docv, std::size_t size; CatDictionary& 
             }
         }
         type::ClusteringListDes::get()->get_cat_mid_writer(
-            iter->category)->Append(cat_hash_value, d);
+            iter->category)->Append(cateMerge, d);
     }
 }
 
-void SegmentTool::run(int i)
+void SegmentTool::run(ThreadContext* context)
 {
-    boost::shared_mutex* mutex = (*context_)[i].mutex_;
-    DocumentVecType* docs = (*context_)[i].docs_;
-    CatDictionary* cat = (*context_)[i].cat_;
-    CatDictionary* terms = (*context_)[i].terms_;
+    boost::shared_mutex* mutex = context->mutex_;
+    DocumentVecType* docs = context->docs_;
+    Dictionary* cat = context->cat_;
+    Dictionary* terms = context->terms_;
     while(!isExit_())
     {
         std::size_t size = 0;
@@ -85,9 +87,9 @@ void SegmentTool::run(int i)
         }
         else
         {
-            calc_(*docs, size, *terms, *cat);
+            calc_(*docs, size, *cat, *terms);
             boost::unique_lock<boost::shared_mutex> uniqueLock(*mutex);
-            docs->erase(docs_->begin(), docs_->begin() + size);
+            docs->erase(docs->begin(), docs->begin() + size);
         }
     }
 }

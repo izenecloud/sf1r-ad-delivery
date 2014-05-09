@@ -8,14 +8,20 @@
 #include <am/sequence_file/ssfr.h>
 #include <util/functional.h>
 #include <boost/unordered_map.hpp>
-#include <map>
+#include <knlp/title_pca.h>
 #include "laser-manager/clusteringmanager/common/utils.h"
+#include "laser-manager/clusteringmanager/type/TermDictionary.h"
+#include "OriDocument.h"
+
 namespace sf1r { namespace laser { namespace clustering {
 
 class SegmentTool
 {
+public:
     typedef std::vector<OriDocument> DocumentVecType;
-    typedef boost::unordered_map<std::string, int> CatDictionary;
+
+private:
+    typedef boost::unordered_map<std::string, int> Dictionary;
     
     class ThreadContext
     {
@@ -24,8 +30,8 @@ class SegmentTool
         {
             mutex_ = new boost::shared_mutex();
             docs_ = new DocumentVecType();
-            cat_ = new CatDictionary();
-            terms_ = new CatDictionary();
+            cat_ = new Dictionary();
+            terms_ = new Dictionary();
         }
         
         ~ThreadContext()
@@ -57,19 +63,21 @@ class SegmentTool
     public:
         boost::shared_mutex* mutex_;
         DocumentVecType* docs_;
-        CatDictionary* cat_;
+        Dictionary* cat_;
+        Dictionary* terms_;
     };
 
 public: 
+    
     SegmentTool(int thread, type::TermDictionary& t, std::string& pcapath, float threshold, std::size_t maxDocPerClustering )
-      : THREAD_NUM_(thread)
-      , THRESHOLD_(threshold)
-      , MAX_DOC_PER_CLUSTERING_(maxDocPerClustering)
-      , term_dictionary(t)
+      : term_dictionary(t)
       , tok(pcapath)
-      , exit_(false)
       , context_(NULL)
       , thread_(NULL)
+      , exit_(false)
+      , THREAD_NUM_(thread)
+      , THRESHOLD_(threshold)
+      , MAX_DOC_PER_CLUSTERING_(maxDocPerClustering)
     {
         context_ = new std::vector<ThreadContext*>(THREAD_NUM_);
         thread_ = new std::vector<boost::thread*>(THREAD_NUM_);
@@ -89,31 +97,33 @@ public:
             thread_ = NULL;
         }
     }
+
+    friend class ComputationTool;
 public:
     void push_back(std::string cat, DocumentVecType& vec)
     {
         int index = Hash_(cat) % THREAD_NUM_;
-        boost::shared_mutex* mutex = (*context_)[index].mutex_;
-        DocumentVecType* docs = (*context_)[index].docs_;
-        boost::mutex::unique_lock<boost::shared_mutex> uniqueLock(mutex);
-        docs->insert(documentPool_[cat].end(),vec.begin(), vec.end()); 
+        boost::shared_mutex* mutex = (*context_)[index]->mutex_;
+        DocumentVecType* docs = (*context_)[index]->docs_;
+        boost::unique_lock<boost::shared_mutex> uniqueLock(*mutex);
+        docs->insert(docs->end(),vec.begin(), vec.end()); 
     }
     
     
     void start()
     {
-        for (int i = 0; i < THREAD_NUM_; ++i)
+        for (std::size_t i = 0; i < THREAD_NUM_; ++i)
         {
-            (*context_)[i] = new ThreadContext();
-            boost::function0<int> f = boost::bind(&SegmentTool::run, this, i);
-            (*thread_)[i] = new boost::thread(f);
+            ThreadContext* context = new ThreadContext();
+            (*context_)[i] = context;
+            (*thread_)[i] = new boost::thread(boost::bind(&SegmentTool::run, this, context));
         }
     }
     
     void stop()
     {
         {
-            boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_)
+            boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
             exit_ = true;
         }
         for (std::size_t i = 0; i < THREAD_NUM_; ++i)
@@ -133,20 +143,22 @@ public:
 
      
 private:
-    bool isExist_() const
+    void run(ThreadContext* context);
+    
+    bool isExit_()
     {
         boost::shared_lock<boost::shared_mutex> sharedLock(mutex_);
         return exit_;
     }
     
-    void calc_(DocumentVecType& docv, HashMap& ccnt, HashMap& termList);
+    void calc_(DocumentVecType& docv, std::size_t size, Dictionary& ccnt, Dictionary& termList);
     
     void mergeTerm_()
     {
         for (std::size_t i = 0; i < THREAD_NUM_; ++i)
         {
-            CatDictionary* terms = (*context_)[i].terms_;
-            for (CatDictionary::const_iterator it = terms->begin(); it != terms->end(); ++it)
+            Dictionary* terms = (*context_)[i]->terms_;
+            for (Dictionary::const_iterator it = terms->begin(); it != terms->end(); ++it)
             {
                 term_dictionary.set(it->first, it->second);
             }
@@ -154,17 +166,16 @@ private:
     }
     
 private:
-    queue<std::string> paths;
     type::TermDictionary& term_dictionary;
     ilplib::knlp::TitlePCA tok;
-    std::vector<boost::thread*>* thread_;
     std::vector<ThreadContext*>* context_;
+    std::vector<boost::thread*>* thread_;
     boost::shared_mutex mutex_;
     bool exit_;
     
+    const std::size_t THREAD_NUM_;
     const float THRESHOLD_;
     const std::size_t MAX_DOC_PER_CLUSTERING_;
-    const int THREAD_NUM_;
 };
 } } }
 #endif /* SEGMENTTOOL_H_ */

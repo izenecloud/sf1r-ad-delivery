@@ -18,8 +18,8 @@
 #include "laser-manager/clusteringmanager/type/ClusteringData.h"
 #include "laser-manager/clusteringmanager/type/ClusteringInfo.h"
 #include "laser-manager/clusteringmanager/type/ClusteringDataAdapter.h"
-#include "laser-manager/clusteringmanager/type/Term.h"
-#include <map>
+#include "SegmentTool.h"
+
 namespace sf1r { namespace laser { namespace clustering {
 class ComputationTool
 {
@@ -27,7 +27,7 @@ public:
     ComputationTool(int thread, std::queue<type::ClusteringInfo>& path,
                     size_t min_clustering_doc_num_,
                     size_t max_clustering_doc_num_,
-                    const boost::unordered_map<std::string, type::Term>& terms,
+                    const boost::unordered_map<std::string, std::pair<int, int> >& terms,
                     type::ClusteringDataAdapter* clusteringDataAdpater_)
         : min_clustering_doc_num(min_clustering_doc_num_)
         , max_clustering_doc_num(max_clustering_doc_num_)
@@ -36,23 +36,23 @@ public:
         , clusteringDataAdpater(clusteringDataAdpater_)
         , terms_(terms)
     {
+        thread_.reserve(THREAD_NUM_);
     }
 
     void start()
     {
         boost::function0<void> f = boost::bind(&ComputationTool::run, this);
-        std::vector<boost::thread*> thread_array;
         for(int i = 0; i < THREAD_NUM_; i++)
         {
             boost::thread* bt = new boost::thread(f);
-            thread_array.push_back(bt);
+            thread_.push_back(bt);
         }
     }
 
     void join()
     {
-        for(std::vector<boost::thread*>::iterator iter = thread_array.begin();
-                iter != thread_array.end(); iter++)
+        for(std::vector<boost::thread*>::iterator iter = thread_.begin();
+                iter != thread_.end(); iter++)
         {
             (*iter)->join();
             delete (*iter);
@@ -75,14 +75,45 @@ private:
         }
     }
 
+    int map(const std::string& clustering)
+    {
+        int ret = get(clustering);
+        if (-1 == ret)
+        {
+            return set(clustering);
+        }
+        return ret;
+    }
+
+    int get(const std::string& clustering)
+    {
+        boost::shared_lock<boost::shared_mutex> sharedLock(clusteringIdMapMutex_);
+        SegmentTool::Dictionary::const_iterator it = clusteringIdMap_.find(clustering);
+        if (clusteringIdMap_.end() == it)
+        {
+            return -1;
+        }
+        return it->second;
+    }
+
+    int set(const std::string& clustering)
+    {
+        boost::unique_lock<boost::shared_mutex> uniqueLock(clusteringIdMapMutex_);
+        int id = clusteringIdMap_.size();
+        clusteringIdMap_[clustering] = id;
+        return id;
+    }
 private:
     const std::size_t min_clustering_doc_num;
     const std::size_t max_clustering_doc_num;
     const int THREAD_NUM_;
+    std::vector<boost::thread*> thread_;
     std::queue<type::ClusteringInfo>& infos;
     type::ClusteringDataAdapter* clusteringDataAdpater;
-    const boost::unordered_map<std::string, type::Term>& terms_;
+    const boost::unordered_map<std::string, std::pair<int, int> >& terms_;
     boost::mutex io_mutex;
+    SegmentTool::Dictionary clusteringIdMap_;
+    boost::shared_mutex clusteringIdMapMutex_;
 
 };
 
