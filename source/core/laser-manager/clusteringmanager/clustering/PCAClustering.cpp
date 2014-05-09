@@ -55,7 +55,6 @@ PCAClustering::~PCAClustering()
     term_dictionary.save();
     ClusteringListDes::get()->close();
     CatDictionary::get()->close();
-    segmentTool_.stop();
 }
 
 void PCAClustering::execute(ClusteringDataAdapter* cda, int threadnum)
@@ -65,7 +64,7 @@ void PCAClustering::execute(ClusteringDataAdapter* cda, int threadnum)
     //unordered_map<string, string> catlist = ClusteringListDes::get()->get_cat_list();
     //unordered_map<string, string> catpathlist = ClusteringListDes::get()->get_cat_path();
     //limit the term number
-    term_dictionary.sort(max_clustering_term_num);
+    term_dictionary.limit(max_clustering_term_num);
     unordered_map<string, pair<int, int> > terms = term_dictionary.getTerms();
     queue<string> paths;
     ClusteringListDes::get()->generate_clustering_mid_result_paths(paths);
@@ -76,6 +75,7 @@ void PCAClustering::execute(ClusteringDataAdapter* cda, int threadnum)
     ClusteringListDes::get()->get_clustering_infos(infos); 
     ComputationTool ct(threadnum, infos, min_clustering_doc_num, max_clustering_doc_num,terms, cda);
     ct.start();
+    ct.join();
 }
 
 void PCAClustering::next(const std::string& title, const std::string& category, const std::string& docid)
@@ -85,7 +85,7 @@ void PCAClustering::next(const std::string& title, const std::string& category, 
     const char* end = pos + category.size();
     for (; pos < end; ++pos)
     {
-        if ('\\' == *pos)
+        if ('/' != *pos)
             refineCategory += *pos;
     }
     OriDocument od(title, refineCategory, docid);

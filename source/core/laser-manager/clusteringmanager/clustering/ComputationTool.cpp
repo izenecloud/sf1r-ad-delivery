@@ -10,23 +10,26 @@ void ComputationTool::run()
         izene_reader_pointer reader = openFile<izene_reader>(info.clusteringMidPath, true);
         izene_writer_pointer writer = openFile<izene_writer>(info.clusteringResPath, true);
         izene_writer_pointer clustering_term_pow_writer = openFile<izene_writer>(info.clusteringPowPath, true);
-        std::string older = "";
         bool next = true;
         type::ClusteringInfo clusteringInfo;
         type::ClusteringData clusteringData;
         std::vector<type::Document>& c_cat_vector = clusteringData.clusteringData;
         c_cat_vector.reserve(max_clustering_doc_num);
         boost::unordered_map<std::string, float>& mean_pow = clusteringInfo.clusteringPow;
-        std::string cat = "";
+        typedef std::pair<std::string, type::Document> ValueClass;
+        typedef hash_t KeyClass;
+        KeyClass lastKey = -1;
+        ValueClass lastValue;
         do 
         {
-            type::Document value("");
-            next = reader->Next(cat, value);
-            if (older != cat)   //new clustering or the last document
+            ValueClass value;
+            KeyClass key = -1;
+            next = reader->Next(key, value);
+            if (key != lastKey)   //new clustering or the last document
             {
                 if (c_cat_vector.size() > min_clustering_doc_num)
                 {
-                    int id = map(older);
+                    int id = map(lastValue.first);
                     clusteringData.clusteringHash = id;
                     clusteringInfo.clusteringHash = id;
                     clusteringInfo.clusteringname = "";
@@ -34,7 +37,7 @@ void ComputationTool::run()
                                     c_cat_vector.begin(); iter != c_cat_vector.end();
                                 iter++)
                     {
-                        writer->Append(cat, *iter);
+                        writer->Append(lastValue.first, *iter);
                     }
                     int c_count = c_cat_vector.size();
                     for (boost::unordered_map<std::string, float>::iterator iter = mean_pow.begin();
@@ -45,14 +48,15 @@ void ComputationTool::run()
                     clusteringInfo.clusteringDocNum = c_count;
                     //save to kv-db or else
                     clusteringDataAdpater->save(clusteringData, clusteringInfo);
-                    clustering_term_pow_writer->Append(cat, mean_pow);
+                    clustering_term_pow_writer->Append(lastValue.first, mean_pow);
                 }
                 mean_pow.clear();
                 c_cat_vector.clear();
-                older = cat;
+                lastKey = key;
+                lastValue.first = value.first;
             }
-            type::Document new_value(value.doc_id);
-            boost::unordered_map<std::string, float> tf = value.terms;
+            type::Document new_value(value.second.doc_id);
+            boost::unordered_map<std::string, float> tf = value.second.terms;
             for (boost::unordered_map<std::string, float>::iterator iter = tf.begin();
                         iter != tf.end(); iter++)
             {
@@ -79,18 +83,20 @@ void ComputationTool::run()
             }
         }
         while (next);
+        
         {
             // code for last category
                 if (c_cat_vector.size() > min_clustering_doc_num)
                 {
-                    clusteringData.clusteringHash = Hash_(older);
-                    clusteringInfo.clusteringHash = Hash_(older);
+                    int id = map(lastValue.first);
+                    clusteringData.clusteringHash = id;
+                    clusteringInfo.clusteringHash = id;
                     clusteringInfo.clusteringname = "";
                     for (std::vector<type::Document>::iterator iter =
                                     c_cat_vector.begin(); iter != c_cat_vector.end();
                                 iter++)
                     {
-                        writer->Append(cat, *iter);
+                        writer->Append(lastValue.first, *iter);
                     }
                     int c_count = c_cat_vector.size();
                     for (boost::unordered_map<std::string, float>::iterator iter = mean_pow.begin();
@@ -101,7 +107,7 @@ void ComputationTool::run()
                     clusteringInfo.clusteringDocNum = c_count;
                     //save to kv-db or else
                     clusteringDataAdpater->save(clusteringData, clusteringInfo);
-                    clustering_term_pow_writer->Append(cat, mean_pow);
+                    clustering_term_pow_writer->Append(lastValue.first, mean_pow);
                 }
         }
         closeFile<izene_writer>(clustering_term_pow_writer);

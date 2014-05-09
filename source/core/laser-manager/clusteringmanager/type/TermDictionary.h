@@ -90,25 +90,20 @@ public:
          
     }
 
-    void sort(size_t limit= 0)
+    void limit(std::size_t ls)
     {
-        /*std::vector<std::pair<std::string,Term> > terms(terms_.begin(),terms_.end());
-        std::sort(terms.begin(),terms.end(), Term::compare);
-        std::vector<std::pair<std::string,Term> > toMove;
-        //index begin with 1!!!
-        size_t count = 1;
-        for(vector< pair<std::string,Term> >::iterator iter = terms.begin(); iter != terms.end(); iter++)
+        if (terms_.size() <= ls)
+            return;
+
+        std::vector<std::pair<std::string, std::pair<int, int> > > terms(terms_.begin(),terms_.end());
+        std::sort(terms.begin(),terms.end(), compare);
+        terms_.clear();
+
+        for (std::size_t i = 0; i < ls; ++i)
         {
-            if(limit != 0 && count > limit)
-            {
-                terms_.erase(iter->first);
-            }
-            else
-            {
-                terms_[iter->first].index = count;
-            }
-            count++;
-        }*/
+            //std::cout<<terms[i].first<<"\t"<<terms[i].second.first<<"\n";
+            terms_[terms[i].first] = std::make_pair(terms[i].second.first, terms_.size());
+        }
     }
 
     boost::unordered_map<std::string, std::pair<int, int> >& getTerms()
@@ -131,8 +126,15 @@ public:
         }
         ofs.close();
     }
-
 private:
+    static bool compare(const std::pair<std::string, std::pair<int, int> >& lv,
+        const std::pair<std::string, std::pair<int, int> >& rv)
+    {
+        return lv.second.first > rv.second.first;
+    }
+private:
+    // first int : count;
+    // second int : index
     boost::unordered_map<std::string, std::pair<int, int> > terms_;;
     const std::string workdir_;
 };

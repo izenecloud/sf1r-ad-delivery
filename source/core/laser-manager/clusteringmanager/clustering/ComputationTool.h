@@ -64,7 +64,7 @@ private:
 
     bool getNext(type::ClusteringInfo& info)
     {
-        boost::mutex::scoped_lock lock(io_mutex);
+        boost::unique_lock<boost::shared_mutex> uniqueLock(io_mutex);
         if(infos.empty())
             return false;
         else
@@ -111,9 +111,9 @@ private:
     std::queue<type::ClusteringInfo>& infos;
     type::ClusteringDataAdapter* clusteringDataAdpater;
     const boost::unordered_map<std::string, std::pair<int, int> >& terms_;
-    boost::mutex io_mutex;
     SegmentTool::Dictionary clusteringIdMap_;
     boost::shared_mutex clusteringIdMapMutex_;
+    boost::shared_mutex io_mutex;
 
 };
 

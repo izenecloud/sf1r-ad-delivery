@@ -132,7 +132,10 @@ public:
 private:
     const std::string generate_path(const std::string& cate, const string& suffix)
     {
-        std::string cat_path = workdir_ + cate + suffix;
+        std::stringstream ss;
+        ss<<Hash_(cate);
+        std::string cat_path = workdir_ + ss.str() + suffix;
+        //std::cout<<workdir_<<"\t"<<cate<<"\t"<<suffix<<"\n";
         cat_path_map[cate] = cat_path;
         return cat_path;
     }

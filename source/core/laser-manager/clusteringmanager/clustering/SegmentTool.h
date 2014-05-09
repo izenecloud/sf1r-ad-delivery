@@ -153,7 +153,7 @@ private:
         return exit_;
     }
     
-    void calc_(DocumentVecType& docv, std::size_t size, Dictionary& ccnt, Dictionary& termList);
+    DocumentVecType::iterator calc_(DocumentVecType& docv, std::size_t size, Dictionary& ccnt, Dictionary& termList);
     
     void mergeTerm_()
     {

@@ -4,11 +4,11 @@
 
 namespace sf1r { namespace laser { namespace clustering {
 
-void SegmentTool::calc_(DocumentVecType& docv, std::size_t size, Dictionary& ccnt, Dictionary& termList)
+SegmentTool::DocumentVecType::iterator  SegmentTool::calc_(DocumentVecType& docv, std::size_t size, Dictionary& ccnt, Dictionary& termList)
 {
     typedef izenelib::util::second_greater<std::pair<std::string, float> > greater_than;
     DocumentVecType::iterator iter = docv.begin();
-    for (std::size_t i = 0; i < size; ++i)
+    for (std::size_t i = 0; i < size; ++i, ++iter)
     {
         //const OriDocument* iter = &(docv[i]);
         std::vector<std::pair<std::string, float> > tks;
@@ -64,10 +64,11 @@ void SegmentTool::calc_(DocumentVecType& docv, std::size_t size, Dictionary& ccn
                 // expand category
             }
         }
+        //std::cout<<iter->category<<"\n";
         type::ClusteringListDes::get()->get_cat_mid_writer(
-            iter->category)->Append(cateMerge, d);
-        iter = docv.erase(iter);
+            iter->category)->Append(Hash_(cateMerge), std::make_pair(cateMerge, d));
     }
+    return iter;
 }
 
 void SegmentTool::run(ThreadContext* context)
@@ -89,9 +90,9 @@ void SegmentTool::run(ThreadContext* context)
         }
         else
         {
-            calc_(*docs, size, *cat, *terms);
+            DocumentVecType::iterator end = calc_(*docs, size, *cat, *terms);
             boost::unique_lock<boost::shared_mutex> uniqueLock(*mutex);
-            //docs->erase(docs->begin(), docs->begin() + size);
+            docs->erase(docs->begin(), end);
         }
     }
 }
