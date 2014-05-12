@@ -16,7 +16,7 @@ SegmentTool::DocumentVecType::iterator  SegmentTool::calc_(DocumentVecType& docv
         std::string brand, mdt;
         tok.pca(iter->title, tks, brand, mdt, subtks, false);
         double tot = 0, now = 0;
-        /*for (size_t i = 0; i < tks.size(); ++i)
+        for (size_t i = 0; i < tks.size(); ++i)
         {
             if (mdt == tks[i].first)
                 tks[i].second = 0;
@@ -25,9 +25,9 @@ SegmentTool::DocumentVecType::iterator  SegmentTool::calc_(DocumentVecType& docv
 
         if(tot == 0)
         {
-            //std::cout<<iter->title<<"\n";
-            continue;
-        }*/
+            tot = 1.0;
+            now = 1.0;
+        }
             
         std::sort(tks.begin(), tks.end(), greater_than());
             
@@ -45,11 +45,18 @@ SegmentTool::DocumentVecType::iterator  SegmentTool::calc_(DocumentVecType& docv
             {
                 termList[tks[i].first]++;
             }
-        // TODO
-        //}
-        //for (size_t i = 0; i < tks.size(); ++i)
-        //{
-            d.add(tks[i].first, tks[i].second/tot);
+            d.add(tks[i].first, tks[i].second / tot);
+        }
+        
+        if (now >= 0.9)
+        {
+            type::ClusteringListDes::get()->get_cat_mid_writer(
+                iter->category)->Append(Hash_(cateMerge), std::make_pair(cateMerge, d));
+            continue;
+        }
+
+        for (size_t i = 0; i < tks.size(); ++i)
+        {
             now += tks[i].second;
             cateMerge += tks[i].first;
             if (now > tot * THRESHOLD_)   //check whether the document number in this category reach the limit
@@ -58,12 +65,12 @@ SegmentTool::DocumentVecType::iterator  SegmentTool::calc_(DocumentVecType& docv
                 if (ccnt.end() == it)
                 {
                     ccnt[cateMerge] = 1;
-                    break;
+                    //break;
                 }
                 else if (it->second < MAX_DOC_PER_CLUSTERING_)
                 {
                     it->second++;
-                    break;
+                    //break;
                 }
                 // expand category
             }
@@ -83,10 +90,13 @@ void SegmentTool::run(ThreadContext* context)
     Dictionary* terms = context->terms_;
     while(true)
     {
+        //DocumentVecType* docv;
         std::size_t size = 0;
         {
             boost::unique_lock<boost::shared_mutex> uniqueLock(*mutex);    
             size = docs->size();
+            //docv = new DocumentVecType(*docs);
+            //docs->clear();
         }
         if (0 == size)
         {
