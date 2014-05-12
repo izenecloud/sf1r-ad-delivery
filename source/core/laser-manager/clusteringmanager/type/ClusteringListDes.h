@@ -125,18 +125,14 @@ public:
         for (boost::unordered_map<std::string, std::string>::iterator it = cat_path_map.begin();
                 it != cat_path_map.end(); ++it)
         {
-            paths.push(workdir_ + it->first + MID_SUFFIX);
+            paths.push(it->second);
         }
     }
 
 private:
     const std::string generate_path(const std::string& cate, const string& suffix)
     {
-        std::stringstream ss;
-        ss<<Hash_(cate);
-        std::string cat_path = workdir_ + ss.str() + suffix;
-        //std::cout<<workdir_<<"\t"<<cate<<"\t"<<suffix<<"\n";
-        cat_path_map[cate] = cat_path;
+        std::string cat_path = workdir_ + cate + suffix;
         return cat_path;
     }
 
@@ -147,7 +143,9 @@ private:
 
     const std::string generate_clustering_mid_result_path(const std::string& cate)
     {
-        return generate_path(cate, MID_SUFFIX);
+        const std::string& cat_path =  generate_path(cate, MID_SUFFIX);
+        cat_path_map[cate] = cat_path;
+        return cat_path;
     }
     /**
      * generate the clustering final result path
@@ -235,86 +233,3 @@ private:
 
 } } } }
 #endif /* CATFILES_H_ */
-    
-    /*
-    std::map<hash_t, string> get_cat_list()
-    {
-        return this->cat_name_map;
-    }
-    std::map<hash_t, string> get_cat_path()
-    {
-        return this->cat_path_map;
-    }
-
-    string getCatFileListDesFilename()
-    {
-        return cat_file_list_des_filename;
-    }
-
-    void setCatFileListDesFilename(string catFileListDesFilename)
-    {
-        cat_file_list_des_filename = catFileListDesFilename;
-    }
-
-    map<hash_t, izene_reader_pointer> getCatFinalClusteringReaders()
-    {
-        return cat_final_clustering_readers_;
-    }
-
-    void setCatFinalClusteringReaders(
-        map<hash_t, izene_reader_pointer> catFinalClusteringReaders)
-    {
-        cat_final_clustering_readers_ = catFinalClusteringReaders;
-    }
-
-    map<hash_t, izene_writer_pointer> getCatFinalClusteringWriters()
-    {
-        return cat_final_clustering_writers_;
-    }
-
-    void setCatFinalClusteringWriters(
-        map<hash_t, izene_writer_pointer> catFinalClusteringWriters)
-    {
-        cat_final_clustering_writers_ = catFinalClusteringWriters;
-    }
-
-    map<hash_t, izene_reader_pointer> getCatMidClusteringReaders()
-    {
-        return cat_mid_clustering_readers_;
-    }
-
-    void setCatMidClusteringReaders(
-        const map<hash_t, izene_reader_pointer>& catMidClusteringReaders)
-    {
-        cat_mid_clustering_readers_ = catMidClusteringReaders;
-    }
-
-    map<hash_t, izene_writer_pointer>& getCatMidClusteringWriters()
-    {
-        return cat_mid_clustering_writers_;
-    }
-
-    const map<hash_t, string>& getCatNameMap() const
-    {
-        return cat_name_map;
-    }
-
-    const map<hash_t, string>& getCatPathMap() const
-    {
-        return cat_path_map;
-    }
-
-    const string& getClusteringDir() const
-    {
-        return clustering_dir;
-    }
-
-    STATUS getClusteringFileStatus()
-    {
-        return clustering_file_status;
-    }
-
-    void setClusteringFileStatus(STATUS clusteringFileStatus)
-    {
-        clustering_file_status = clusteringFileStatus;
-    }*/
