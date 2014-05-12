@@ -158,8 +158,9 @@ void RpcServer::dispatch(msgpack::rpc::request req)
                 for (std::size_t i = 0; i < info_list_.size(); ++i)
                 {
                     const boost::unordered_map<std::string, float>& pow = info_list_[i].getClusteringVector();
-                    std::map<int, float> vec;
-                    TermParser::get()->numeric(pow, vec);
+                    clustering::rpc::ClusteringInfo vec;
+                    vec.clusteringIndex = info_list_[i].getClusteringIndex();
+                    TermParser::get()->numeric(pow, vec.pow);
                     gir.info_list_.push_back(vec);
                 }
                 LOG(INFO) << "method:" <<method <<" data req total"<< gir.info_list_.size() << std::endl;
@@ -172,8 +173,9 @@ void RpcServer::dispatch(msgpack::rpc::request req)
                 LOG(INFO) << "method:" <<method <<" data req one"<< res << std::endl;
                 if(res == true)
                 {
-                    std::map<int, float> vec;
-                    TermParser::get()->numeric(newinfo.getClusteringVector(), vec);
+                    clustering::rpc::ClusteringInfo vec;
+                    vec.clusteringIndex = newinfo.getClusteringIndex();
+                    TermParser::get()->numeric(newinfo.getClusteringVector(), vec.pow);
                     gir.info_list_.push_back(vec);
                 }
 

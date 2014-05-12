@@ -36,6 +36,11 @@ public:
     {
         return clusteringPow;
     }
+    
+    const hash_t getClusteringIndex() const
+    {
+        return clusteringHash;
+    }
 public:
     std::string clusteringname;
     std::string clusteringMidPath;

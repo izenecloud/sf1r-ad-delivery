@@ -58,9 +58,16 @@ struct GetClusteringInfoRequest: public RequestData
     MSGPACK_DEFINE(clusteringhash_);
 };
 
+struct ClusteringInfo
+{
+    clustering::hash_t clusteringIndex;
+    std::map<int, float> pow;
+    MSGPACK_DEFINE(clusteringIndex, pow);
+};
+
 struct GetClusteringInfosResult
 {
-    std::vector<std::map<int, float> > info_list_;
+    std::vector<ClusteringInfo> info_list_;
     MSGPACK_DEFINE(info_list_);
 };
 struct GetClusteringItemResult
