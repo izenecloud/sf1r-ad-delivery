@@ -7,7 +7,6 @@
 #include "SuffixMatchConfig.h"
 #include "ZambeziConfig.h"
 #include "AdIndexConfig.h"
-
 #include <stdint.h>
 #include <string>
 #include <boost/serialization/access.hpp>

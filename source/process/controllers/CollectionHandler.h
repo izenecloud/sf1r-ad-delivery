@@ -43,6 +43,8 @@ public:
     bool update(const ::izenelib::driver::Value& document);
     bool update_inplace(const ::izenelib::driver::Value& request);
     bool destroy(const ::izenelib::driver::Value& document);
+    
+    void laserRecomend(::izenelib::driver::Request& request, ::izenelib::driver::Response& response);
 
     //////////////////////////////////////////
     //    Helpers

@@ -59,7 +59,7 @@ void checkProperty(
     BOOST_REQUIRE(it != doc.propertyEnd());
 
     const PropertyValue& value = it->second;
-    BOOST_CHECK_EQUAL(value.get<int32_t>(), propValue);
+    BOOST_CHECK_EQUAL(value.get<boost::int32_t>(), propValue);
 }
 
 void checkProperty(
@@ -110,7 +110,7 @@ void prepareDocument(
     property = str_to_propstr(docInput.dateStr_, ENCODING_TYPE);
     document.property(PROP_NAME_GROUP_DATETIME) = property;
 
-    document.property(PROP_NAME_GROUP_INT) = lexical_cast<int32_t>(docInput.groupInt_);
+    document.property(PROP_NAME_GROUP_INT) = lexical_cast<boost::int32_t>(docInput.groupInt_);
     document.property(PROP_NAME_GROUP_FLOAT) = lexical_cast<float>(docInput.groupFloat_);
 }
 

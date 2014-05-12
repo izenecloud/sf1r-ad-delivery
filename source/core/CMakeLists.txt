@@ -26,6 +26,7 @@ FILE(GLOB_RECURSE aggregator_SRC "aggregator-manager/*.cpp")
 FILE(GLOB_RECURSE node_SRC "node-manager/*.cpp")
 FILE(GLOB sf1r_net_SRC "sf1r-net/*.cpp")
 FILE(GLOB ad_SRC "ad-manager/*.cpp" "ad-manager/sponsored-ad-search/*.cpp")
+FILE(GLOB laser_SRC "laser-manager/*.cpp")
 
 FILE(GLOB index_SRC
   "index-manager/zambezi-manager/*.cpp"
@@ -55,6 +56,15 @@ FILE(GLOB mining_SRC
   "mining-manager/suffix-match-manager/*.cpp"
 )
 
+FILE(GLOB laser_SRC
+    "laser-manager/*.cpp"
+    "laser-manager/predict/*.cpp"
+    "laser-manager/service/*.cpp"
+    "laser-manager/clusteringmanager/clustering/*.cpp"
+    "laser-manager/clusteringmanager/common/*.cpp"
+    "laser-manager/clusteringmanager/type/*.cpp"
+)
+
 ADD_DEFINITIONS("-fno-strict-aliasing")
 ADD_LIBRARY(sf1r_configuration_manager ${configuration_SRC})
 ADD_LIBRARY(sf1r_la_manager ${la_SRC})
@@ -71,6 +81,7 @@ ADD_LIBRARY(sf1r_aggregator_manager ${aggregator_SRC})
 ADD_LIBRARY(sf1r_node_manager ${node_SRC})
 ADD_LIBRARY(sf1r_net ${sf1r_net_SRC})
 ADD_LIBRARY(sf1r_ad_manager ${ad_SRC})
+ADD_LIBRARY(sf1r_laser_manager ${laser_SRC})
 
 INSTALL(TARGETS
     sf1r_configuration_manager
@@ -88,6 +99,7 @@ INSTALL(TARGETS
     sf1r_node_manager
     sf1r_net
     sf1r_ad_manager
+    sf1r_laser_manager
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     COMPONENT sf1r_libraries)

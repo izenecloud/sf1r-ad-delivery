@@ -9,7 +9,7 @@ using namespace boost::posix_time;
 
 namespace sf1r
 {
-
+typedef boost::uint32_t uint32_t;
 const char* UserQuery::ColumnName[EoC] = { "query", "collection", "hit_docs_num", \
         "page_start", "page_count", "session_id", "duration" , "TimeStamp"
                                          };

@@ -3,6 +3,7 @@ headers:
   - controllers/DocumentsController.h
   - controllers/StatusController.h
   - controllers/CollectionController.h
+  - controllers/LaserController.h
 
 controllers:
   CommandsController:
@@ -11,6 +12,7 @@ controllers:
       - optimize_index
       - mining
       - train_ctr_model
+      - load_laser_clustering
 
   DocumentsController:
     actions:
@@ -46,4 +48,8 @@ controllers:
       - backup_all
       - create_collection
       - delete_collection
+  
+  LaserController:
+    actions:
+      - recommend
 

@@ -36,6 +36,7 @@
 #include <index-manager/zambezi-manager/ZambeziManager.h>
 
 #include <ad-manager/AdIndexManager.h>
+#include <laser-manager/LaserManager.h>
 
 #include <search-manager/SearchManager.h>
 #include <search-manager/NumericPropertyTableBuilderImpl.h>
@@ -166,6 +167,7 @@ MiningManager::MiningManager(
     , searchManager_(searchManager)
     , searchCache_(searchCache)
     , adSearchService_(adSearchService)
+    , laserManager_(NULL)
     , idManager_(idManager)
     , numericTableBuilder_(NULL)
     , rtypeStringPropTableBuilder_(NULL)
@@ -208,6 +210,7 @@ MiningManager::~MiningManager()
     if (rtypeStringPropTableBuilder_) delete rtypeStringPropTableBuilder_;
     if (suffixMatchManager_) delete suffixMatchManager_;
     if (productTokenizer_) delete productTokenizer_;
+    if (laserManager_) delete laserManager_;
 
     close();
 }
@@ -442,6 +445,9 @@ bool MiningManager::open()
             !initProductScorerFactory_(rankConfig) ||
             !initProductRankerFactory_(rankConfig))
             return false;
+
+       /** laser */
+       laserManager_=new LaserManager(adSearchService_);
     }
     catch (NotEnoughMemoryException& ex)
     {
