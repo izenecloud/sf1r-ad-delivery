@@ -36,7 +36,6 @@ public:
         std::string path;
         while(getNext(path))
         {
-            LOG(INFO)<<path;
             izenelib::am::ssf::Sorter<uint32_t, hash_t>::Sort(path);
         }
     }
