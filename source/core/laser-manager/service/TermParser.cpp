@@ -10,8 +10,8 @@ using namespace sf1r::laser::clustering::type;
 using namespace ilplib::knlp;
 namespace sf1r { namespace laser { namespace clustering { namespace rpc {
 TermParser::TermParser()
-    : termDict_(NULL)
-    , tok(NULL)
+    : tok(NULL)
+    , termDict_(NULL)
 {
 }
 TermParser::~TermParser()

@@ -167,6 +167,7 @@ MiningManager::MiningManager(
     , searchManager_(searchManager)
     , searchCache_(searchCache)
     , adSearchService_(adSearchService)
+    , laserManager_(NULL)
     , idManager_(idManager)
     , numericTableBuilder_(NULL)
     , rtypeStringPropTableBuilder_(NULL)
@@ -186,7 +187,6 @@ MiningManager::MiningManager(
     , adIndexManager_(NULL)
     , miningTaskBuilder_(NULL)
     , multiThreadMiningTaskBuilder_(NULL)
-    , laserManager_(NULL)
     , hasDeletedDocDuringMining_(false)
 {
 }
