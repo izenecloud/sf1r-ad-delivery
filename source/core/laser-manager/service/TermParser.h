@@ -16,14 +16,7 @@
 #include "laser-manager/clusteringmanager/type/TermDictionary.h"
 #include "DataType.h"
 
-namespace sf1r
-{
-namespace laser
-{
-namespace clustering
-{
-namespace rpc
-{
+namespace sf1r { namespace laser { namespace clustering { namespace rpc {
 class TermParser
 {
 public:
@@ -38,6 +31,8 @@ public:
     bool init(const std::string& workdir, const std::string& dictionPath);
     void reload(const std::string& clusteringRoot);
     void parse(const clustering::rpc::SplitTitle& title, clustering::rpc::SplitTitleResult& res) const;
+
+    void numeric(const boost::unordered_map<std::string, float>& pow, std::map<int, float>& res) const;
     
 private:
     ilplib::knlp::TitlePCA* tok; //the pca
@@ -46,9 +41,6 @@ private:
     type::TermDictionary* termDict_;
     mutable boost::shared_mutex mutex_;
 };
-}
-}
-}
-}
+} } } }
 
 #endif /* TERMPARSER_H_ */

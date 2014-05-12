@@ -153,18 +153,28 @@ void RpcServer::dispatch(msgpack::rpc::request req)
             GetClusteringInfosResult gir;
             if(params.get<0>().clusteringhash_ == 0)
             {
-                ClusteringDataStorage::get()->loadClusteringInfos(gir.info_list_);
+                std::vector<clustering::type::ClusteringInfo> info_list_;
+                ClusteringDataStorage::get()->loadClusteringInfos(info_list_);
+                for (std::size_t i = 0; i < info_list_.size(); ++i)
+                {
+                    const boost::unordered_map<std::string, float>& pow = info_list_[i].getClusteringVector();
+                    std::map<int, float> vec;
+                    TermParser::get()->numeric(pow, vec);
+                    gir.info_list_.push_back(vec);
+                }
                 LOG(INFO) << "method:" <<method <<" data req total"<< gir.info_list_.size() << std::endl;
                 req.result(gir);
             }
             else
             {
-                ClusteringInfo newinfo;
+                clustering::type::ClusteringInfo newinfo;
                 bool res = ClusteringDataStorage::get()->loadClusteringInfo(params.get<0>().clusteringhash_, newinfo);
                 LOG(INFO) << "method:" <<method <<" data req one"<< res << std::endl;
                 if(res == true)
                 {
-                    gir.info_list_.push_back(newinfo);
+                    std::map<int, float> vec;
+                    TermParser::get()->numeric(newinfo.getClusteringVector(), vec);
+                    gir.info_list_.push_back(vec);
                 }
 
                 req.result(gir);

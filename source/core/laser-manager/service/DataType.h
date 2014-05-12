@@ -35,16 +35,6 @@ struct TestData: public RequestData
     MSGPACK_DEFINE(test_);
 };
 
-struct SubscribeData: public RequestData
-{
-    std::string topic_;
-    std::string ip_;
-    int port_;
-    bool sub_;
-
-    MSGPACK_DEFINE(topic_, ip_, port_, sub_);
-};
-
 struct SplitTitle: public RequestData
 {
     std::string title_;
@@ -70,7 +60,7 @@ struct GetClusteringInfoRequest: public RequestData
 
 struct GetClusteringInfosResult
 {
-    std::vector<clustering::type::ClusteringInfo> info_list_;
+    std::vector<std::map<int, float> > info_list_;
     MSGPACK_DEFINE(info_list_);
 };
 struct GetClusteringItemResult

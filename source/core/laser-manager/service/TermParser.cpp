@@ -8,14 +8,7 @@
 #include "TermParser.h"
 using namespace sf1r::laser::clustering::type;
 using namespace ilplib::knlp;
-namespace sf1r
-{
-namespace laser
-{
-namespace clustering
-{
-namespace rpc
-{
+namespace sf1r { namespace laser { namespace clustering { namespace rpc {
 TermParser::TermParser()
     : termDict_(NULL)
     , tok(NULL)
@@ -92,8 +85,19 @@ void TermParser::parse(const clustering::rpc::SplitTitle& st,
     }
 
 }
-}
-}
-}
+
+void TermParser::numeric(const boost::unordered_map<std::string, float>& pow, std::map<int, float>& res) const
+{
+    boost::unordered_map<std::string, float>::const_iterator it = pow.begin();
+    for (; it != pow.end(); ++it)
+    {
+        boost::unordered_map<std::string, std::pair<int, int> >::const_iterator thisIt = termDict_->getTerms().find(it->first);
+        if (termDict_->getTerms().end() != thisIt)
+        {
+            res[thisIt->second.second] = it->second; 
+        }
+    }
 }
 
+
+} } } }
