@@ -8,16 +8,15 @@ SegmentTool::DocumentVecType::iterator  SegmentTool::calc_(DocumentVecType& docv
 {
     typedef izenelib::util::second_greater<std::pair<std::string, float> > greater_than;
     DocumentVecType::iterator iter = docv.begin();
-    for (std::size_t i = 0; i < size; ++i, ++iter)
+    for (std::size_t k = 0; k < size; ++k, ++iter)
     {
-        //const OriDocument* iter = &(docv[i]);
         std::vector<std::pair<std::string, float> > tks;
         std::pair<std::string, float> tmp;
         std::vector<std::pair<std::string, float> > subtks;
         std::string brand, mdt;
         tok.pca(iter->title, tks, brand, mdt, subtks, false);
         double tot = 0, now = 0;
-        for (size_t i = 0; i < tks.size(); ++i)
+        /*for (size_t i = 0; i < tks.size(); ++i)
         {
             if (mdt == tks[i].first)
                 tks[i].second = 0;
@@ -26,8 +25,9 @@ SegmentTool::DocumentVecType::iterator  SegmentTool::calc_(DocumentVecType& docv
 
         if(tot == 0)
         {
+            //std::cout<<iter->title<<"\n";
             continue;
-        }
+        }*/
             
         std::sort(tks.begin(), tks.end(), greater_than());
             
@@ -81,7 +81,7 @@ void SegmentTool::run(ThreadContext* context)
     DocumentVecType* docs = context->docs_;
     Dictionary* cat = context->cat_;
     Dictionary* terms = context->terms_;
-    while(!isExit_())
+    while(true)
     {
         std::size_t size = 0;
         {
@@ -90,6 +90,8 @@ void SegmentTool::run(ThreadContext* context)
         }
         if (0 == size)
         {
+            if (isExit_())
+                break;
             boost::this_thread::sleep(boost::posix_time::milliseconds(2000));
         }
         else
