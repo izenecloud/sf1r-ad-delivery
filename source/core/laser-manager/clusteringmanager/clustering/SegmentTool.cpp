@@ -45,6 +45,10 @@ SegmentTool::DocumentVecType::iterator  SegmentTool::calc_(DocumentVecType& docv
             {
                 termList[tks[i].first]++;
             }
+        // TODO
+        //}
+        //for (size_t i = 0; i < tks.size(); ++i)
+        //{
             d.add(tks[i].first, tks[i].second/tot);
             now += tks[i].second;
             cateMerge += tks[i].first;

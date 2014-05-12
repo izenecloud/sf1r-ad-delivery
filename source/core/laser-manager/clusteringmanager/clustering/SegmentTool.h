@@ -103,12 +103,20 @@ public:
 public:
     void push_back(std::string cat, OriDocument& doc)
     {
-        int index = Hash_(cat) % THREAD_NUM_;
-        boost::shared_mutex* mutex = (*context_)[index]->mutex_;
-        DocumentVecType* docs = (*context_)[index]->docs_;
-        boost::unique_lock<boost::shared_mutex> uniqueLock(*mutex);
-        //docs->insert(docs->end(),vec.begin(), vec.end()); 
-        docs->push_back(doc);
+        boost::unordered_map<std::string, std::list<OriDocument> >::iterator it = cache_.find(cat);
+        if (cache_.end() != it)
+        {
+            it->second.push_back(doc);
+            if (it->second.size() > CACHE_THRESHOLD)
+            {
+                push_back(it);
+                it->second.clear();
+            }
+        }
+        else
+        {
+            cache_[cat].push_back(doc);
+        }
     }
     
     
@@ -124,6 +132,14 @@ public:
     
     void stop()
     {
+        {
+            boost::unordered_map<std::string, std::list<OriDocument> >::iterator it = cache_.begin();
+            for (; it != cache_.end(); ++it)
+            {
+                push_back(it);
+            }
+            cache_.clear();
+        }
         {
             boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
             exit_ = true;
@@ -146,6 +162,21 @@ public:
      
 private:
     void run(ThreadContext* context);
+
+    void push_back(boost::unordered_map<std::string, std::list<OriDocument> >::const_iterator cache)
+    {
+        const std::string cat = cache->first;
+        int index = Hash_(cat) % THREAD_NUM_;
+        boost::shared_mutex* mutex = (*context_)[index]->mutex_;
+        DocumentVecType* docs = (*context_)[index]->docs_;
+        //docs->insert(docs->end(),vec.begin(), vec.end());
+        std::list<OriDocument>::const_iterator it = cache->second.begin();
+        boost::unique_lock<boost::shared_mutex> uniqueLock(*mutex);
+        for (; it != cache->second.end(); ++it)
+        {
+            docs->push_back(*it);
+        }
+    }
     
     bool isExit_()
     {
@@ -172,12 +203,14 @@ private:
     ilplib::knlp::TitlePCA tok;
     std::vector<ThreadContext*>* context_;
     std::vector<boost::thread*>* thread_;
+    boost::unordered_map<std::string, std::list<OriDocument> > cache_;
     boost::shared_mutex mutex_;
     bool exit_;
     
     const std::size_t THREAD_NUM_;
     const float THRESHOLD_;
     const std::size_t MAX_DOC_PER_CLUSTERING_;
+    const static std::size_t CACHE_THRESHOLD = 1024;
 };
 } } }
 #endif /* SEGMENTTOOL_H_ */
