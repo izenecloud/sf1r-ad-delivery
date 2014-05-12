@@ -1,7 +1,7 @@
 #ifndef AD_FEEDBACK_MGR_H
 #define AD_FEEDBACK_MGR_H
 
-#include "sponsored-ad-search/AdAucationLogMgr.h"
+#include "sponsored-ad-search/AdAuctionLogMgr.h"
 #include <util/singleton.h>
 #include <boost/thread.hpp>
 #include <cache/concurrent_cache.hpp>
