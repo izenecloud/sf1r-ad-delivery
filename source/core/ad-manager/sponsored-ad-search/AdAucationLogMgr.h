@@ -75,7 +75,7 @@ public:
     void updateAdSearchStat(const std::set<BidKeywordId>& keyword_list,
         const std::vector<std::string>& ranked_ad_list);
     void updateAucationLogData(const std::string& ad_id, const BidPhraseT& keyword_list,
-        int click_cost, uint32_t click_slot);
+        int click_cost_in_fen, uint32_t click_slot);
 
     double getAdCTR(const std::string& adid);
     // clicked number for a day on the keyword.
@@ -87,6 +87,8 @@ public:
     int getAdAvgCost(const std::string& adid);
     double getKeywordCTR(BidKeywordId kid);
     void getKeywordBidLandscape(std::vector<BidKeywordId>& keyword_list,
+        std::vector<std::vector<std::pair<int, double> > >& cost_click_list);
+    void getAdLandscape(std::vector<std::string>& ad_list,
         std::vector<std::vector<std::pair<int, double> > >& cost_click_list);
 
 private:
