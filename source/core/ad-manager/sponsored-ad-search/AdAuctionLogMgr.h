@@ -1,5 +1,5 @@
-#ifndef AD_SPONSORED_AUCATIONLOG_MGR_H
-#define AD_SPONSORED_AUCATIONLOG_MGR_H
+#ifndef AD_SPONSORED_AUCTIONLOG_MGR_H
+#define AD_SPONSORED_AUCTIONLOG_MGR_H
 
 #include "AdCommonDataType.h"
 #include <util/singleton.h>
@@ -63,18 +63,18 @@ struct GlobalInfo
 
 typedef std::map<std::string, GlobalInfo> GlobalInfoDayListT;
 
-class AdAucationLogMgr
+class AdAuctionLogMgr
 {
 public:
-    static AdAucationLogMgr* get()
+    static AdAuctionLogMgr* get()
     {
-        return izenelib::util::Singleton<AdAucationLogMgr>::get();
+        return izenelib::util::Singleton<AdAuctionLogMgr>::get();
     }
 
-    AdAucationLogMgr();
+    AdAuctionLogMgr();
     void updateAdSearchStat(const std::set<BidKeywordId>& keyword_list,
         const std::vector<std::string>& ranked_ad_list);
-    void updateAucationLogData(const std::string& ad_id, const BidPhraseT& keyword_list,
+    void updateAuctionLogData(const std::string& ad_id, const BidPhraseT& keyword_list,
         int click_cost_in_fen, uint32_t click_slot);
 
     double getAdCTR(const std::string& adid);
