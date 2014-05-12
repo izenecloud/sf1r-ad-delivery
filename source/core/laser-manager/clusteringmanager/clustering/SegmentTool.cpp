@@ -65,12 +65,12 @@ SegmentTool::DocumentVecType::iterator  SegmentTool::calc_(DocumentVecType& docv
                 if (ccnt.end() == it)
                 {
                     ccnt[cateMerge] = 1;
-                    //break;
+                    break;
                 }
                 else if (it->second < MAX_DOC_PER_CLUSTERING_)
                 {
                     it->second++;
-                    //break;
+                    break;
                 }
                 // expand category
             }
