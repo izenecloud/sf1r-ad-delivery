@@ -13,6 +13,9 @@
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <am/sequence_file/ssfr.h>
+#include "laser-manager/clusteringmanager/type/Document.h"
+
+#include <glog/logging.h>
 namespace sf1r
 {
 namespace laser
@@ -33,7 +36,7 @@ public:
         std::string path;
         while(getNext(path))
         {
-            izenelib::am::ssf::Sorter<uint32_t, std::string>::Sort(path);
+            izenelib::am::ssf::Sorter<uint32_t, hash_t>::Sort(path);
         }
     }
     void start()

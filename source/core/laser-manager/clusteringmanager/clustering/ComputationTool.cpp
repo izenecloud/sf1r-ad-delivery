@@ -29,7 +29,6 @@ void ComputationTool::run()
             {
                 if (c_cat_vector.size() > min_clustering_doc_num)
                 {
-                    //std::cout<<lastValue.first<<"\t"<<c_cat_vector.size()<<"\n";
                     int id = map(lastValue.first);
                     clusteringData.clusteringHash = id;
                     clusteringInfo.clusteringHash = id;

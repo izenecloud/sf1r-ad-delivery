@@ -65,7 +65,7 @@ void PCAClustering::execute(ClusteringDataAdapter* cda, int threadnum)
     //unordered_map<string, string> catpathlist = ClusteringListDes::get()->get_cat_path();
     //limit the term number
     term_dictionary.limit(max_clustering_term_num);
-    unordered_map<string, pair<int, int> > terms = term_dictionary.getTerms();
+    const unordered_map<string, pair<int, int> >& terms = term_dictionary.getTerms();
     queue<string> paths;
     ClusteringListDes::get()->generate_clustering_mid_result_paths(paths);
     ClusteringSortTool st(threadnum, paths);
