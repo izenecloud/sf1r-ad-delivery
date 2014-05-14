@@ -11,6 +11,7 @@
 #include <boost/unordered_map.hpp>
 #include <knlp/title_pca.h>
 #include "laser-manager/clusteringmanager/type/TermDictionary.h"
+#include "laser-manager/clusteringmanager/common/utils.h"
 
 namespace sf1r { namespace laser { namespace clustering {
 
@@ -198,18 +199,33 @@ private:
         const type::TermDictionary& dict, 
         ClusteringContainer& clusteringContainer);
 
-    void push_back(boost::unordered_map<std::string, std::list<Document> >::const_iterator cache)
+    void push_back(boost::unordered_map<std::string, std::list<Document> >::iterator cache)
     {
         const std::string cat = cache->first;
         int index = Hash_(cat) % THREAD_NUM_;
         boost::shared_mutex* mutex = (*context_)[index]->mutex_;
         DocumentVecType* docs = (*context_)[index]->docs_;
-        //docs->insert(docs->end(),vec.begin(), vec.end());
-        std::list<Document>::const_iterator it = cache->second.begin();
-        boost::unique_lock<boost::shared_mutex> uniqueLock(*mutex);
-        for (; it != cache->second.end(); ++it)
+        while (true)
         {
-            docs->push_back(*it);
+            std::size_t size = 0;
+            {
+                boost::shared_lock<boost::shared_mutex> sharedLock(*mutex);
+                size = docs->size();
+            }
+            if (size >= MAX_BUFFER_SIZE)
+            {
+                boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+                continue;
+            }
+            break;
+        }
+        {
+            boost::unique_lock<boost::shared_mutex> uniqueLock(*mutex);
+            std::list<Document>::iterator it = cache->second.begin();
+            for (; it != cache->second.end(); ++it)
+            {
+                docs->push_back(*it);
+            }
         }
     }
     
@@ -299,6 +315,7 @@ private:
     const std::size_t MAX_DOC_PER_CLUSTERING_;
     const std::size_t MIN_DOC_PER_CLUSTERING_;
     const static std::size_t CACHE_THRESHOLD = 1024;
+    const static std::size_t MAX_BUFFER_SIZE = 1024*1024*1024;
 };
 
 void saveClusteringResult(const boost::unordered_map<std::string, boost::unordered_map<std::string, float> >& container, const std::string& filename);

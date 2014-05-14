@@ -15,9 +15,6 @@
 #include <algorithm>
 #include <boost/unordered_map.hpp>
 
-#include "laser-manager/clusteringmanager/common/constant.h"
-#include "laser-manager/clusteringmanager/common/utils.h"
-
 #include <string>
 #include <boost/serialization/unordered_map.hpp>
 #include <boost/serialization/string.hpp>

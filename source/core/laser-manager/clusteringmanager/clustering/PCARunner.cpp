@@ -1,5 +1,6 @@
 #include "PCARunner.h"
 
+const std::size_t MAX_TOKEN = 4;
 namespace sf1r { namespace laser { namespace clustering {
 
 PCARunner::DocumentVecType::iterator  PCARunner::distribution_(DocumentVecType& docv, 
@@ -26,7 +27,7 @@ PCARunner::DocumentVecType::iterator  PCARunner::distribution_(DocumentVecType& 
             it->second++;
         }
         
-        for (size_t i = 0; i < tks.size(); ++i)
+        for (std::size_t i = 0; i < tks.size(); ++i)
         {
             if(dict.find(tks[i].first) == dict.end())
             {
@@ -38,16 +39,18 @@ PCARunner::DocumentVecType::iterator  PCARunner::distribution_(DocumentVecType& 
             }
             
             cateMerge += tks[i].first;
+            Dictionary::iterator it = ccnt.find(cateMerge);
+            if (ccnt.end() == it)
             {
-                Dictionary::iterator it = ccnt.find(cateMerge);
-                if (ccnt.end() == it)
-                {
-                    ccnt[cateMerge] = 1;
-                }
-                else
-                {
-                    it->second++;
-                }
+                ccnt[cateMerge] = 1;
+            }
+            else
+            {
+                it->second++;
+            }
+            if (i > MAX_TOKEN)
+            {
+                break;
             }
         }
     }
