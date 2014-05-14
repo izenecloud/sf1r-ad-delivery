@@ -76,6 +76,11 @@ public:
         return true;
     }
 
+    bool find(const std::string& term) const
+    {
+        return terms_.find(term) == terms_.end();
+    }
+
     void set(const std::string& term, int count)
     {
         boost::unordered_map<std::string, std::pair<int, int> >::iterator iter = terms_.find(term);
