@@ -82,6 +82,7 @@ void AdSelector::loadDef(const std::string& file, FeatureMapT& def_features,
 void AdSelector::init(const std::string& res_path,
     const std::string& segments_data_path,
     const std::string& rec_data_path,
+    bool enable_rec,
     AdClickPredictor* pad_predictor,
     faceted::GroupManager* grp_mgr,
     DocumentManager* doc_mgr)
@@ -154,8 +155,11 @@ void AdSelector::init(const std::string& res_path,
     }
     ctr_update_thread_ = boost::thread(boost::bind(&AdSelector::updateFunc, this));
 
-    ad_feature_item_rec_.reset(new AdRecommender());
-    ad_feature_item_rec_->init(rec_data_path_, true);
+    if (enable_rec)
+    {
+        ad_feature_item_rec_.reset(new AdRecommender());
+        ad_feature_item_rec_->init(rec_data_path_, true);
+    }
 }
 
 void AdSelector::getDefaultFeatures(FeatureMapT& feature_name_list, SegType type)
@@ -242,7 +246,8 @@ void AdSelector::save()
     ofs_segid_data.write(buf, len);
     ofs_segid_data.flush();
 
-    ad_feature_item_rec_->save();
+    if (ad_feature_item_rec_)
+        ad_feature_item_rec_->save();
 }
 
 void AdSelector::stop()
@@ -345,6 +350,8 @@ void AdSelector::getAdTagsForRec(docid_t id, std::vector<std::string>& tags)
 
 void AdSelector::updateAdFeatureItemsForRec(docid_t id, const FeatureMapT& features_map)
 {
+    if (!ad_feature_item_rec_)
+        return;
     std::vector<std::string> features;
     for (FeatureMapT::const_iterator it = features_map.begin();
         it != features_map.end(); ++it)
@@ -742,7 +749,7 @@ void AdSelector::getUserSegmentStr(std::vector<std::string>& user_seg_str_list, 
 }
 
 bool AdSelector::getHistoryCTR(const std::vector<std::string>& user_seg_key, 
-    const std::vector<SegIdT>& ad_segid_list, double& max_ctr)
+    const std::vector<SegIdT>& ad_segid_list, double& max_ctr) const
 {
     max_ctr = 0;
     bool ret = false;
@@ -793,7 +800,8 @@ bool AdSelector::selectFromRecommend(const FeatureT& user_info,
     std::vector<double>& score_list
     )
 {
-    ad_feature_item_rec_->recommend("", user_info, max_return, recommended_items, score_list);
+    if (ad_feature_item_rec_)
+        ad_feature_item_rec_->recommend("", user_info, max_return, recommended_items, score_list);
     // select the ads from recommend system if no any search results.
     return false;
 }
@@ -979,6 +987,8 @@ bool AdSelector::selectForTest(const FeatureT& user_info,
 void AdSelector::trainOnlineRecommender(const std::string& user_str_id, const FeatureT& user_info,
     const std::string& ad_docid, bool is_clicked)
 {
+    if (!ad_feature_item_rec_)
+        return;
     ad_feature_item_rec_->update(user_str_id, user_info, ad_docid, is_clicked);
 }
 

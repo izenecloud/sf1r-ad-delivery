@@ -19,7 +19,13 @@ public:
 
     std::string clickPredictorWorkingPath;
 
+    bool enable_selector;
+    bool enable_rec;
+    bool enable_sponsored_search;
     AdIndexConfig() : isEnable(false)
+                      , enable_selector(false)
+                      , enable_rec(false)
+                      , enable_sponsored_search(false)
     {}
 
 private:
@@ -30,6 +36,10 @@ private:
     {
         ar & isEnable;
         ar & indexFilePath;
+        ar & clickPredictorWorkingPath;
+        ar & enable_selector;
+        ar & enable_rec;
+        ar & enable_sponsored_search;
     }
 };
 

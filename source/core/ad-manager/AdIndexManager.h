@@ -44,6 +44,9 @@ public:
     AdIndexManager(
             const std::string& ad_resource_path,
             const std::string& ad_data_path,
+            bool enable_ad_selector,
+            bool enable_ad_rec,
+            bool enable_ad_sponsored_search,
             boost::shared_ptr<DocumentManager>& dm,
             NumericPropertyTableBuilder* ntb,
             AdSearchService* searcher,
@@ -76,6 +79,9 @@ public:
     bool searchByRecommend(const SearchKeywordOperation& actionOperation,
         KeywordSearchResult& searchResult);
 
+    bool sponsoredAdSearch(const SearchKeywordOperation& actionOperation,
+        KeywordSearchResult& searchResult);
+
     void postMining(docid_t startid, docid_t endid);
 
 private:
@@ -84,8 +90,12 @@ private:
     std::string indexPath_;
 
     std::string clickPredictorWorkingPath_;
-    std::string ad_selector_res_path_;
-    std::string ad_selector_data_path_;
+    std::string ad_res_path_;
+    std::string ad_data_path_;
+
+    bool enable_ad_selector_;
+    bool enable_ad_rec_;
+    bool enable_ad_sponsored_search_;
 
     boost::shared_ptr<DocumentManager>& documentManager_;
     AdMiningTask* adMiningTask_;
@@ -95,6 +105,7 @@ private:
     faceted::GroupManager* groupManager_;
     boost::shared_mutex  rwMutex_;
     boost::shared_ptr<AdDNFIndexType> ad_dnf_index_;
+    boost::shared_ptr<AdSelector> ad_selector_;
     boost::shared_ptr<sponsored::AdSponsoredMgr> ad_sponsored_mgr_;
 };
 

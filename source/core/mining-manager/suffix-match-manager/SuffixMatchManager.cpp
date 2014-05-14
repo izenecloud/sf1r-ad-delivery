@@ -323,6 +323,7 @@ size_t SuffixMatchManager::AllPossibleSuffixMatch(
             }
             else
             {
+                bool missMajor = false;
                 for (std::list<std::pair<UString, double> >::const_iterator pit = major_tokens.begin();
                         pit != major_tokens.end(); ++pit)
                 {
@@ -336,7 +337,12 @@ size_t SuffixMatchManager::AllPossibleSuffixMatch(
                         range_list.push_back(sub_match_range);
                         score_list.push_back(pit->second);
                     }
+                    else
+                        missMajor = true;
                 }
+
+                if (missMajor)
+                    continue;
 
                 thres = range_list.size();
     

@@ -8,7 +8,6 @@
 #include "AdClickPredictor.h"
 #include "AdFeedbackMgr.h"
 #include "AdSearchService.h"
-#include "sponsored-ad-search/AdAuctionLogMgr.h"
 #include "sponsored-ad-search/AdSponsoredMgr.h"
 #include <common/ResultType.h>
 #include <mining-manager/group-manager/GroupManager.h>
@@ -33,14 +32,20 @@ using namespace sponsored;
 AdIndexManager::AdIndexManager(
         const std::string& ad_resource_path,
         const std::string& ad_data_path,
+        bool enable_ad_selector,
+        bool enable_ad_rec,
+        bool enable_ad_sponsored_search,
         boost::shared_ptr<DocumentManager>& dm,
         NumericPropertyTableBuilder* ntb,
         AdSearchService* searcher,
         faceted::GroupManager* grp_mgr)
     : indexPath_(ad_data_path + "/index.bin"),
       clickPredictorWorkingPath_(ad_data_path + "/ctr_predictor"),
-      ad_selector_res_path_(ad_resource_path + "/ad_selector"),
-      ad_selector_data_path_(ad_data_path + "/ad_selector"),
+      ad_res_path_(ad_resource_path),
+      ad_data_path_(ad_data_path),
+      enable_ad_selector_(enable_ad_selector),
+      enable_ad_rec_(enable_ad_rec),
+      enable_ad_sponsored_search_(enable_ad_sponsored_search),
       documentManager_(dm),
       numericTableBuilder_(ntb),
       ad_searcher_(searcher),
@@ -80,14 +85,26 @@ bool AdIndexManager::buildMiningTask()
         }
     }
 
-    adMiningTask_ = new AdMiningTask(indexPath_, documentManager_, ad_dnf_index_, rwMutex_);
+    if (enable_ad_selector_)
+    {
+        ad_selector_.reset(new AdSelector());
+        ad_selector_->init(ad_res_path_ + "/ad_selector", ad_data_path_ + "/ad_selector",
+            ad_data_path_ + "/ad_rec", enable_ad_rec_, ad_click_predictor_, groupManager_,
+            documentManager_.get());
+    }
+
+    if (enable_ad_sponsored_search_)
+    {
+        ad_sponsored_mgr_.reset(new AdSponsoredMgr());
+        ad_sponsored_mgr_->init(ad_res_path_ + "/ad_sponsored", ad_data_path_ + "ad_sponsored",
+            groupManager_, documentManager_.get(), ad_searcher_);
+    }
+
+    adMiningTask_ = new AdMiningTask(indexPath_, documentManager_, ad_dnf_index_, ad_selector_, rwMutex_);
     adMiningTask_->setPostProcessFunc(boost::bind(&AdIndexManager::postMining, this, _1, _2));
 
     ad_click_predictor_ = AdClickPredictor::get();
     ad_click_predictor_->init(clickPredictorWorkingPath_);
-    AdSelector::get()->init(ad_selector_res_path_, ad_selector_data_path_,
-        ad_selector_data_path_ + "/rec", ad_click_predictor_, groupManager_,
-        documentManager_.get());
     bool ret = AdStreamSubscriber::get()->subscribe(adlog_topic, boost::bind(&AdIndexManager::onAdStreamMessage, this, _1));
     if (!ret)
     {
@@ -114,41 +131,50 @@ void AdIndexManager::onAdStreamMessage(const std::vector<AdMessage>& msg_list)
     std::vector<AdClickPredictor::AssignmentT> user_segs;
     feedback_info_list.resize(msg_list.size());
     // read from stream msg and convert it to assignment list.
-    BidPhraseT bidphrase;
-    for (size_t i = 0; i < msg_list.size(); ++i)
+    if (enable_ad_sponsored_search_)
     {
-        AdFeedbackMgr::get()->parserFeedbackLog(msg_list[i].body, feedback_info_list[i]);
-        if (feedback_info_list[i].action == AdFeedbackMgr::Click)
+        for (size_t i = 0; i < msg_list.size(); ++i)
         {
-            ad_sponsored_mgr_->getBidPhrase(feedback_info_list[i].ad_id, bidphrase);
-            AdAuctionLogMgr::get()->updateAuctionLogData(feedback_info_list[i].ad_id,
-                bidphrase,
-                feedback_info_list[i].click_cost, feedback_info_list[i].click_slot);
+            AdFeedbackMgr::get()->parserFeedbackLog(msg_list[i].body, feedback_info_list[i]);
+            if (feedback_info_list[i].action == AdFeedbackMgr::Click)
+            {
+                ad_sponsored_mgr_->updateAuctionLogData(feedback_info_list[i].ad_id,
+                    feedback_info_list[i].click_cost, feedback_info_list[i].click_slot);
+            }
         }
     }
     
-    for(size_t i = 0; i < feedback_info_list.size(); ++i)
+    if (enable_ad_selector_)
     {
-        const AdFeedbackMgr::FeedbackInfo& info = feedback_info_list[i];
-        bool is_clicked = info.action > AdFeedbackMgr::View;
-        ad_click_predictor_->update(user_segs[i], ad_segs[i],
-            is_clicked);
-        if (is_clicked)
+        for(size_t i = 0; i < feedback_info_list.size(); ++i)
         {
-            // get docid from adid.
-            docid_t docid;
-            AdSelector::get()->updateClicked(docid);
+            const AdFeedbackMgr::FeedbackInfo& info = feedback_info_list[i];
+            bool is_clicked = info.action > AdFeedbackMgr::View;
+            ad_click_predictor_->update(user_segs[i], ad_segs[i],
+                is_clicked);
+            if (is_clicked)
+            {
+                // get docid from adid.
+                docid_t docid = 0;
+                ad_selector_->updateClicked(docid);
+            }
+            ad_selector_->updateSegments(user_segs[i], AdSelector::UserSeg);
+            if (enable_ad_rec_)
+            {
+                ad_selector_->trainOnlineRecommender(info.user_id,
+                    user_segs[i], info.ad_id, is_clicked);
+            }
         }
-        AdSelector::get()->updateSegments(user_segs[i], AdSelector::UserSeg);
-        AdSelector::get()->trainOnlineRecommender(info.user_id,
-            user_segs[i], info.ad_id, is_clicked);
     }
 }
 
 void AdIndexManager::postMining(docid_t startid, docid_t endid)
 {
     LOG(INFO) << "ad mining finished from: " << startid << " to " << endid;
-    AdSelector::get()->miningAdSegmentStr(startid, endid);
+    if (ad_selector_)
+    {
+        ad_selector_->miningAdSegmentStr(startid, endid);
+    }
 }
 
 void AdIndexManager::rankAndSelect(const FeatureT& userinfo,
@@ -214,8 +240,11 @@ void AdIndexManager::rankAndSelect(const FeatureT& userinfo,
     LOG(INFO) << "begin select ads from cpc cand result : " << cpc_ads_result.size();
     // select some ads using some strategy to maximize the CPC.
     std::vector<double> score_list;
-    AdSelector::get()->select(userinfo, MAX_SELECT_AD_COUNT,
-        cpc_ads_result, score_list, propSharedLockSet);
+    if (ad_selector_)
+    {
+        ad_selector_->select(userinfo, MAX_SELECT_AD_COUNT,
+            cpc_ads_result, score_list, propSharedLockSet);
+    }
     LOG(INFO) << "end select ads from result.";
     // calculate eCPM
     for (std::size_t i = 0; i < cpc_ads_result.size(); ++i)
@@ -247,7 +276,7 @@ void AdIndexManager::rankAndSelect(const FeatureT& userinfo,
 bool AdIndexManager::searchByQuery(const SearchKeywordOperation& actionOperation,
     KeywordSearchResult& searchResult)
 {
-    if (!ad_searcher_)
+    if (!ad_searcher_ || !ad_selector_)
         return false;
     // using the DNF as Attributes.
     (*const_cast<SearchKeywordOperation*>(&actionOperation)).actionItem_.searchingMode_.mode_ = SearchingMode::SUFFIX_MATCH;
@@ -291,12 +320,12 @@ bool AdIndexManager::searchByDNF(const FeatureT& info,
 bool AdIndexManager::searchByRecommend(const SearchKeywordOperation& actionOperation,
     KeywordSearchResult& searchResult)
 {
-    if (!ad_searcher_)
+    if (!ad_searcher_ || !ad_selector_)
         return false;
     const std::vector<std::pair<std::string, std::string> > userinfo;
     std::vector<double> score_list;
     std::vector<std::string> rec_items;
-    AdSelector::get()->selectFromRecommend(userinfo, MAX_RECOMMEND_ITEM_NUM,
+    ad_selector_->selectFromRecommend(userinfo, MAX_RECOMMEND_ITEM_NUM,
         rec_items, score_list);
     std::string rec_query_str;
     for (size_t i = 0; i < rec_items.size(); ++i)
@@ -316,5 +345,14 @@ bool AdIndexManager::searchByRecommend(const SearchKeywordOperation& actionOpera
     }
     return ret;
 }
+
+bool AdIndexManager::sponsoredAdSearch(const SearchKeywordOperation& actionOperation,
+    KeywordSearchResult& searchResult)
+{
+    if (!ad_sponsored_mgr_)
+        return false;
+    return ad_sponsored_mgr_->sponsoredAdSearch(actionOperation, searchResult);
+}
+
 
 } //namespace sf1r

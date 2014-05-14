@@ -911,6 +911,162 @@ private:
 };
 }
 
+bool MiningManager::DoSponsoredAdSearch(
+        const SearchKeywordOperation& actionOperation,
+        uint32_t max_docs,
+        uint32_t start,
+        const std::vector<QueryFiltering::FilteringType>& filter_param,
+        std::vector<uint32_t>& docIdList,
+        std::vector<float>& rankScoreList,
+        std::vector<float>& customRankScoreList,
+        std::size_t& totalCount,
+        bool isAnalyzeQuery,
+        UString& analyzedQuery,
+        std::string& pruneQueryString_,
+        DistKeywordSearchInfo& distSearchInfo
+    )
+{
+    if (!mining_schema_.suffixmatch_schema.suffix_match_enable || !suffixMatchManager_)
+        return false;
+
+    izenelib::util::ClockTimer clock;
+    double lastSec, tokenTime, suffixMatchTime;
+    lastSec = tokenTime = suffixMatchTime = 0;
+
+    izenelib::util::UString queryU(actionOperation.actionItem_.env_.queryString_, izenelib::util::UString::UTF_8);
+    std::vector<std::pair<double, uint32_t> > res_list;
+
+    const std::vector<string>& search_in_properties = mining_schema_.suffixmatch_schema.suffix_match_properties;
+
+    size_t orig_max_docs = max_docs;
+
+    LOG(INFO) << "sponsored ad searching using fuzzy mode " << endl;
+    std::string pattern_orig = actionOperation.actionItem_.env_.queryString_;
+
+    if (pattern_orig.empty())
+        return 0;
+
+    LOG(INFO) << "original query string: " << pattern_orig;
+    std::string pattern = pattern_orig;
+    boost::to_lower(pattern);
+
+    const bool isWrongQuery = QueryNormalizer::get()->isWrongQuery(pattern);
+    if (isWrongQuery)
+    {
+        LOG (ERROR) <<"The query is too long...";
+    }
+
+    const bool isLongQuery = QueryNormalizer::get()->isLongQuery(pattern);
+    boost::shared_ptr<KNlpWrapper> knlpWrapper = KNlpResourceManager::getResource();
+    if (isLongQuery)
+        pattern = knlpWrapper->cleanStopword(pattern);
+    else
+        pattern = knlpWrapper->cleanGarbage(pattern);
+
+    LOG(INFO) << "clear stop word for long query: " << pattern;
+
+    ProductTokenParam tokenParam(pattern, isAnalyzeQuery);
+
+    // use Fuzzy Search Threshold 
+    if (actionOperation.actionItem_.searchingMode_.useFuzzyThreshold_)
+    {
+        tokenParam.useFuzzyThreshold = true;
+        tokenParam.fuzzyThreshold = actionOperation.actionItem_.searchingMode_.fuzzyThreshold_;
+        tokenParam.tokensThreshold = actionOperation.actionItem_.searchingMode_.tokensThreshold_;
+    }
+
+    // use Privilege Query
+    if (actionOperation.actionItem_.searchingMode_.usePivilegeQuery_)
+    {
+        tokenParam.usePrivilegeQuery = true;
+        tokenParam.privilegeQuery = actionOperation.actionItem_.searchingMode_.privilegeQuery_;
+        tokenParam.privilegeWeight = actionOperation.actionItem_.searchingMode_.privilegeWeight_;
+    }
+
+    productTokenizer_->tokenize(tokenParam);
+    analyzedQuery.swap(tokenParam.refinedResult);
+
+    double queryScore = productTokenizer_->sumQueryScore(pattern_orig);
+    actionOperation.actionItem_.queryScore_ = queryScore;
+    std::cout << "The query's product score is:" << queryScore << std::endl;
+
+    // for sponsored ad search, we use the OR mode, all major token will be put into minor token list.
+    for (ProductTokenParam::TokenScoreListIter it = tokenParam.majorTokens.begin();
+        it != tokenParam.majorTokens.end(); ++it)
+    {
+        tokenParam.minorTokens.push_back(*it);
+    }
+    tokenParam.majorTokens.clear();
+
+    std::cout << "-----" << std::endl;
+    for (ProductTokenParam::TokenScoreListIter it = tokenParam.minorTokens.begin();
+        it != tokenParam.minorTokens.end(); ++it)
+    {
+        std::string key;
+        it->first.convertString(key, izenelib::util::UString::UTF_8);
+        cout << key << " " << it->second << endl;
+    }
+
+    if (actionOperation.actionItem_.searchingMode_.useQueryPrune_ == false)
+    {
+        tokenParam.rankBoundary = 0;
+    }
+
+    LOG(INFO) << " Rank boundary: " << tokenParam.rankBoundary;
+
+    bool useSynonym = actionOperation.actionItem_.languageAnalyzerInfo_.synonymExtension_;
+
+    if (isLongQuery)
+    {
+        useSynonym = false;
+    }
+
+    tokenTime = elapsedFromLast(clock, lastSec);
+    LOG(INFO) << "OR search, lucky: " << max_docs;
+
+    totalCount = suffixMatchManager_->AllPossibleSuffixMatch(
+        useSynonym,
+        tokenParam.majorTokens,
+        tokenParam.minorTokens,
+        search_in_properties,
+        max_docs,
+        actionOperation.actionItem_.searchingMode_.filtermode_,
+        filter_param,
+        actionOperation.actionItem_.groupParam_,
+        res_list,
+        tokenParam.rankBoundary);
+
+    distSearchInfo.majorTokenNum_ = tokenParam.majorTokens.size();
+
+    suffixMatchTime = elapsedFromLast(clock, lastSec);
+
+    if (!res_list.empty())
+    {
+        LOG(INFO) << "average score of fuzzy search top results: "
+            << topAverageScore(res_list);
+    }
+
+    LOG(INFO) << "GetSuffixMatch(): " << clock.elapsed()
+              << ", token: " << tokenTime
+              << ", suffix: " << suffixMatchTime
+              << ", res_list.size(): " << res_list.size()
+              << ", query: " << actionOperation.actionItem_.env_.queryString_;
+
+    if (!totalCount ||res_list.empty()) return false;
+
+    res_list.resize(std::min(orig_max_docs, res_list.size()));
+
+    docIdList.resize(res_list.size());
+    rankScoreList.resize(res_list.size());
+    for (size_t i = 0; i < res_list.size(); ++i)
+    {
+        rankScoreList[i] = res_list[i].first;
+        docIdList[i] = res_list[i].second;
+    }
+
+    return true;
+}
+
 bool MiningManager::GetSuffixMatch(
         const SearchKeywordOperation& actionOperation,
         uint32_t max_docs,
@@ -1480,6 +1636,7 @@ bool MiningManager::initAdIndexManager_(AdIndexConfig& adIndexConfig)
     adIndexManager_ = new AdIndexManager(
         system_resource_path_ + "/ad_resource",
         adIndexDir.string(),
+        true, true, true,
         document_manager_, numericTableBuilder_,
         adSearchService_.get(), groupManager_);
     adIndexManager_->buildMiningTask();

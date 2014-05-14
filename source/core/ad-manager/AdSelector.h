@@ -28,10 +28,10 @@ namespace faceted
 class AdSelector
 {
 public:
-    static AdSelector* get()
-    {
-        return izenelib::util::Singleton<AdSelector>::get();
-    }
+    //static AdSelector* get()
+    //{
+    //    return izenelib::util::Singleton<AdSelector>::get();
+    //}
     enum SegType
     {
         UserSeg,
@@ -51,6 +51,7 @@ public:
     void init(const std::string& res_path,
         const std::string& segments_data_path,
         const std::string& rec_data_path,
+        bool enable_rec,
         AdClickPredictor* pad_predictor,
         faceted::GroupManager* grp_mgr,
         DocumentManager* doc_mgr);
@@ -98,7 +99,7 @@ private:
     void computeHistoryCTR();
     //bool getHistoryCTR(const std::vector<std::string>& all_fullkey, double& max_ctr);
     bool getHistoryCTR(const std::vector<std::string>& user_seg_key, 
-        const std::vector<SegIdT>& ad_segid_list, double& max_ctr);
+        const std::vector<SegIdT>& ad_segid_list, double& max_ctr) const;
 
     void expandSegmentStr(std::vector<std::string>& seg_str_list, const std::vector<SegIdT>& ad_segid_list);
     void expandSegmentStr(std::vector<std::string>& seg_str_list, const FeatureMapT& feature_list);

@@ -26,17 +26,20 @@ namespace faceted
 namespace sponsored
 {
 
-class AdAucationLogMgr;
+class AdAuctionLogMgr;
 class AdSponsoredMgr
 {
 public:
     AdSponsoredMgr();
+    ~AdSponsoredMgr();
     void init(const std::string& dict_path,
+        const std::string& data_path,
         faceted::GroupManager* grp_mgr,
         DocumentManager* doc_mgr,
         AdSearchService* searcher);
 
     void miningAdCreatives(ad_docid_t start_id);
+    void tokenize(const std::string& str, std::vector<std::string>& tokens);
     void generateBidPhrase(const std::string& ad_title, BidPhraseT& bidphrase_list);
     void generateBidPrice(ad_docid_t adid, std::vector<double>& price_list);
 
@@ -49,12 +52,19 @@ public:
     double getAdRelevantScore(const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list);
     double getAdQualityScore(ad_docid_t adid, const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list);
     void getBidPhrase(const std::string& adid, BidPhraseT& bidphrase);
-    ad_docid_t getAdIdFromAdStrId(const std::string& strid);
-    std::string getAdStrIdFromAdId(ad_docid_t adid);
+    bool getAdIdFromAdStrId(const std::string& strid, ad_docid_t& adid);
+    bool getAdStrIdFromAdId(ad_docid_t adid, std::string& ad_strid);
+
+    void updateAuctionLogData(const std::string& ad_id,
+        int click_cost_in_fen, uint32_t click_slot);
+
+    void save();
 
 private:
+    void load();
     bool getBidKeywordId(const std::string& keyword, bool insert, BidKeywordId& id);
     typedef boost::unordered_map<std::string, uint32_t>  StrIdMapT;
+    std::string data_path_;
     // all bid phrase for all ad creatives.
     std::vector<BidPhraseT>  ad_bidphrase_list_;
     std::vector<std::string> keyword_id_value_list_;
@@ -74,7 +84,7 @@ private:
     DocumentManager* doc_mgr_;
     AdSearchService* ad_searcher_;
 
-    boost::shared_ptr<AdAucationLogMgr> ad_log_mgr_;
+    boost::shared_ptr<AdAuctionLogMgr> ad_log_mgr_;
 };
 
 }

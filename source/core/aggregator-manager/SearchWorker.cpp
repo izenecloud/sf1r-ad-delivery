@@ -497,6 +497,16 @@ bool SearchWorker::getSearchResult_(
         }
         break;
 
+    case SearchingMode::SPONSORED_AD_SEARCH:
+        if (!miningManager_->getAdIndexManager())
+        {
+            LOG(INFO) << "no sponsored ad manager.";
+            return true;
+        }
+        if (!miningManager_->getAdIndexManager()->sponsoredAdSearch(actionOperation, resultItem))
+        {
+            return true;
+        }
     default:
         unsigned int QueryPruneTimes = 2;
         bool isUsePrune = false;

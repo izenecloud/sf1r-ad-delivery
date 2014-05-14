@@ -244,6 +244,21 @@ public:
 
     bool HasDeletedDocDuringMining() { return hasDeletedDocDuringMining_; }
 
+    bool DoSponsoredAdSearch(
+        const SearchKeywordOperation& actionOperation,
+        uint32_t max_docs,
+        uint32_t start,
+        const std::vector<QueryFiltering::FilteringType>& filter_param,
+        std::vector<uint32_t>& docIdList,
+        std::vector<float>& rankScoreList,
+        std::vector<float>& customRankScoreList,
+        std::size_t& totalCount,
+        bool isAnalyzeQuery,
+        UString& analyzedQuery,
+        std::string& pruneQueryString_,
+        DistKeywordSearchInfo& distSearchInfo
+        );
+
     bool GetSuffixMatch(
             const SearchKeywordOperation& actionOperation,
             uint32_t max_docs,

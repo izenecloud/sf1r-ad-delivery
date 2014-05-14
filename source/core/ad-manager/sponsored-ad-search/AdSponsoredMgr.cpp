@@ -8,6 +8,11 @@
 #include <query-manager/SearchKeywordOperation.h>
 #include <query-manager/ActionItem.h>
 #include <search-manager/HitQueue.h>
+#include <fstream>
+#include <util/izene_serialization.h>
+#include <boost/serialization/map.hpp>
+#include <boost/serialization/set.hpp>
+#include <boost/serialization/unordered_map.hpp>
 
 namespace sf1r
 {
@@ -101,17 +106,201 @@ AdSponsoredMgr::AdSponsoredMgr()
 {
 }
 
+AdSponsoredMgr::~AdSponsoredMgr()
+{
+    save();
+}
+
 void AdSponsoredMgr::init(const std::string& dict_path,
+    const std::string& data_path,
     faceted::GroupManager* grp_mgr,
     DocumentManager* doc_mgr,
     AdSearchService* searcher)
 {
+    data_path_ = data_path;
     bid_title_pca_.reset(new TitlePCAWrapper());
     bid_title_pca_->loadDictFiles(dict_path);
     grp_mgr_ = grp_mgr;
     doc_mgr_ = doc_mgr;
     ad_searcher_ = searcher;
     keyword_value_id_list_.rehash(MAX_DIFF_BID_KEYWORD_NUM);
+    ad_log_mgr_.reset(new AdAuctionLogMgr());
+    ad_log_mgr_->init(data_path_);
+    load();
+}
+
+void AdSponsoredMgr::updateAuctionLogData(const std::string& ad_id,
+    int click_cost_in_fen, uint32_t click_slot)
+{
+    BidPhraseT bidphrase;
+    getBidPhrase(ad_id, bidphrase);
+    ad_log_mgr_->updateAuctionLogData(ad_id, bidphrase, click_cost_in_fen, click_slot);
+}
+
+void AdSponsoredMgr::save()
+{
+    std::ofstream ofs(std::string(data_path_ + "/sponsored_ad.data").c_str());
+    std::size_t len = 0;
+    char* buf = NULL;
+    {
+        izenelib::util::izene_serialization<std::vector<BidPhraseT> > izs(ad_bidphrase_list_);
+        izs.write_image(buf, len);
+        ofs.write((const char*)&len, sizeof(len));
+        ofs.write(buf, len);
+        ofs.flush();
+
+    }
+    {
+        len = 0;
+        izenelib::util::izene_serialization<std::vector<std::string> > izs(keyword_id_value_list_);
+        izs.write_image(buf, len);
+        ofs.write((const char*)&len, sizeof(len));
+        ofs.write(buf, len);
+        ofs.flush();
+    }
+
+    {
+        len = 0;
+        izenelib::util::izene_serialization<StrIdMapT> izs(keyword_value_id_list_);
+        izs.write_image(buf, len);
+        ofs.write((const char*)&len, sizeof(len));
+        ofs.write(buf, len);
+        ofs.flush();
+    }
+
+    {
+        len = 0;
+        izenelib::util::izene_serialization<boost::unordered_map<std::string, double> > izs(ad_budget_list_);
+        izs.write_image(buf, len);
+        ofs.write((const char*)&len, sizeof(len));
+        ofs.write(buf, len);
+        ofs.flush();
+    }
+
+    {
+        len = 0;
+        izenelib::util::izene_serialization<boost::unordered_map<std::string, double> > izs(ad_budget_left_list_);
+        izs.write_image(buf, len);
+        ofs.write((const char*)&len, sizeof(len));
+        ofs.write(buf, len);
+        ofs.flush();
+    }
+
+    {
+        len = 0;
+        izenelib::util::izene_serialization<std::vector<std::string> > izs(ad_campaign_name_list_);
+        izs.write_image(buf, len);
+        ofs.write((const char*)&len, sizeof(len));
+        ofs.write(buf, len);
+        ofs.flush();
+    }
+
+    {
+        len = 0;
+        izenelib::util::izene_serialization<StrIdMapT> izs(ad_campaign_name_id_list_);
+        izs.write_image(buf, len);
+        ofs.write((const char*)&len, sizeof(len));
+        ofs.write(buf, len);
+        ofs.flush();
+    }
+
+    {
+        len = 0;
+        izenelib::util::izene_serialization<std::vector<uint32_t> > izs(ad_campaign_belong_list_);
+        izs.write_image(buf, len);
+        ofs.write((const char*)&len, sizeof(len));
+        ofs.write(buf, len);
+        ofs.flush();
+    }
+
+    ofs.close();
+    if (ad_log_mgr_)
+        ad_log_mgr_->save();
+}
+
+void AdSponsoredMgr::load()
+{
+    std::ifstream ifs(std::string(data_path_ + "/sponsored_ad.data").c_str());
+    std::string data;
+
+    if (ifs.good())
+    {
+        std::size_t len = 0;
+        {
+            ifs.read((char*)&len, sizeof(len));
+            data.resize(len);
+            ifs.read((char*)&data[0], len);
+            izenelib::util::izene_deserialization<std::vector<BidPhraseT> > izd(data.data(), data.size());
+            izd.read_image(ad_bidphrase_list_);
+        }
+
+        {
+            len = 0;
+            ifs.read((char*)&len, sizeof(len));
+            data.resize(len);
+            ifs.read((char*)&data[0], len);
+            izenelib::util::izene_deserialization<std::vector<std::string> > izd(data.data(), data.size());
+            izd.read_image(keyword_id_value_list_);
+        }
+
+        {
+            len = 0;
+            ifs.read((char*)&len, sizeof(len));
+            data.resize(len);
+            ifs.read((char*)&data[0], len);
+            izenelib::util::izene_deserialization<StrIdMapT> izd(data.data(), data.size());
+            izd.read_image(keyword_value_id_list_);
+        }
+
+        {
+            len = 0;
+            ifs.read((char*)&len, sizeof(len));
+            data.resize(len);
+            ifs.read((char*)&data[0], len);
+            izenelib::util::izene_deserialization<boost::unordered_map<std::string, double> > izd(data.data(), data.size());
+            izd.read_image(ad_budget_list_);
+        }
+
+        {
+            len = 0;
+            ifs.read((char*)&len, sizeof(len));
+            data.resize(len);
+            ifs.read((char*)&data[0], len);
+            izenelib::util::izene_deserialization<boost::unordered_map<std::string, double> > izd(data.data(), data.size());
+            izd.read_image(ad_budget_left_list_);
+        }
+
+        {
+            len = 0;
+            ifs.read((char*)&len, sizeof(len));
+            data.resize(len);
+            ifs.read((char*)&data[0], len);
+            izenelib::util::izene_deserialization<std::vector<std::string> > izd(data.data(), data.size());
+            izd.read_image(ad_campaign_name_list_);
+        }
+
+        {
+            len = 0;
+            ifs.read((char*)&len, sizeof(len));
+            data.resize(len);
+            ifs.read((char*)&data[0], len);
+            izenelib::util::izene_deserialization<StrIdMapT> izd(data.data(), data.size());
+            izd.read_image(ad_campaign_name_id_list_);
+        }
+
+        {
+            len = 0;
+            ifs.read((char*)&len, sizeof(len));
+            data.resize(len);
+            ifs.read((char*)&data[0], len);
+            izenelib::util::izene_deserialization<std::vector<uint32_t> > izd(data.data(), data.size());
+            izd.read_image(ad_campaign_belong_list_);
+        }
+    }
+    ifs.close();
+
+    if (ad_log_mgr_)
+        ad_log_mgr_->load();
 }
 
 void AdSponsoredMgr::miningAdCreatives(ad_docid_t start_id)
@@ -151,10 +340,52 @@ void AdSponsoredMgr::getBidPhrase(const std::string& adid, BidPhraseT& bidphrase
 {
     bidphrase.clear();
     ad_docid_t adid_int = 0;
-    // TODO: convert string adid to int ad id.
+    if (!getAdIdFromAdStrId(adid, adid_int))
+        return;
     if (adid_int > ad_bidphrase_list_.size())
         return;
     bidphrase = ad_bidphrase_list_[adid_int];
+}
+
+void AdSponsoredMgr::tokenize(const std::string& str, std::vector<std::string>& tokens)
+{
+    tokens.clear();
+    std::string pattern = str;
+    boost::to_lower(pattern);
+
+    //const bool isLongQuery = QueryNormalizer::get()->isLongQuery(pattern);
+    //boost::shared_ptr<KNlpWrapper> knlpWrapper = KNlpResourceManager::getResource();
+    //if (isLongQuery)
+    //    pattern = knlpWrapper->cleanStopword(pattern);
+    //else
+    //    pattern = knlpWrapper->cleanGarbage(pattern);
+
+    //ProductTokenParam tokenParam(pattern, false);
+
+    //// use Fuzzy Search Threshold 
+    //if (actionOperation.actionItem_.searchingMode_.useFuzzyThreshold_)
+    //{
+    //    tokenParam.useFuzzyThreshold = true;
+    //    tokenParam.fuzzyThreshold = actionOperation.actionItem_.searchingMode_.fuzzyThreshold_;
+    //    tokenParam.tokensThreshold = actionOperation.actionItem_.searchingMode_.tokensThreshold_;
+    //}
+
+    //productTokenizer_->tokenize(tokenParam);
+
+    //for (ProductTokenParam::TokenScoreListIter it = tokenParam.majorTokens.begin();
+    //    it != tokenParam.majorTokens.end(); ++it)
+    //{
+    //    std::string key;
+    //    it->first.convertString(key, izenelib::util::UString::UTF_8);
+    //    tokens.push_back(key);
+    //}
+    //for (ProductTokenParam::TokenScoreListIter it = tokenParam.minorTokens.begin();
+    //    it != tokenParam.minorTokens.end(); ++it)
+    //{
+    //    std::string key;
+    //    it->first.convertString(key, izenelib::util::UString::UTF_8);
+    //    tokens.push_back(key);
+    //}
 }
 
 void AdSponsoredMgr::generateBidPhrase(const std::string& ad_title, BidPhraseT& bidphrase)
@@ -216,7 +447,9 @@ double AdSponsoredMgr::getBudgetLeft(ad_docid_t adid)
 
 double AdSponsoredMgr::getAdCTR(ad_docid_t adid)
 {
-    return AdAuctionLogMgr::get()->getAdCTR(getAdStrIdFromAdId(adid));
+    std::string ad_strid;
+    getAdStrIdFromAdId(adid, ad_strid);
+    return ad_log_mgr_->getAdCTR(ad_strid);
 }
 
 double AdSponsoredMgr::getAdRelevantScore(const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list)
@@ -232,8 +465,10 @@ double AdSponsoredMgr::getAdQualityScore(ad_docid_t adid, const BidPhraseT& bidp
 bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOperation,
         KeywordSearchResult& searchResult)
 {
+    if (!ad_searcher_)
+        return false;
     // search using OR mode for fuzzy search.
-    (*const_cast<SearchKeywordOperation*>(&actionOperation)).actionItem_.searchingMode_.mode_ = SearchingMode::SUFFIX_MATCH;
+    (*const_cast<SearchKeywordOperation*>(&actionOperation)).actionItem_.searchingMode_.mode_ = SearchingMode::SPONSORED_AD_SEARCH_SUFFIX;
     ad_searcher_->search(actionOperation.actionItem_, searchResult);
 
     std::vector<std::string> query_keyword_list;
@@ -333,21 +568,19 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     }
     
     searchResult.totalCount_ = count;
-    AdAuctionLogMgr::get()->updateAdSearchStat(all_keyword_list, ranked_ad_strlist);
+    ad_log_mgr_->updateAdSearchStat(all_keyword_list, ranked_ad_strlist);
 
     return true;
 }
 
-ad_docid_t AdSponsoredMgr::getAdIdFromAdStrId(const std::string& strid)
+bool AdSponsoredMgr::getAdIdFromAdStrId(const std::string& strid, ad_docid_t& id)
 {
-    ad_docid_t id;
-    return id;
+    return true;
 }
 
-std::string AdSponsoredMgr::getAdStrIdFromAdId(ad_docid_t adid)
+bool AdSponsoredMgr::getAdStrIdFromAdId(ad_docid_t adid, std::string& ad_strid)
 {
-    std::string ad_strid;
-    return ad_strid;
+    return true;
 }
 
 
