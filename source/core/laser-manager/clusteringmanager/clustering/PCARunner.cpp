@@ -74,7 +74,7 @@ void PCARunner::statistics_(ThreadContext* context)
         {
             if (isExit_())
                 break;
-            boost::this_thread::sleep(boost::posix_time::milliseconds(2000));
+            boost::this_thread::sleep(boost::posix_time::milliseconds(1));
         }
         else
         {

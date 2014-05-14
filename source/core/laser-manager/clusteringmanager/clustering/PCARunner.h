@@ -214,7 +214,7 @@ private:
             }
             if (size >= MAX_BUFFER_SIZE)
             {
-                boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+                boost::this_thread::sleep(boost::posix_time::milliseconds(1));
                 continue;
             }
             break;
