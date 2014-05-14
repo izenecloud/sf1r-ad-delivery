@@ -107,7 +107,7 @@ public:
             (*context_)[i] = context;
         }
         thread_ = new std::vector<boost::thread*>(THREAD_NUM_);
-        clusteringContainer_ = new boost::unordered_map<std::string, boost::unordered_map<std::string, float> >();
+        clusteringContainer_ = new std::vector<boost::unordered_map<std::string, float> >();
     }
 
     ~PCARunner()
@@ -181,7 +181,7 @@ public:
         mergeClustering_();
     }
 
-    const boost::unordered_map<std::string, boost::unordered_map<std::string, float> >& getClusteringResult() const
+    const std::vector<boost::unordered_map<std::string, float> >& getClusteringResult() const
     {
         return *clusteringContainer_;
     }
@@ -265,7 +265,7 @@ private:
                 {
                     vec[tokenIterator->first] = tokenIterator->second / it->second.first;
                 }
-                (*clusteringContainer_)[it->first] = vec;
+                clusteringContainer_->push_back(vec);
             }
         }
     }
@@ -309,7 +309,7 @@ private:
     boost::shared_mutex mutex_;
     bool exit_;
 
-    boost::unordered_map<std::string, boost::unordered_map<std::string, float> >* clusteringContainer_;
+    std::vector<boost::unordered_map<std::string, float> >* clusteringContainer_;
     const std::size_t THREAD_NUM_;
     const float THRESHOLD_;
     const std::size_t MAX_DOC_PER_CLUSTERING_;
@@ -318,7 +318,7 @@ private:
     const static std::size_t MAX_BUFFER_SIZE = 1024*1024*1024;
 };
 
-void saveClusteringResult(const boost::unordered_map<std::string, boost::unordered_map<std::string, float> >& container, const std::string& filename);
-void loadClusteringResult(boost::unordered_map<std::string, boost::unordered_map<std::string, float> >& container, const std::string& filename);
+void saveClusteringResult(const std::vector<boost::unordered_map<std::string, float> >& container, const std::string& filename);
+void loadClusteringResult(std::vector<boost::unordered_map<std::string, float> >& container, const std::string& filename);
 } } }
 #endif /* SEGMENTTOOL_H_ */

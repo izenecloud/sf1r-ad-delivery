@@ -86,7 +86,7 @@ void PCAProcess::run()
 void PCAProcess::save()
 {
     termDict_->save();
-    const boost::unordered_map<std::string, boost::unordered_map<std::string, float> >& 
+    const std::vector<boost::unordered_map<std::string, float> >& 
         clusteringResult = runner_->getClusteringResult();
     LOG(INFO)<<"clustering summary:\n\tclustering size = "<<clusteringResult.size();
     saveClusteringResult(clusteringResult, workdir_ + "/clustering");
