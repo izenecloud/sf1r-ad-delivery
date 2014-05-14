@@ -28,12 +28,12 @@ namespace sf1r { namespace laser { namespace clustering { namespace type {
 class TermDictionary
 {
 public:
-    TermDictionary(const std::string& workdir)
-        : workdir_ (workdir + "/terms/")
+    TermDictionary(const std::string& filename)
+        : filename_ (filename)
     {
-        if (!boost::filesystem::exists(workdir_))
+        if (!boost::filesystem::exists(filename_))
         {
-            boost::filesystem::create_directory(workdir_);
+            load();
         }
     }
     
@@ -42,18 +42,10 @@ public:
     }
 
 public:    
-    void load(const std::string& dictPath = "")
+    void load(const std::string& path = "")
     {
-        LOG(INFO)<<"load term dictionary from: " <<dictPath;
-        if (dictPath.empty() && boost::filesystem::exists((workdir_ + "/dic.dat").c_str()))
         {
-            std::ifstream ifs((workdir_ + "/dic.dat").c_str(), std::ios::binary);
-            boost::archive::text_iarchive ia(ifs);
-            ia >> terms_;
-        }
-        else if (boost::filesystem::exists((dictPath + "/terms/dic.dat").c_str()))
-        {
-            std::ifstream ifs((dictPath + "/terms/dic.dat").c_str(), std::ios::binary);
+            std::ifstream ifs(filename_.c_str(), std::ios::binary);
             boost::archive::text_iarchive ia(ifs);
             ia >> terms_;
         }
@@ -116,7 +108,7 @@ public:
     void save()
     {
         LOG(INFO)<<"save term dictionary, term number = "<<terms_.size();
-        std::ofstream ofs((workdir_ + "/dic.dat").c_str(), std::ofstream::binary | std::ofstream::trunc);
+        std::ofstream ofs(filename_ .c_str(), std::ofstream::binary | std::ofstream::trunc);
         boost::archive::text_oarchive oa(ofs);
         try
         {
@@ -138,7 +130,7 @@ private:
     // first int : count;
     // second int : index
     boost::unordered_map<std::string, std::pair<int, int> > terms_;;
-    const std::string workdir_;
+    const std::string filename_;
 };
 
 } } } }

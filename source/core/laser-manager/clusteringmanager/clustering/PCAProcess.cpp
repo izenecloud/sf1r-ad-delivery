@@ -38,7 +38,7 @@ PCAProcess::PCAProcess(const std::string& workdir,
     {
         create_directory(workdir_);
     }
-   termDict_ = new TermDictionary(workdir_);
+   termDict_ = new TermDictionary(workdir_ + "/terms_dic.dat");
    runner_ = new PCARunner(threadNum, *termDict_, pcaDictPath, threhold, maxDocPerClustering, minDocPerClustering);
 }
 
@@ -89,7 +89,7 @@ void PCAProcess::save()
     const std::vector<boost::unordered_map<std::string, float> >& 
         clusteringResult = runner_->getClusteringResult();
     LOG(INFO)<<"clustering summary:\n\tclustering size = "<<clusteringResult.size();
-    saveClusteringResult(clusteringResult, workdir_ + "/clustering");
+    saveClusteringResult(clusteringResult, workdir_ + "/clustering_result");
 }
 
 bool PCAProcess::next(std::string& title, std::string& category)
