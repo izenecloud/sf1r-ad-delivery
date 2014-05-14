@@ -117,42 +117,46 @@ PCARunner::DocumentVecType::iterator PCARunner::doClustering_(DocumentVecType& d
         for (std::size_t i = 0; i < size; ++i)
         {
             cateMerge += tks[i].first;
+            Dictionary::const_iterator it = ccnt.find(cateMerge);
+            if (ccnt.end() == it)
             {
-                Dictionary::const_iterator it = ccnt.find(cateMerge);
-                if (ccnt.end() == it)
+                break;
+            }
+            else if (it->second > MAX_DOC_PER_CLUSTERING_)
+            {
+                if ( i + 1 < size) 
                 {
-                    continue;
-                }
-                else if (it->second > MAX_DOC_PER_CLUSTERING_)
-                {
-                    if ( i + 1 < size) 
+                    Dictionary::const_iterator next = ccnt.find(cateMerge + tks[i + 1].first);
+                    if (next == ccnt.end())
                     {
-                        Dictionary::const_iterator next = ccnt.find(cateMerge + tks[i + 1].first);
-                        if (next == ccnt.end())
-                        {
-                            break;
-                        }
-
-                        if (next->second < MIN_DOC_PER_CLUSTERING_)
-                        {
-                            break;
-                        }
-
-                        continue;
-                    }
-                    else
-                    {
+                        pushClustering_(cateMerge, tks, dict, clusteringContainer); 
                         break;
                     }
+
+                    if (next->second < MIN_DOC_PER_CLUSTERING_)
+                    {
+                        pushClustering_(cateMerge, tks, dict, clusteringContainer); 
+                        break;
+                    }
+                    continue;
                 }
                 else
                 {
+                    pushClustering_(cateMerge, tks, dict, clusteringContainer); 
                     break;
                 }
             }
+            else if (it->second > MIN_DOC_PER_CLUSTERING_)
+            {
+                pushClustering_(cateMerge, tks, dict, clusteringContainer); 
+                break;
+            }
+            else
+            {
+               break;
+            }
         }
         
-       pushClustering_(cateMerge, tks, dict, clusteringContainer); 
     }
     return iter;
 }

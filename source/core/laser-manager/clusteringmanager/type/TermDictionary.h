@@ -31,7 +31,7 @@ public:
     TermDictionary(const std::string& filename)
         : filename_ (filename)
     {
-        if (!boost::filesystem::exists(filename_))
+        if (boost::filesystem::exists(filename_))
         {
             load();
         }
