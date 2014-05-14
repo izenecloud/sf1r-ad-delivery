@@ -20,15 +20,18 @@
 
 using namespace msgpack::type;
 using namespace sf1r::laser::predict;
-using namespace sf1r::laser::clustering::type;
 using namespace sf1r::laser::clustering::rpc;
 using namespace boost;
 namespace sf1r { namespace laser {
 
 LaserRpcServer::LaserRpcServer(const Tokenizer* tokenzer,
-        const std::vector<boost::unordered_map<std::string, float> >* clusteringContainer)
+        const std::vector<boost::unordered_map<std::string, float> >* clusteringContainer,
+        TopNClusteringDB* topnClustering,
+        LaserOnlineModelDB* laserOnlineModel)
     : tokenizer_(tokenzer)
     , clusteringContainer_(clusteringContainer)
+    , topnClustering_(topnClustering)
+    , laserOnlineModel_(laserOnlineModel)
 {
 }
 
@@ -60,7 +63,7 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
         std::string method;
         req.method().convert(&method);
 
-        /*if (method == CLUSTERINGServerRequest::method_names[CLUSTERINGServerRequest::METHOD_TEST])
+        if (method == CLUSTERINGServerRequest::method_names[CLUSTERINGServerRequest::METHOD_TEST])
         {
             msgpack::type::tuple<bool> params;
             req.params().convert(&params);
@@ -77,50 +80,27 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
             msgpack::type::tuple<SplitTitle> params;
             req.params().convert(&params);
             clustering::rpc::SplitTitleResult res;
-            TermParser::get()->parse(params.get<0>(), res);
+            tokenizer_->tokenize(params.get<0>().title_, res.term_list_);
             req.result(res);
         }
         else if (method == CLUSTERINGServerRequest::method_names[CLUSTERINGServerRequest::METHOD_GETCLUSTERINGINFOS])
         {
-            msgpack::type::tuple<GetClusteringInfoRequest> params;
-            req.params().convert(&params);
             GetClusteringInfosResult gir;
-            if(params.get<0>().clusteringhash_ == 0)
+            for (std::size_t i = 0; i < clusteringContainer_->size(); ++i)
             {
-                std::vector<clustering::type::ClusteringInfo> info_list_;
-                ClusteringDataStorage::get()->loadClusteringInfos(info_list_);
-                for (std::size_t i = 0; i < info_list_.size(); ++i)
-                {
-                    const boost::unordered_map<std::string, float>& pow = info_list_[i].getClusteringVector();
-                    clustering::rpc::ClusteringInfo vec;
-                    vec.clusteringIndex = info_list_[i].getClusteringIndex();
-                    TermParser::get()->numeric(pow, vec.pow);
-                    gir.info_list_.push_back(vec);
-                }
-                LOG(INFO) << "method:" <<method <<" data req total"<< gir.info_list_.size() << std::endl;
-                req.result(gir);
+                ClusteringInfo clustering;
+                clustering.clusteringIndex = i;
+                tokenizer_->numeric((*clusteringContainer_)[i], clustering.pow);
+                gir.info_list_.push_back(clustering);
             }
-            else
-            {
-                clustering::type::ClusteringInfo newinfo;
-                bool res = ClusteringDataStorage::get()->loadClusteringInfo(params.get<0>().clusteringhash_, newinfo);
-                LOG(INFO) << "method:" <<method <<" data req one"<< res << std::endl;
-                if(res == true)
-                {
-                    clustering::rpc::ClusteringInfo vec;
-                    vec.clusteringIndex = newinfo.getClusteringIndex();
-                    TermParser::get()->numeric(newinfo.getClusteringVector(), vec.pow);
-                    gir.info_list_.push_back(vec);
-                }
-
-                req.result(gir);
-            }
+            req.result(gir);
         }
         else if (method == CLUSTERINGServerRequest::method_names[CLUSTERINGServerRequest::METHOD_UPDATETOPNCLUSTER])
         {
-            msgpack::type::tuple<TopNCluster> params;
+            msgpack::type::tuple<TopNClustering> params;
             req.params().convert(&params);
-            bool res = TopNClusterContainer::get()->update(params.get<0>());
+            const TopNClustering& clustering = params.get<0>();
+            bool res = topnClustering_->update(clustering.userName(), clustering.get());
             req.result(res);
         }
         else if (method == CLUSTERINGServerRequest::method_names[CLUSTERINGServerRequest::METHOD_UPDATEPERUSERMODEL])
@@ -128,15 +108,13 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
             msgpack::type::tuple<std::string, std::vector<float> > params;
             req.params().convert(&params);
             PerUserOnlineModel userModel;
-            userModel.setUserName(params.get<0>());
-            userModel.setArgs(params.get<1>());
-            bool res = LaserOnlineModel::get()->update(userModel);
+            bool res = laserOnlineModel_->update(params.get<0>(), params.get<1>());
             req.result(res);
         }
         else
         {
             req.error(msgpack::rpc::NO_METHOD_ERROR);
-        }*/
+        }
     }
     catch (const msgpack::type_error& e)
     {

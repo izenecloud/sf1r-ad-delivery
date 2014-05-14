@@ -9,6 +9,7 @@
 #include "LaserRecommendParam.h"
 #include "AdIndexManager.h"
 #include "Tokenizer.h"
+#include "TopNClusteringDB.h"
 #include "clusteringmanager/type/TermDictionary.h"
 
 namespace sf1r
@@ -40,6 +41,8 @@ private:
     static std::vector<boost::unordered_map<std::string, float> >* clusteringContainer_;
     static laser::Tokenizer* tokenizer_;
     static laser::LaserRpcServer* rpcServer_;
+    static laser::TopNClusteringDB* topnClustering_;
+    static laser::LaserOnlineModelDB* laserOnlineModel_;
     static boost::shared_mutex mutex_;
 };
 

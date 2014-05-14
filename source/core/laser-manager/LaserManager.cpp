@@ -11,6 +11,8 @@ namespace sf1r
 std::vector<boost::unordered_map<std::string, float> >* LaserManager::clusteringContainer_ = NULL;
 laser::Tokenizer* LaserManager::tokenizer_ = NULL;
 laser::LaserRpcServer* LaserManager::rpcServer_ = NULL;
+laser::TopNClusteringDB* LaserManager::topnClustering_ = NULL;
+laser::LaserOnlineModelDB* LaserManager::laserOnlineModel_ = NULL;
 boost::shared_mutex LaserManager::mutex_;
 
 LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService)
@@ -23,9 +25,10 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
     }
 
     load_();
-
-    recommend_.reset(new LaserRecommend());
-    indexManager_.reset(new laser::AdIndexManager(workdir_));
+    
+    laser::AdIndexManager* index = new laser::AdIndexManager(workdir_);
+    indexManager_.reset(index);
+    recommend_.reset(new LaserRecommend(index, topnClustering_, laserOnlineModel_));
 }
    
 LaserManager::~LaserManager()
@@ -41,10 +44,13 @@ void LaserManager::load_()
     clusteringContainer_ = new std::vector<TokenVector>();
     laser::clustering::loadClusteringResult(*clusteringContainer_, MiningManager::system_resource_path_ + "/laser/clustering_result");
     
-    tokenizer_ = new Tokenizer(MiningManager::system_working_path_ + "/dict/title_pca/",
+    tokenizer_ = new Tokenizer(MiningManager::system_resource_path_ + "/dict/title_pca/",
         MiningManager::system_resource_path_ + "/laser/terms_dic.dat");
+
+    topnClustering_ = new TopNClusteringDB(workdir_ + "/topnclustering");
+    laserOnlineModel_ = new LaserOnlineModelDB(workdir_ + "/laser_online_model/"); 
     
-    rpcServer_ = new LaserRpcServer(tokenizer_, clusteringContainer_);
+    rpcServer_ = new LaserRpcServer(tokenizer_, clusteringContainer_, topnClustering_, laserOnlineModel_);
     rpcServer_->start("0.0.0.0", 28611, 2);
 }
     
@@ -68,6 +74,16 @@ void LaserManager::close_()
     {
         delete clusteringContainer_;
         clusteringContainer_ = NULL;
+    }
+    if (NULL != topnClustering_)
+    {
+        delete topnClustering_;
+        topnClustering_ = NULL;
+    }
+    if (NULL != laserOnlineModel_)
+    {
+        delete laserOnlineModel_;
+        laserOnlineModel_ = NULL;
     }
 }
 

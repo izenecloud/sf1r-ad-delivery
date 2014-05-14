@@ -27,18 +27,9 @@ void AdIndexManager::index(const std::size_t& clusteringId,
         const std::string& docid, 
         const std::vector<std::pair<int, float> >& vec)
 {
-    Lux::IO::data_t *val_p = NULL;
     ADVector advec;
-    if (!containerPtr_->get(clusteringId, &val_p, Lux::IO::SYSTEM))
-    {
-        containerPtr_->clean_data(val_p);
-    }
-    else
-    {
-        izenelib::util::izene_deserialization<ADVector> izd((char*)val_p->data, val_p->size);
-        izd.read_image(advec);
-        containerPtr_->clean_data(val_p);
-    }
+    get(clusteringId, advec);
+
     AD ad;
     ad.first = docid;
     ad.second = vec;
@@ -48,6 +39,23 @@ void AdIndexManager::index(const std::size_t& clusteringId,
     size_t srcLen;
     izs.write_image(src, srcLen);
     containerPtr_->put(clusteringId, src, srcLen, Lux::IO::OVERWRITE);
+}
+
+bool AdIndexManager::get(const std::size_t& clusteringId, ADVector& advec) const
+{
+    Lux::IO::data_t *val_p = NULL;
+    if (!containerPtr_->get(clusteringId, &val_p, Lux::IO::SYSTEM))
+    {
+        containerPtr_->clean_data(val_p);
+        return false;
+    }
+    else
+    {
+        izenelib::util::izene_deserialization<ADVector> izd((char*)val_p->data, val_p->size);
+        izd.read_image(advec);
+        containerPtr_->clean_data(val_p);
+    }
+    return true;
 }
 
 void AdIndexManager::open_()

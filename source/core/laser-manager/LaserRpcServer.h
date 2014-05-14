@@ -3,6 +3,8 @@
 
 #include <3rdparty/msgpack/rpc/server.h>
 #include "service/CLUSTERINGServerRequest.h"
+#include "TopNClusteringDB.h"
+#include "LaserOnlineModelDB.h"
 #include "Tokenizer.h"
 #include <boost/thread/mutex.hpp>
 #include <boost/shared_ptr.hpp>
@@ -14,7 +16,9 @@ class LaserRpcServer : public msgpack::rpc::server::base
 {
 public:
     LaserRpcServer(const Tokenizer* tokenzer,
-        const std::vector<boost::unordered_map<std::string, float> >* clusteringContainer);
+        const std::vector<boost::unordered_map<std::string, float> >* clusteringContainer,
+        TopNClusteringDB* topnClustering,
+        LaserOnlineModelDB* laserOnlineModel);
     ~LaserRpcServer();
 
 public:
@@ -30,6 +34,8 @@ private:
 private:
     const Tokenizer* tokenizer_;
     const std::vector<boost::unordered_map<std::string, float> >* clusteringContainer_;
+    TopNClusteringDB* topnClustering_;
+    LaserOnlineModelDB* laserOnlineModel_;
 };
 
 } } 

@@ -10,6 +10,8 @@ class AdIndexManager
     typedef Lux::IO::Array ContainerType;
     typedef std::pair<std::string, std::vector<std::pair<int, float> > > AD;
     typedef std::vector<AD> ADVector;
+
+    friend class LaserRecommend;
 public:
     AdIndexManager(const std::string& workdir);
     ~AdIndexManager();
@@ -18,6 +20,7 @@ public:
     void index(const std::size_t& clusteringId, 
         const std::string& docid, 
         const std::vector<std::pair<int, float> >& vec);
+    bool get(const std::size_t& clusteringId, ADVector& advec) const;
 private:
     void open_();
 private:
