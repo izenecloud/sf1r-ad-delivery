@@ -32,8 +32,8 @@ private:
     const std::string workdir_;
     const std::string scddir_;
     const std::size_t dictLimit_;
-    type::TermDictionary termDict_;
-    PCARunner runner_;
+    type::TermDictionary* termDict_;
+    PCARunner* runner_;
     std::queue<std::fstream*> fstream_;
 };
 } } }

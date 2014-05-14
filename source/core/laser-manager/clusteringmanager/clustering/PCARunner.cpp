@@ -266,4 +266,26 @@ void PCARunner::pushClustering_(const std::string& cateMerge,
     }
 }
 
+void saveClusteringResult(const boost::unordered_map<std::string, boost::unordered_map<std::string, float> >& container, const std::string& filename)
+{
+    std::ofstream ofs(filename.c_str(), std::ofstream::binary | std::ofstream::trunc);
+    boost::archive::text_oarchive oa(ofs);
+    try
+    {
+        oa << container;
+    }
+    catch(std::exception& e)
+    {
+        LOG(INFO)<<e.what();
+    }
+    ofs.close();
+}
+
+void loadClusteringResult(boost::unordered_map<std::string, boost::unordered_map<std::string, float> >& container, const std::string& filename)
+{
+    std::ifstream ifs(filename.c_str(), std::ios::binary);
+    boost::archive::text_iarchive ia(ifs);
+    ia >> container;
+}
+
 } } }

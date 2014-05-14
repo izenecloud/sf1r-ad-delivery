@@ -106,7 +106,7 @@ public:
             (*context_)[i] = context;
         }
         thread_ = new std::vector<boost::thread*>(THREAD_NUM_);
-        clusteringContainer_ = new ClusteringContainer();
+        clusteringContainer_ = new boost::unordered_map<std::string, boost::unordered_map<std::string, float> >();
     }
 
     ~PCARunner()
@@ -180,7 +180,7 @@ public:
         mergeClustering_();
     }
 
-    const ClusteringContainer& getClusteringResult() const
+    const boost::unordered_map<std::string, boost::unordered_map<std::string, float> >& getClusteringResult() const
     {
         return *clusteringContainer_;
     }
@@ -242,7 +242,14 @@ private:
             ClusteringContainer::const_iterator it = container->begin();
             for (; it != container->end(); ++it)
             {
-                (*clusteringContainer_)[it->first] = it->second;
+                boost::unordered_map<std::string, float> vec;
+                // normalize
+                boost::unordered_map<std::string, float>::const_iterator tokenIterator = it->second.second.begin();
+                for (; tokenIterator != it->second.second.end(); ++tokenIterator)
+                {
+                    vec[tokenIterator->first] = tokenIterator->second / it->second.first;
+                }
+                (*clusteringContainer_)[it->first] = vec;
             }
         }
     }
@@ -276,6 +283,7 @@ private:
         const std::vector<std::pair<std::string, float> >& tks,
         const type::TermDictionary& dict,
         ClusteringContainer& clusteringContainer) const;
+
 private:
     type::TermDictionary& term_dictionary;
     ilplib::knlp::TitlePCA tok;
@@ -285,13 +293,15 @@ private:
     boost::shared_mutex mutex_;
     bool exit_;
 
-    ClusteringContainer* clusteringContainer_;
-    
+    boost::unordered_map<std::string, boost::unordered_map<std::string, float> >* clusteringContainer_;
     const std::size_t THREAD_NUM_;
     const float THRESHOLD_;
     const std::size_t MAX_DOC_PER_CLUSTERING_;
     const std::size_t MIN_DOC_PER_CLUSTERING_;
     const static std::size_t CACHE_THRESHOLD = 1024;
 };
+
+void saveClusteringResult(const boost::unordered_map<std::string, boost::unordered_map<std::string, float> >& container, const std::string& filename);
+void loadClusteringResult(boost::unordered_map<std::string, boost::unordered_map<std::string, float> >& container, const std::string& filename);
 } } }
 #endif /* SEGMENTTOOL_H_ */

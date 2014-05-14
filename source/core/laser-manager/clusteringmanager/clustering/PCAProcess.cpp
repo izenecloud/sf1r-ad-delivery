@@ -31,41 +31,53 @@ PCAProcess::PCAProcess(const std::string& workdir,
    : workdir_(workdir)
    , scddir_(scddir)
    , dictLimit_(dictLimit)
-   , termDict_(workdir_)
-   , runner_(threadNum, termDict_, pcaDictPath, threhold, maxDocPerClustering, minDocPerClustering)
+   , termDict_(NULL)
+   , runner_(NULL)
 {
     if (!exists(workdir_))
     {
         create_directory(workdir_);
     }
+   termDict_ = new TermDictionary(workdir_);
+   runner_ = new PCARunner(threadNum, *termDict_, pcaDictPath, threhold, maxDocPerClustering, minDocPerClustering);
 }
 
 PCAProcess::~PCAProcess()
 {
+    if (NULL != termDict_)
+    {
+        delete termDict_;
+        termDict_ = NULL;
+    }
+    if (NULL != runner_)
+    {
+        delete runner_;
+        runner_ = NULL;
+    }
 }
 
 void PCAProcess::run()
 {
     LOG(INFO)<<"prepare to clustering, statistics...";
     initFstream();
-    runner_.startStatistics();
+    runner_->startStatistics();
     Document doc;
     while (next(doc.title, doc.category))
     {
-        runner_.push_back(doc);
+        runner_->push_back(doc);
     }
-    runner_.stopStatistics();
+    runner_->stopStatistics();
     LOG(INFO)<<"statistics finish";
-    termDict_.limit(dictLimit_);
+    termDict_->limit(dictLimit_);
 
     LOG(INFO)<<"clustering...";
     initFstream();
-    runner_.startClustering();
+    runner_->startClustering();
     while (next(doc.title, doc.category))
     {
-        runner_.push_back(doc);
+        runner_->push_back(doc);
     }
-    runner_.stopClustering();
+    runner_->stopClustering();
     LOG(INFO)<<"clustering finish";
     
     save();
@@ -73,22 +85,11 @@ void PCAProcess::run()
 
 void PCAProcess::save()
 {
-    termDict_.save();
-    const PCARunner::ClusteringContainer& clusteringResult = runner_.getClusteringResult();
+    termDict_->save();
+    const boost::unordered_map<std::string, boost::unordered_map<std::string, float> >& 
+        clusteringResult = runner_->getClusteringResult();
     LOG(INFO)<<"clustering summary:\n\tclustering size = "<<clusteringResult.size();
-    {
-        std::ofstream ofs((workdir_ + "/clustering").c_str(), std::ofstream::binary | std::ofstream::trunc);
-        boost::archive::text_oarchive oa(ofs);
-        try
-        {
-            oa << clusteringResult;
-        }
-        catch(std::exception& e)
-        {
-            LOG(INFO)<<e.what();
-        }
-        ofs.close();
-    }
+    saveClusteringResult(clusteringResult, workdir_ + "/clustering");
 }
 
 bool PCAProcess::next(std::string& title, std::string& category)
