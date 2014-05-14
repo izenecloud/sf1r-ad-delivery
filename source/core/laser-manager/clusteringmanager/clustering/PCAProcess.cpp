@@ -34,6 +34,10 @@ PCAProcess::PCAProcess(const std::string& workdir,
    , termDict_(workdir_)
    , runner_(threadNum, termDict_, pcaDictPath, threhold, maxDocPerClustering, minDocPerClustering)
 {
+    if (!exists(workdir_))
+    {
+        create_directory(workdir_);
+    }
 }
 
 PCAProcess::~PCAProcess()
