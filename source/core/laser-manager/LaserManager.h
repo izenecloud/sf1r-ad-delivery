@@ -31,6 +31,7 @@ public:
 
     MiningTask* getLaserIndexTask();
 
+    const std::size_t getClustering(const std::string& title) const;
 private:
     std::size_t assignClustering_(const TokenVector& v) const;
     float similarity_(const TokenVector& lv, const TokenVector& rv) const;

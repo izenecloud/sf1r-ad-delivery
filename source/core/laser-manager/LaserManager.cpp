@@ -141,6 +141,14 @@ MiningTask* LaserManager::getLaserIndexTask()
 {
     return indexTask_.get();
 }
+    
+const std::size_t LaserManager::getClustering(const std::string& title) const
+{
+    boost::unordered_map<std::string, float> vec;
+    tokenizer_->tokenize(title, vec);
+    return assignClustering_(vec);
+}
+
 std::size_t LaserManager::assignClustering_(const TokenVector& v) const
 {
     std::size_t size = clusteringContainer_->size();
@@ -161,7 +169,6 @@ std::size_t LaserManager::assignClustering_(const TokenVector& v) const
 float LaserManager::similarity_(const TokenVector& lv, const TokenVector& rv) const
 {
     float sim = 0.0;
-    TokenVector::const_iterator pit = lv.begin();
     TokenVector::const_iterator it = lv.begin(); 
     for (; it != lv.end(); ++it)
     {
