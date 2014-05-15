@@ -67,7 +67,7 @@ public:
 
     bool find(const std::string& term) const
     {
-        return terms_.find(term) == terms_.end();
+        return terms_.find(term) != terms_.end();
     }
 
     void set(const std::string& term, int count)
