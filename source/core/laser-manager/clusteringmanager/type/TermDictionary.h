@@ -75,7 +75,8 @@ public:
         boost::unordered_map<std::string, std::pair<int, int> >::iterator iter = terms_.find(term);
         if(iter == terms_.end())
         {
-            terms_[term] = std::make_pair(count, terms_.size());
+            int id = terms_.size();
+            terms_[term] = std::make_pair(count, id);
         }
         else
         {
@@ -95,8 +96,7 @@ public:
 
         for (std::size_t i = 0; i < ls; ++i)
         {
-            //std::cout<<terms[i].first<<"\t"<<terms[i].second.first<<"\n";
-            terms_[terms[i].first] = std::make_pair(terms[i].second.first, terms_.size());
+            terms_[terms[i].first] = std::make_pair(terms[i].second.first, i);
         }
     }
 
