@@ -15,7 +15,7 @@ class AdIndexManager
 
     friend class LaserRecommend;
 public:
-    AdIndexManager(const std::string& workdir);
+    AdIndexManager(const std::string& workdir, const std::string& collection);
     ~AdIndexManager();
 
 public:
@@ -23,11 +23,22 @@ public:
         const docid_t& docid, 
         const std::vector<std::pair<int, float> >& vec);
     bool get(const std::size_t& clusteringId, ADVector& advec) const;
+    
+    docid_t getLastDocId() const
+    {
+        return lastDocId_;
+    }
+
+    void setLastDocId(const docid_t docid)
+    {
+        lastDocId_ = docid;
+    }
 private:
     void open_();
 private:
-    const std::string filename_;
+    const std::string workdir_;
     ContainerType* containerPtr_;
+    docid_t lastDocId_;
 };
 
 } }

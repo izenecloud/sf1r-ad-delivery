@@ -1,13 +1,24 @@
 #include "AdIndexManager.h"
 #include <boost/filesystem.hpp>
 #include <util/izene_serialization.h>
+#include <fstream>
+#include <glog/logging.h>
 
 namespace sf1r { namespace laser {
 
-AdIndexManager::AdIndexManager(const std::string& workdir)
-    : filename_(workdir + "/ad-index-manager")
+AdIndexManager::AdIndexManager(const std::string& workdir, const std::string& collection)
+    : workdir_(workdir + "/" + collection + "/ad-index-manager/")
     , containerPtr_(NULL)
+    , lastDocId_(0)
 {
+    if (!boost::filesystem::exists(workdir_))
+    {
+        if (!boost::filesystem::exists(workdir + "/" + collection))
+        {
+            boost::filesystem::create_directory(workdir + "/" + collection);
+        }
+        boost::filesystem::create_directory(workdir_);
+    }
     containerPtr_ = new ContainerType(Lux::IO::NONCLUSTER);
     containerPtr_->set_noncluster_params(Lux::IO::Linked);
     containerPtr_->set_lock_type(Lux::IO::LOCK_THREAD);
@@ -18,8 +29,22 @@ AdIndexManager::~AdIndexManager()
 {
     if (NULL != containerPtr_)
     {
-         containerPtr_->close();
+        containerPtr_->close();
         delete containerPtr_;
+    }
+    {
+        const std::string filename = workdir_ + "/last_docid";
+        std::ofstream ofs(filename .c_str(), std::ofstream::binary | std::ofstream::trunc);
+        boost::archive::text_oarchive oa(ofs);
+        try
+        {
+            oa << lastDocId_;
+        }
+        catch(std::exception& e)
+        {
+            LOG(INFO)<<e.what();
+        }
+        ofs.close();
     }
 }
     
@@ -62,17 +87,28 @@ void AdIndexManager::open_()
 {
     try
     {
-        if ( !boost::filesystem::exists(filename_) )
+        const std::string filename = workdir_ + "/index";
+        if ( !boost::filesystem::exists(filename) )
         {
-            containerPtr_->open(filename_.c_str(), Lux::IO::DB_CREAT);
+            containerPtr_->open(filename.c_str(), Lux::IO::DB_CREAT);
         }
         else
         {
-            containerPtr_->open(filename_.c_str(), Lux::IO::DB_RDWR);
+            containerPtr_->open(filename.c_str(), Lux::IO::DB_RDWR);
         }
     }
     catch (...)
     {
     }
+
+   {
+        const std::string filename = workdir_ + "/last_docid";
+        if ( boost::filesystem::exists(filename) )
+        {
+            std::ifstream ifs(filename.c_str(), std::ios::binary);
+            boost::archive::text_iarchive ia(ifs);
+            ia >> lastDocId_;
+        }
+   }
 }
 } }

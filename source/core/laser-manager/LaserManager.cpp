@@ -16,8 +16,10 @@ laser::TopNClusteringDB* LaserManager::topnClustering_ = NULL;
 laser::LaserOnlineModelDB* LaserManager::laserOnlineModel_ = NULL;
 boost::shared_mutex LaserManager::mutex_;
 
-LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService)
+LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService,
+    const std::string& collection)
     : workdir_(MiningManager::system_working_path_ + "/LASER/")
+    , collection_(collection)
     , adSearchService_(adSearchService)
 {
     if (!boost::filesystem::exists(workdir_))
@@ -27,7 +29,7 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
 
     load_();
     
-    laser::AdIndexManager* index = new laser::AdIndexManager(workdir_);
+    laser::AdIndexManager* index = new laser::AdIndexManager(workdir_, collection_);
     indexManager_.reset(index);
     recommend_.reset(new LaserRecommend(index, topnClustering_, laserOnlineModel_));
     indexTask_.reset(new LaserIndexTask(this));
@@ -124,8 +126,14 @@ void LaserManager::index(const docid_t& docid, const std::string& title)
     boost::unordered_map<std::string, float> vec;
     tokenizer_->tokenize(title, vec);
     std::size_t clusteringId = assignClustering_(vec);
+    //LOG(INFO)<<docid<<"\t"<<title<<"\t clustering id = "<<clusteringId;
     std::vector<std::pair<int,float> >numericVec;
     tokenizer_->numeric(vec, numericVec);
+    if ( -1 == clusteringId)
+    {
+        // for void
+        clusteringId = rand() % clusteringContainer_->size();
+    }
     indexManager_->index(clusteringId, docid, numericVec); 
 }
     
@@ -137,10 +145,10 @@ std::size_t LaserManager::assignClustering_(const TokenVector& v) const
 {
     std::size_t size = clusteringContainer_->size();
     float maxSim = 0.0;
-    std::size_t maxId = 0;
+    std::size_t maxId = -1;
     for (std::size_t i = 0; i < size; ++i)
     {
-        float sim = similarity_((*clusteringContainer_)[i], v);
+        float sim = similarity_(v, (*clusteringContainer_)[i]);
         if (sim > maxSim)
         {
             maxSim = sim;
@@ -153,6 +161,7 @@ std::size_t LaserManager::assignClustering_(const TokenVector& v) const
 float LaserManager::similarity_(const TokenVector& lv, const TokenVector& rv) const
 {
     float sim = 0.0;
+    TokenVector::const_iterator pit = lv.begin();
     TokenVector::const_iterator it = lv.begin(); 
     for (; it != lv.end(); ++it)
     {

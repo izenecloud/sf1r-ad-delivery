@@ -22,7 +22,7 @@ class LaserManager
 {
 typedef boost::unordered_map<std::string, float> TokenVector;
 public:
-    LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService);
+    LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService, const std::string& collection);
     ~LaserManager();
 public:
     bool recommend(const laser::LaserRecommendParam& param, 
@@ -37,8 +37,11 @@ private:
 
     void load_();
     void close_();
+
+    friend class laser::LaserIndexTask;
 private:
     const std::string workdir_;
+    const std::string collection_;
     boost::shared_ptr<AdSearchService> adSearchService_;
     boost::scoped_ptr<laser::LaserRecommend> recommend_;
     boost::scoped_ptr<laser::AdIndexManager> indexManager_;

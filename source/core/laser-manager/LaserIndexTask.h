@@ -10,6 +10,7 @@ class LaserIndexTask : public MiningTask
 public:
     LaserIndexTask(LaserManager* laserManager)
         : laserManager_(laserManager)
+        , docid_(0)
     {
     }
 
@@ -19,6 +20,10 @@ public:
 public:
     virtual bool buildDocument(docid_t docID, const Document& doc)
     {
+        if (docid_ < docID)
+        {
+            docid_ = docID;
+        }
         std::string title = "";
         if (doc.getString("Title", title))
         {
@@ -29,21 +34,24 @@ public:
 
     virtual bool preProcess(int64_t timestamp)
     {
+        docid_ = laserManager_->indexManager_->getLastDocId();
         return true;
     }
 
     virtual bool postProcess()
     {
+        laserManager_->indexManager_->setLastDocId(docid_);
         return true;
     }
 
     virtual docid_t getLastDocId()
     {
-        return 0;
+        return docid_;
     }
 
 private:
     LaserManager* laserManager_;
+    docid_t docid_;
 };
 
 } }
