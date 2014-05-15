@@ -39,6 +39,7 @@
                             <xs:element ref="ProductRanking" minOccurs="0"/>
                             <xs:element ref="SuffixMatch" minOccurs="0"/>
                             <xs:element ref="AdIndex" minOccurs="0"/>
+                            <xs:element ref="LaserIndex" minOccurs="0"/>
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
@@ -76,6 +77,14 @@
                 <xs:element name="Property" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
             <xs:attribute name="ctrpath" type="xs:string" use="required"/>
+        </xs:complexType>
+    </xs:element>
+    
+    <xs:element name="LaserIndex">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="Property" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
         </xs:complexType>
     </xs:element>
 

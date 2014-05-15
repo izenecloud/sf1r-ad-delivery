@@ -5,7 +5,7 @@
 namespace sf1r { namespace laser {
 
 bool LaserRecommend::recommend(const std::string& uuid, 
-    std::vector<std::string>& itemList, 
+    std::vector<docid_t>& itemList, 
     std::vector<float>& itemScoreList, 
     const std::size_t num) const
 {
@@ -50,7 +50,7 @@ void LaserRecommend::topN(const std::vector<float>& model, const AdIndexManager:
     for (std::size_t i = 0; i < advec.size(); ++i)
     {
         const AdIndexManager::AD& ad = advec[i];
-        const std::string& docid = ad.first;
+        const docid_t& docid = ad.first;
         const std::vector<std::pair<int, float> >& vec = ad.second;
         std::vector<std::pair<int, float> >::const_iterator it = vec.begin();
         float weight = 0;

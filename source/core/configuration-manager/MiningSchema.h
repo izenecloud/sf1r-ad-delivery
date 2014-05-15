@@ -7,6 +7,7 @@
 #include "SuffixMatchConfig.h"
 #include "ZambeziConfig.h"
 #include "AdIndexConfig.h"
+#include "LaserIndexConfig.h"
 #include <stdint.h>
 #include <string>
 #include <boost/serialization/access.hpp>
@@ -50,6 +51,8 @@ public:
     ZambeziConfig zambezi_config;
 
     AdIndexConfig ad_index_config;
+
+    LaserIndexConfig laser_index_config;
 };
 
 } // namespace

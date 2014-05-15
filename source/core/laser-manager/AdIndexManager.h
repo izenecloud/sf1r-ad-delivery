@@ -3,12 +3,14 @@
 
 #include <3rdparty/am/luxio/array.h>
 #include <vector>
+#include <common/inttypes.h>
+
 namespace sf1r { namespace laser {
 
 class AdIndexManager
 {
     typedef Lux::IO::Array ContainerType;
-    typedef std::pair<std::string, std::vector<std::pair<int, float> > > AD;
+    typedef std::pair<docid_t, std::vector<std::pair<int, float> > > AD;
     typedef std::vector<AD> ADVector;
 
     friend class LaserRecommend;
@@ -18,7 +20,7 @@ public:
 
 public:
     void index(const std::size_t& clusteringId, 
-        const std::string& docid, 
+        const docid_t& docid, 
         const std::vector<std::pair<int, float> >& vec);
     bool get(const std::size_t& clusteringId, ADVector& advec) const;
 private:

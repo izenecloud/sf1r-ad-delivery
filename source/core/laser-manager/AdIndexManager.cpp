@@ -24,7 +24,7 @@ AdIndexManager::~AdIndexManager()
 }
     
 void AdIndexManager::index(const std::size_t& clusteringId, 
-        const std::string& docid, 
+        const docid_t& docid, 
         const std::vector<std::pair<int, float> >& vec)
 {
     ADVector advec;

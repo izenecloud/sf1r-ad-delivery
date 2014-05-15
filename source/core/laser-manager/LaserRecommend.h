@@ -6,13 +6,14 @@
 #include "TopNClusteringDB.h"
 #include "LaserOnlineModelDB.h"
 #include <util/functional.h>
+#include <common/inttypes.h>
 #include <queue>
 
 namespace sf1r { namespace laser {
 class LaserRecommend
 {
-typedef izenelib::util::second_greater<std::pair<std::string, float> > greater_than;
-typedef std::priority_queue<std::pair<std::string, float>, std::vector<std::pair<std::string, float> >, greater_than> priority_queue;
+typedef izenelib::util::second_greater<std::pair<docid_t, float> > greater_than;
+typedef std::priority_queue<std::pair<docid_t, float>, std::vector<std::pair<docid_t, float> >, greater_than> priority_queue;
 
 public:
     LaserRecommend(const AdIndexManager* index,
@@ -26,7 +27,7 @@ public:
 
 public:
     bool recommend(const std::string& uuid, 
-        std::vector<std::string>& itemList, 
+        std::vector<docid_t>& itemList, 
         std::vector<float>& itemScoreList, 
         const std::size_t num) const;
 private:

@@ -122,17 +122,19 @@ PCARunner::DocumentVecType::iterator PCARunner::doClustering_(DocumentVecType& d
             {
                 break;
             }
+            // to many, move to child
             else if (it->second > MAX_DOC_PER_CLUSTERING_)
             {
                 if ( i + 1 < size) 
                 {
                     Dictionary::const_iterator next = ccnt.find(cateMerge + tks[i + 1].first);
+                    // no child 
                     if (next == ccnt.end())
                     {
                         pushClustering_(cateMerge, tks, dict, clusteringContainer); 
                         break;
                     }
-
+                    // child, too little
                     if (next->second < MIN_DOC_PER_CLUSTERING_)
                     {
                         pushClustering_(cateMerge, tks, dict, clusteringContainer); 
@@ -140,17 +142,20 @@ PCARunner::DocumentVecType::iterator PCARunner::doClustering_(DocumentVecType& d
                     }
                     continue;
                 }
+                // last token
                 else
                 {
                     pushClustering_(cateMerge, tks, dict, clusteringContainer); 
                     break;
                 }
             }
+            // 
             else if (it->second > MIN_DOC_PER_CLUSTERING_)
             {
                 pushClustering_(cateMerge, tks, dict, clusteringContainer); 
                 break;
             }
+            // too little, discard
             else
             {
                break;
