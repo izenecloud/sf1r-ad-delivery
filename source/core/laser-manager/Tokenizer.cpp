@@ -34,13 +34,22 @@ void Tokenizer::tokenize(const std::string& title, boost::unordered_map<std::str
     std::vector<TermPair> subtks;
     std::string brand, mdt;
     tok->pca(title, tks, brand, mdt, subtks, false);
-    
+    if (!brand.empty())
+    {
+        tks.push_back(std::make_pair(brand, 0.5));
+    }
+    if (!mdt.empty())
+    {
+        tks.push_back(std::make_pair(mdt, 0.5));
+    }
     float total = 0;
     for (size_t i = 0; i < tks.size(); ++i)
     {
+        std::cout<<tks[i].first<<"\n";
         boost::unordered_map<std::string, std::pair<int, int> >::const_iterator it = termDict_->getTerms().find(tks[i].first);
         if(it != termDict_->getTerms().end())
         {
+            std::cout<<"YES\n";
             vec[tks[i].first] = tks[i].second;
             total+=tks[i].second;
         }
@@ -50,6 +59,7 @@ void Tokenizer::tokenize(const std::string& title, boost::unordered_map<std::str
     {
         for (boost::unordered_map<std::string, float>::iterator it = vec.begin(); it != vec.end(); it++)
         {
+            std::cout<<it->first<<"\n";
             it->second /= total;
         }
     }
