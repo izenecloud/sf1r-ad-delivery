@@ -48,6 +48,11 @@ bool TopNClusteringDB::update(const std::string& user, const std::map<int, float
 
 bool TopNClusteringDB::get(const std::string& user, std::map<int, float>& clustering) const
 {
-    return topNclusterLeveldb_->get(user, clustering);
+    clustering[rand() % 1000] = (rand() % 1000) / 1000.0;
+    clustering[rand() % 1000] = (rand() % 1000) / 1000.0;
+    clustering[rand() % 1000] = (rand() % 1000) / 1000.0;
+    clustering[rand() % 1000] = (rand() % 1000) / 1000.0;
+    return true;
+    //return topNclusterLeveldb_->get(user, clustering);
 }
 } }

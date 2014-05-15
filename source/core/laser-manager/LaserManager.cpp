@@ -106,13 +106,16 @@ void LaserManager::close_()
 }
 
 bool LaserManager::recommend(const LaserRecommendParam& param, 
+    GetDocumentsByIdsActionItem& actionItem,
     RawTextResultFromMIA& res) const 
 {
     std::vector<docid_t> docIdList;
     std::vector<float> itemScoreList;
     if (!recommend_->recommend(param.uuid_, docIdList, itemScoreList, param.topN_))
+    {
+        res.error_ = "Internal ERROR in Recommend Engine";
         return false;
-    GetDocumentsByIdsActionItem actionItem;
+    }
     for (std::size_t i = 0; i < docIdList.size(); ++i)
     {
         actionItem.idList_.push_back(docIdList[i]);

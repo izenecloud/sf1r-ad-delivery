@@ -37,6 +37,11 @@ bool LaserOnlineModelDB::update(const std::string& user, const std::vector<float
 
 bool LaserOnlineModelDB::get(const std::string& user, std::vector<float>& model) const
 {
-    return db_->get(user, model);
+    for (int i = 0; i <= 1000; i++)
+    {
+        model.push_back((rand() % 1000) / 1000.0);
+    }
+    return true;
+    //return db_->get(user, model);
 }
 } }

@@ -101,7 +101,7 @@ bool CollectionHandler::destroy(const ::izenelib::driver::Value& document)
     return true;
 }
 
-void CollectionHandler::laserRecomend(::izenelib::driver::Request& request, ::izenelib::driver::Response& response)
+void CollectionHandler::laserRecommend(::izenelib::driver::Request& request, ::izenelib::driver::Response& response)
 {
     LaserHandler handler(request, response, *this);
     handler.recommend();

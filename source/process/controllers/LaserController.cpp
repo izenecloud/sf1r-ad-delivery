@@ -5,7 +5,7 @@ namespace sf1r
 {
 void LaserController::recommend()
 {
-    collectionHandler_->laserRecomend(request(), response());
+    collectionHandler_->laserRecommend(request(), response());
 }
 
 }
