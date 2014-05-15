@@ -13,9 +13,13 @@ class AdIndexManager
     typedef std::pair<docid_t, std::vector<std::pair<int, float> > > AD;
     typedef std::vector<AD> ADVector;
 
+    typedef std::vector<ADVector> Cache;
+
     friend class LaserRecommend;
 public:
-    AdIndexManager(const std::string& workdir, const std::string& collection);
+    AdIndexManager(const std::string& workdir, 
+        const std::string& collection,
+        const std::size_t clusteringNum);
     ~AdIndexManager();
 
 public:
@@ -33,12 +37,17 @@ public:
     {
         lastDocId_ = docid;
     }
+    
+    void preIndex();
+    void postIndex();
 private:
     void open_();
 private:
     const std::string workdir_;
+    const std::size_t clusteringNum_;
     ContainerType* containerPtr_;
     docid_t lastDocId_;
+    Cache* cache_;
 };
 
 } }

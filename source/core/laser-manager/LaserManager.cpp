@@ -29,7 +29,7 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
 
     load_();
     
-    laser::AdIndexManager* index = new laser::AdIndexManager(workdir_, collection_);
+    laser::AdIndexManager* index = new laser::AdIndexManager(workdir_, collection_, clusteringContainer_->size());
     indexManager_.reset(index);
     recommend_.reset(new LaserRecommend(index, topnClustering_, laserOnlineModel_));
     indexTask_.reset(new LaserIndexTask(this));

@@ -25,21 +25,31 @@ public:
             docid_ = docID;
         }
         std::string title = "";
-        if (doc.getString("Title", title))
+        try
         {
-            laserManager_->index(docID, title);
+            // throw exception
+            if (doc.getString("Title", title))
+            {
+                laserManager_->index(docID, title);
+            }
+        }
+        catch (std::exception& e)
+        {
+            LOG(INFO)<<e.what();
         }
         return true;
     }
 
     virtual bool preProcess(int64_t timestamp)
     {
+        laserManager_->indexManager_->preIndex();
         docid_ = laserManager_->indexManager_->getLastDocId();
         return true;
     }
 
     virtual bool postProcess()
     {
+        laserManager_->indexManager_->postIndex();
         laserManager_->indexManager_->setLastDocId(docid_);
         return true;
     }

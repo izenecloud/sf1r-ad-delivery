@@ -6,10 +6,14 @@
 
 namespace sf1r { namespace laser {
 
-AdIndexManager::AdIndexManager(const std::string& workdir, const std::string& collection)
+AdIndexManager::AdIndexManager(const std::string& workdir, 
+        const std::string& collection,
+        const std::size_t clusteringNum)
     : workdir_(workdir + "/" + collection + "/ad-index-manager/")
+    , clusteringNum_(clusteringNum)
     , containerPtr_(NULL)
     , lastDocId_(0)
+    , cache_(NULL)
 {
     if (!boost::filesystem::exists(workdir_))
     {
@@ -23,6 +27,7 @@ AdIndexManager::AdIndexManager(const std::string& workdir, const std::string& co
     containerPtr_->set_noncluster_params(Lux::IO::Linked);
     containerPtr_->set_lock_type(Lux::IO::LOCK_THREAD);
     open_();
+    cache_ = new Cache(clusteringNum_);
 }
 
 AdIndexManager::~AdIndexManager()
@@ -46,13 +51,24 @@ AdIndexManager::~AdIndexManager()
         }
         ofs.close();
     }
+    if (NULL != cache_)
+    {
+        delete cache_;
+        cache_ = NULL;
+    }
 }
     
 void AdIndexManager::index(const std::size_t& clusteringId, 
         const docid_t& docid, 
         const std::vector<std::pair<int, float> >& vec)
 {
-    ADVector advec;
+    ADVector& advec = (*cache_)[clusteringId];
+    AD ad;
+    ad.first = docid;
+    ad.second = vec;
+    advec.push_back(ad);
+
+    /*ADVector advec;
     get(clusteringId, advec);
 
     AD ad;
@@ -63,7 +79,7 @@ void AdIndexManager::index(const std::size_t& clusteringId,
     char* src;
     size_t srcLen;
     izs.write_image(src, srcLen);
-    containerPtr_->put(clusteringId, src, srcLen, Lux::IO::OVERWRITE);
+    containerPtr_->put(clusteringId, src, srcLen, Lux::IO::OVERWRITE);*/
 }
 
 bool AdIndexManager::get(const std::size_t& clusteringId, ADVector& advec) const
@@ -111,4 +127,33 @@ void AdIndexManager::open_()
         }
    }
 }
+    
+void AdIndexManager::preIndex()
+{
+    LOG(INFO)<<"load LUX IO to cache...";
+    for (std::size_t i = 0; i < clusteringNum_; i++)
+    {
+        ADVector advec;
+        if (get(i, advec))
+        {
+            (*cache_)[i] = advec;
+        }
+    }
+}
+
+void AdIndexManager::postIndex()
+{
+    LOG(INFO)<<"flush cache to LUX IO ...";
+    for (std::size_t i = 0; i < cache_->size(); ++i)
+    {
+        ADVector& advec = (*cache_)[i];
+        izenelib::util::izene_serialization<ADVector> izs(advec);
+        char* src;
+        size_t srcLen;
+        izs.write_image(src, srcLen);
+        containerPtr_->put(i, src, srcLen, Lux::IO::OVERWRITE);
+    }
+    cache_->clear();
+}
+
 } }
