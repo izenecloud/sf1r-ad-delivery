@@ -8,7 +8,7 @@
 #include "AdClickPredictor.h"
 #include "AdFeedbackMgr.h"
 #include "AdSearchService.h"
-#include "sponsored-ad-search/AdAuctionLogMgr.h"
+#include "sponsored-ad-search/AdAucationLogMgr.h"
 #include "sponsored-ad-search/AdSponsoredMgr.h"
 #include <common/ResultType.h>
 #include <mining-manager/group-manager/GroupManager.h>
@@ -121,7 +121,7 @@ void AdIndexManager::onAdStreamMessage(const std::vector<AdMessage>& msg_list)
         if (feedback_info_list[i].action == AdFeedbackMgr::Click)
         {
             ad_sponsored_mgr_->getBidPhrase(feedback_info_list[i].ad_id, bidphrase);
-            AdAuctionLogMgr::get()->updateAuctionLogData(feedback_info_list[i].ad_id,
+            AdAucationLogMgr::get()->updateAucationLogData(feedback_info_list[i].ad_id,
                 bidphrase,
                 feedback_info_list[i].click_cost, feedback_info_list[i].click_slot);
         }

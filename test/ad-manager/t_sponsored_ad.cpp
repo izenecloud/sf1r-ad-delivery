@@ -1,6 +1,6 @@
 #include <ad-manager/AdStreamSubscriber.h>
 #include <ad-manager/AdFeedbackMgr.h>
-#include <ad-manager/sponsored-ad-search/AdAuctionLogMgr.h>
+#include <ad-manager/sponsored-ad-search/AdAucationLogMgr.h>
 #include <boost/thread.hpp>
 #include <boost/filesystem.hpp>
 #include <fstream>
@@ -36,7 +36,7 @@ int main()
 
     LOG(INFO) << "begin generating the test data.";
     
-    using sp::AdAuctionLogMgr;
+    using sp::AdAucationLogMgr;
 
     std::vector<sp::BidKeywordId>  heavy_searched_keyword;
     std::vector<sp::BidKeywordId>  normal_searched_keyword;
@@ -107,7 +107,7 @@ int main()
         keyword_list.insert(bidphrase3.begin(), bidphrase3.end());
         searched_list.push_back(adstr);
 
-        sp::AdAuctionLogMgr::get()->updateAdSearchStat(keyword_list, searched_list);
+        sp::AdAucationLogMgr::get()->updateAdSearchStat(keyword_list, searched_list);
 
         if (i % 500 == 0)
         {
@@ -137,20 +137,20 @@ int main()
             }
             searched_clicked_list.push_back(clicked_adstr);
             clicked_bid_phrase_list.push_back(clicked_keyword);
-            sp::AdAuctionLogMgr::get()->updateAuctionLogData(clicked_adstr, clicked_keyword, click_cost, click_slot);
+            sp::AdAucationLogMgr::get()->updateAucationLogData(clicked_adstr, clicked_keyword, click_cost, click_slot);
         }
     }
 
     std::ofstream ofs(std::string(test_base_path + "/test.out").c_str());
 
-    ofs << "Total clicked : " << AdAuctionLogMgr::get()->getAvgTotalClickedNum() << std::endl;
+    ofs << "Total clicked : " << AdAucationLogMgr::get()->getAvgTotalClickedNum() << std::endl;
 
     ofs << "Ad statistical data for clicked ad: " << std::endl;
     for(std::size_t i = 0; i < searched_clicked_list.size(); ++i)
     {
         std::string adstr = searched_clicked_list[i];
-        ofs << adstr << ":" << AdAuctionLogMgr::get()->getAdCTR(adstr) << ","
-            << AdAuctionLogMgr::get()->getAdAvgCost(adstr) << std::endl;
+        ofs << adstr << ":" << AdAucationLogMgr::get()->getAdCTR(adstr) << ","
+            << AdAucationLogMgr::get()->getAdAvgCost(adstr) << std::endl;
     }
 
     ofs << "Ad statistical data for keyword: " << std::endl;
@@ -160,18 +160,18 @@ int main()
         for(std::size_t j = 0; j < clicked_bid_phrase_list[i].size(); ++j)
         {
             sp::BidKeywordId bid = clicked_bid_phrase_list[i][j];
-            ofs << bid << ":" << AdAuctionLogMgr::get()->getAvgKeywordClickedNum(bid) << ", cost: "
-                << AdAuctionLogMgr::get()->getKeywordAvgCost(bid, 0) << "-"
-                << AdAuctionLogMgr::get()->getKeywordAvgCost(bid, 1) << "-"
-                << AdAuctionLogMgr::get()->getKeywordAvgCost(bid, 2) << ", ctr: "
-                << AdAuctionLogMgr::get()->getKeywordCTR(bid) << std::endl;
+            ofs << bid << ":" << AdAucationLogMgr::get()->getAvgKeywordClickedNum(bid) << ", cost: "
+                << AdAucationLogMgr::get()->getKeywordAvgCost(bid, 0) << "-"
+                << AdAucationLogMgr::get()->getKeywordAvgCost(bid, 1) << "-"
+                << AdAucationLogMgr::get()->getKeywordAvgCost(bid, 2) << ", ctr: "
+                << AdAucationLogMgr::get()->getKeywordCTR(bid) << std::endl;
         }
     }
 
 
     std::vector<std::vector<std::pair<int, double> > > cost_click_list;
     std::vector<sp::BidKeywordId> all_keys;
-    AdAuctionLogMgr::get()->getKeywordBidLandscape(all_keys, cost_click_list);
+    AdAucationLogMgr::get()->getKeywordBidLandscape(all_keys, cost_click_list);
     ofs << "keyword landscape: " << std::endl;
     for(std::size_t i = 0; i < all_keys.size(); ++i)
     {
@@ -184,7 +184,7 @@ int main()
     }
 
     std::vector<std::string> all_ads;
-    AdAuctionLogMgr::get()->getAdLandscape(all_ads, cost_click_list);
+    AdAucationLogMgr::get()->getAdLandscape(all_ads, cost_click_list);
     ofs << "ad creative landscape: " << std::endl;
     for(std::size_t i = 0; i < all_ads.size(); ++i)
     {

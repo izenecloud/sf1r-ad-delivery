@@ -1,5 +1,5 @@
 #include "AdSponsoredMgr.h"
-#include "AdAuctionLogMgr.h"
+#include "AdAucationLogMgr.h"
 #include "../AdSearchService.h"
 #include <la-manager/TitlePCAWrapper.h>
 #include <document-manager/DocumentManager.h>
@@ -216,7 +216,7 @@ double AdSponsoredMgr::getBudgetLeft(ad_docid_t adid)
 
 double AdSponsoredMgr::getAdCTR(ad_docid_t adid)
 {
-    return AdAuctionLogMgr::get()->getAdCTR(getAdStrIdFromAdId(adid));
+    return AdAucationLogMgr::get()->getAdCTR(getAdStrIdFromAdId(adid));
 }
 
 double AdSponsoredMgr::getAdRelevantScore(const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list)
@@ -333,7 +333,7 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     }
     
     searchResult.totalCount_ = count;
-    AdAuctionLogMgr::get()->updateAdSearchStat(all_keyword_list, ranked_ad_strlist);
+    AdAucationLogMgr::get()->updateAdSearchStat(all_keyword_list, ranked_ad_strlist);
 
     return true;
 }
