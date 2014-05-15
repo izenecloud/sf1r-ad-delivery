@@ -100,6 +100,10 @@ PCARunner::DocumentVecType::iterator PCARunner::doClustering_(DocumentVecType& d
             continue;
         
         const std::size_t size = tks.size();
+        for (std::size_t i = 0; i < size; ++i)
+        {
+            
+        }
         std::string cateMerge = iter->category;
         {
             Dictionary::const_iterator it = ccnt.find(cateMerge);
@@ -263,7 +267,7 @@ void PCARunner::pushClustering_(const std::string& cateMerge,
         for (std::size_t i = 0; i < size; ++i)
         {
             // remove tokens not in dictionary
-            if (dict.find(tks[i].first))
+            if (dict.end() != dict.find(tks[i].first))
             {
                 if (clustering.second.end() != clustering.second.find(tks[i].first))
                 {
