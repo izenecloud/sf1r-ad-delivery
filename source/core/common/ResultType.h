@@ -99,6 +99,10 @@ public:
     {
     }
 
+    virtual ~KeywordSearchResult()
+    {
+    }
+
     void print(std::ostream& out = std::cout) const
     {
         stringstream ss;

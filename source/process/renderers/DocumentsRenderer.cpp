@@ -6,6 +6,7 @@
  */
 #include "DocumentsRenderer.h"
 #include "SubDocPropValueRenderer.h"
+#include <ad-manager/sponsored-ad-search/AdResultType.h>
 #include <common/Keys.h>
 #include <query-manager/ActionItem.h>
 #include <glog/logging.h>
@@ -149,12 +150,26 @@ void DocumentsRenderer::renderDocuments(
 
     std::vector<sf1r::wdocid_t> topKWDocs;
     searchResult.getTopKWDocs(topKWDocs);
+    std::vector<double> topKAdCost;
+    try
+    {
+        const AdKeywordSearchResult& tmp = dynamic_cast<const AdKeywordSearchResult&>(searchResult);
+        topKAdCost = tmp.topKAdCost_;
+    }
+    catch(const std::exception& e)
+    {
+    }
 
     for (std::size_t i = 0; i < searchResult.count_; ++i, ++indexInTopK)
     {
         Value& newResource = resources();
         newResource[Keys::_id] = topKWDocs[indexInTopK];
         newResource[Keys::_rank] = searchResult.topKRankScoreList_[indexInTopK];
+
+        if (indexInTopK < topKAdCost.size())
+        {
+            newResource[Keys::_ad_click_cost] = topKAdCost[indexInTopK];
+        }
 
         if (searchResult.topKCustomRankScoreList_.size()
                 == searchResult.topKDocs_.size())

@@ -1,6 +1,7 @@
 #ifndef AD_FEEDBACK_MGR_H
 #define AD_FEEDBACK_MGR_H
 
+#include "sponsored-ad-search/AdAucationLogMgr.h"
 #include <util/singleton.h>
 #include <boost/thread.hpp>
 #include <cache/concurrent_cache.hpp>
@@ -38,9 +39,15 @@ public:
 
     struct FeedbackInfo
     {
+        FeedbackInfo()
+            :click_cost(0), click_slot(0)
+        {
+        }
         std::string user_id;
         std::string ad_id;
         FeedbackActionT action;
+        double click_cost;
+        uint32_t click_slot;
         UserProfile user_profiles;
     };
 

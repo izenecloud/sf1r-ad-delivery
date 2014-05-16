@@ -32,6 +32,11 @@ namespace faceted
     class GroupManager;
 }
 
+namespace sponsored
+{
+    class AdSponsoredMgr;
+}
+
 class AdIndexManager
 {
 public:
@@ -90,6 +95,7 @@ private:
     faceted::GroupManager* groupManager_;
     boost::shared_mutex  rwMutex_;
     boost::shared_ptr<AdDNFIndexType> ad_dnf_index_;
+    boost::shared_ptr<sponsored::AdSponsoredMgr> ad_sponsored_mgr_;
 };
 
 } //namespace sf1r

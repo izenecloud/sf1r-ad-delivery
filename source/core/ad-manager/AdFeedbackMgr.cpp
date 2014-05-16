@@ -260,13 +260,30 @@ bool AdFeedbackMgr::parserFeedbackLog(const std::string& log_data, FeedbackInfo&
         LOG(INFO) << "unknow action string: " << action_str;
         feedback_info.action = View;
     }
-    if (feedback_info.user_id.empty() ||
+
+    if (feedback_info.action == Click)
+    {
+        if (args.HasMember("click_cost"))
+        {
+            feedback_info.click_cost = args["click_cost"].GetDouble();
+        }
+        if (args.HasMember("click_slot"))
+        {
+            feedback_info.click_slot = args["click_slot"].GetInt();
+        }
+    }
+    if (feedback_info.user_id.empty() &&
         feedback_info.ad_id.empty())
     {
-        LOG(INFO) << "empty user id or ad id." << feedback_info.user_id << ":" << feedback_info.ad_id;
+        LOG(INFO) << "empty user id and ad id." << feedback_info.user_id << ":" << feedback_info.ad_id;
         return false;
     }
-    //
+
+    if (feedback_info.user_id.empty())
+    {
+        // no user data for this log.
+        return true;
+    }
     return getUserProfileFromDMP(feedback_info.user_id, feedback_info.user_profiles);
 }
 bool AdFeedbackMgr::parserFeedbackLogForAVRO(const std::string& log_data, FeedbackInfo& feedback_info)
@@ -323,6 +340,18 @@ bool AdFeedbackMgr::parserFeedbackLogForAVRO(const std::string& log_data, Feedba
     else
     {
         feedback_info.action = View;
+    }
+
+    if (feedback_info.action == Click)
+    {
+        try
+        {
+            feedback_info.click_cost = boost::lexical_cast<double>(raw_data.args["click_cost"]);
+            feedback_info.click_slot = boost::lexical_cast<uint32_t>(raw_data.args["click_slot"]);
+        }
+        catch(const std::exception& e)
+        {
+        }
     }
 
     if (!feedback_info.user_id.empty() && !feedback_info.ad_id.empty())

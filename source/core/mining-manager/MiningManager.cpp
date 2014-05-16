@@ -167,6 +167,7 @@ MiningManager::MiningManager(
     , searchManager_(searchManager)
     , searchCache_(searchCache)
     , adSearchService_(adSearchService)
+    , laserManager_(NULL)
     , idManager_(idManager)
     , numericTableBuilder_(NULL)
     , rtypeStringPropTableBuilder_(NULL)

@@ -13,3 +13,4 @@ CONFIGURE_FILE(
   )
 
 ADD_SUBDIRECTORY(mining-manager)
+ADD_SUBDIRECTORY(ad-manager)
