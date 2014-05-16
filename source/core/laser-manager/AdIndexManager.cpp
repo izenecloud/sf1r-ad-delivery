@@ -154,6 +154,15 @@ void AdIndexManager::postIndex()
         containerPtr_->put(i, src, srcLen, Lux::IO::OVERWRITE);
     }
     cache_->clear();*/
+   {
+        const std::string filename = workdir_ + "/last_docid";
+        if ( boost::filesystem::exists(filename) )
+        {
+            std::ifstream ifs(filename.c_str(), std::ios::binary);
+            boost::archive::text_iarchive ia(ifs);
+            ia >> lastDocId_;
+        }
+   }
 }
 
 } }

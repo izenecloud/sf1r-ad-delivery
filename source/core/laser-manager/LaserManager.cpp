@@ -26,6 +26,8 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
     : workdir_(MiningManager::system_working_path_ + "/LASER/")
     , collection_(collection)
     , adSearchService_(adSearchService)
+    , recommend_(NULL)
+    , indexManager_(NULL)
 {
     if (!boost::filesystem::exists(workdir_))
     {
@@ -34,16 +36,27 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
 
     load_();
     
-    laser::AdIndexManager* index = new laser::AdIndexManager(workdir_, collection_, clusteringContainer_->size());
-    indexManager_.reset(index);
-    recommend_.reset(new LaserRecommend(index, topnClustering_, laserOnlineModel_));
-    indexTask_.reset(new LaserIndexTask(this));
+    indexManager_ = new laser::AdIndexManager(workdir_, collection_, clusteringContainer_->size());
+    recommend_ = new LaserRecommend(indexManager_, topnClustering_, laserOnlineModel_);
+    // delete by TaskBuilder
+    indexTask_ = new LaserIndexTask(this);
 
 }
    
 LaserManager::~LaserManager()
 {
     close_();
+    if (NULL != indexManager_)
+    {
+        delete indexManager_;
+        indexManager_ = NULL;
+    }
+    if (NULL != recommend_)
+    {
+        delete recommend_;
+        recommend_ =NULL;
+    }
+    //delete indexTask_;
 }
     
 void LaserManager::load_()
@@ -150,7 +163,7 @@ void LaserManager::index(const docid_t& docid, const std::string& title)
     std::size_t clusteringId = assignClustering_(vec);
     //gettimeofday(&etime, NULL);
     //LOG(INFO)<<"ASSIGN : = "<<1000000* (etime.tv_sec - stime.tv_sec) + (etime.tv_usec - stime.tv_usec) <<"\t"<<clusteringId;
-    if ( -1 == clusteringId)
+    if ( (std::size_t)-1 == clusteringId)
     {
         // for void
         clusteringId = rand() % clusteringContainer_->size();
@@ -163,7 +176,7 @@ void LaserManager::index(const docid_t& docid, const std::string& title)
     
 MiningTask* LaserManager::getLaserIndexTask()
 {
-    return indexTask_.get();
+    return indexTask_;
 }
     
 const std::size_t LaserManager::getClustering(const std::string& title) const

@@ -47,9 +47,9 @@ private:
     const std::string workdir_;
     const std::string collection_;
     boost::shared_ptr<AdSearchService> adSearchService_;
-    boost::scoped_ptr<laser::LaserRecommend> recommend_;
-    boost::scoped_ptr<laser::AdIndexManager> indexManager_;
-    boost::shared_ptr<laser::LaserIndexTask> indexTask_;
+    laser::LaserRecommend* recommend_;
+    laser::AdIndexManager* indexManager_;
+    laser::LaserIndexTask* indexTask_;
 
     
     static std::vector<TokenVector>* clusteringContainer_;

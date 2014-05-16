@@ -20,9 +20,12 @@ public:
 public:
     virtual bool buildDocument(docid_t docID, const Document& doc)
     {
-        if (docid_ < docID)
         {
-            docid_ = docID;
+            boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
+            if (docid_ < docID)
+            {
+                docid_ = docID;
+            }
         }
         std::string title = "";
         try
@@ -62,6 +65,7 @@ public:
 private:
     LaserManager* laserManager_;
     docid_t docid_;
+    boost::shared_mutex mutex_;
 };
 
 } }
