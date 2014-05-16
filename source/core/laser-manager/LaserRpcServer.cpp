@@ -25,7 +25,7 @@ using namespace boost;
 namespace sf1r { namespace laser {
 
 LaserRpcServer::LaserRpcServer(const Tokenizer* tokenzer,
-        const std::vector<boost::unordered_map<std::string, float> >* clusteringContainer,
+        const std::vector<LaserManager::TokenVector>* clusteringContainer,
         TopNClusteringDB* topnClustering,
         LaserOnlineModelDB* laserOnlineModel)
     : tokenizer_(tokenzer)
@@ -88,10 +88,11 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
             GetClusteringInfosResult gir;
             for (std::size_t i = 0; i < clusteringContainer_->size(); ++i)
             {
-                ClusteringInfo clustering;
-                clustering.clusteringIndex = i;
-                tokenizer_->numeric((*clusteringContainer_)[i], clustering.pow);
-                gir.info_list_.push_back(clustering);
+                //ClusteringInfo clustering;
+                //clustering.clusteringIndex = i;
+                //LaserManager::
+                //tokenizer_->numeric((*clusteringContainer_)[i], clustering.pow);
+                //gir.info_list_.push_back(clustering);
             }
             req.result(gir);
         }

@@ -5,7 +5,6 @@
 #include <mining-manager/MiningTask.h>
 #include <common/ResultType.h>
 
-#include "LaserRpcServer.h"
 #include "LaserRecommend.h"
 #include "LaserRecommendParam.h"
 #include "AdIndexManager.h"
@@ -15,12 +14,16 @@
 
 namespace sf1r { namespace laser {
 class LaserIndexTask;
+class LaserRpcServer;
 } }
 namespace sf1r {
 
 class LaserManager
 {
-    typedef boost::unordered_map<std::string, float> TokenVector;
+    typedef std::vector<float> TokenVector;
+    typedef std::vector<std::pair<int, float> > TokenSparseVector;
+    friend class laser::LaserRpcServer;
+
     class ThreadContext
     {
     public:
@@ -48,7 +51,7 @@ class LaserManager
             return max_;
         }
 
-        void set(const TokenVector* v)
+        void set(const TokenSparseVector* v)
         {
             boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
             v_ = v;
@@ -62,7 +65,7 @@ class LaserManager
             }
         }
 
-        const TokenVector* get() const
+        const TokenSparseVector* get() const
         {
             boost::shared_lock<boost::shared_mutex> sharedLock(mutex_);
             return v_;
@@ -94,7 +97,7 @@ class LaserManager
 
     public:
         const std::vector<TokenVector>* clusteringContainer_;
-        const TokenVector* v_;
+        const TokenSparseVector* v_;
         const std::size_t bIndex_;
         const std::size_t eIndex_;
         std::size_t maxIndex_;
@@ -116,8 +119,8 @@ public:
 
     const std::size_t getClustering(const std::string& title) const;
 private:
-    std::size_t assignClustering_(const TokenVector& v) const;
-    float similarity_(const TokenVector& lv, const TokenVector& rv) const;
+    std::size_t assignClustering_(const TokenSparseVector& v) const;
+    float similarity_(const TokenSparseVector& lv, const TokenVector& rv) const;
 
     void assignClusteringFunc_(ThreadContext* context);
 
@@ -138,7 +141,7 @@ private:
 
     std::vector<std::pair<boost::thread*, ThreadContext*> > thread_;
     
-    static std::vector<boost::unordered_map<std::string, float> >* clusteringContainer_;
+    static std::vector<TokenVector>* clusteringContainer_;
     static laser::Tokenizer* tokenizer_;
     static laser::LaserRpcServer* rpcServer_;
     static laser::TopNClusteringDB* topnClustering_;

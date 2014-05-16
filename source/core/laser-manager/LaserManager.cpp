@@ -1,6 +1,7 @@
 #include "LaserManager.h"
 #include "clusteringmanager/clustering/PCARunner.h"
 #include "LaserIndexTask.h"
+#include "LaserRpcServer.h"
 #include <mining-manager/MiningManager.h>
 #include <query-manager/ActionItem.h>
 #include <ad-manager/AdSearchService.h>
@@ -13,7 +14,7 @@ namespace sf1r
 
 const static std::size_t THREAD_NUM = 8;
     
-std::vector<boost::unordered_map<std::string, float> >* LaserManager::clusteringContainer_ = NULL;
+std::vector<LaserManager::TokenVector>* LaserManager::clusteringContainer_ = NULL;
 laser::Tokenizer* LaserManager::tokenizer_ = NULL;
 laser::LaserRpcServer* LaserManager::rpcServer_ = NULL;
 laser::TopNClusteringDB* LaserManager::topnClustering_ = NULL;
@@ -59,14 +60,22 @@ void LaserManager::load_()
         return;
     }
     LOG(INFO)<<"open all dependencies of LaserManager...";
-    clusteringContainer_ = new std::vector<TokenVector>();
-    laser::clustering::loadClusteringResult(*clusteringContainer_, MiningManager::system_resource_path_ + "/laser_resource/clustering_result");
-    
     tokenizer_ = new Tokenizer(MiningManager::system_resource_path_ + "/dict/title_pca/",
         MiningManager::system_resource_path_ + "/laser_resource/terms_dic.dat");
 
     topnClustering_ = new TopNClusteringDB(workdir_ + "/topnclustering");
     laserOnlineModel_ = new LaserOnlineModelDB(workdir_ + "/laser_online_model/"); 
+    
+    std::vector<boost::unordered_map<std::string, float> > clusteringContainer;
+    laser::clustering::loadClusteringResult(clusteringContainer, MiningManager::system_resource_path_ + "/laser_resource/clustering_result");
+    
+    clusteringContainer_ = new std::vector<TokenVector>(clusteringContainer.size());
+    for (std::size_t i = 0; i < clusteringContainer.size(); ++i)
+    {
+        TokenVector vec;
+        tokenizer_->numeric(clusteringContainer[i], vec);
+        (*clusteringContainer_)[i] = vec;
+    }
     
     rpcServer_ = new LaserRpcServer(tokenizer_, clusteringContainer_, topnClustering_, laserOnlineModel_);
     rpcServer_->start("0.0.0.0", 28611, 2);
@@ -133,26 +142,26 @@ bool LaserManager::recommend(const LaserRecommendParam& param,
     
 void LaserManager::index(const docid_t& docid, const std::string& title)
 {
-    //struct timeval stime, etime;
+    struct timeval stime, etime;
     //gettimeofday(&stime, NULL);
-    boost::unordered_map<std::string, float> vec;
+    TokenSparseVector vec;
     tokenizer_->tokenize(title, vec);
     //gettimeofday(&etime, NULL);
     //LOG(INFO)<<"TOKENIZE : = "<<1000* (etime.tv_sec - stime.tv_sec) + (etime.tv_usec - stime.tv_usec);
-    //gettimeofday(&stime, NULL);
+    gettimeofday(&stime, NULL);
     std::size_t clusteringId = assignClustering_(vec);
-    //gettimeofday(&etime, NULL);
-   // LOG(INFO)<<"ASSIGN : = "<<1000* (etime.tv_sec - stime.tv_sec) + (etime.tv_usec - stime.tv_usec);
+    gettimeofday(&etime, NULL);
+    LOG(INFO)<<"ASSIGN : = "<<1000* (etime.tv_sec - stime.tv_sec) + (etime.tv_usec - stime.tv_usec);
     //LOG(INFO)<<docid<<"\t"<<title<<"\t clustering id = "<<clusteringId;
-    std::vector<std::pair<int,float> >numericVec;
-    tokenizer_->numeric(vec, numericVec);
+    //std::vector<std::pair<int,float> >numericVec;
+    //tokenizer_->numeric(vec, numericVec);
     if ( -1 == clusteringId)
     {
         // for void
         clusteringId = rand() % clusteringContainer_->size();
     }
     //gettimeofday(&stime, NULL);
-    indexManager_->index(clusteringId, docid, numericVec); 
+    indexManager_->index(clusteringId, docid, vec); 
     //gettimeofday(&etime, NULL);
     //LOG(INFO)<<"INDEX : = "<<1000* (etime.tv_sec - stime.tv_sec) + (etime.tv_usec - stime.tv_usec);
 }
@@ -164,15 +173,20 @@ MiningTask* LaserManager::getLaserIndexTask()
     
 const std::size_t LaserManager::getClustering(const std::string& title) const
 {
-    boost::unordered_map<std::string, float> vec;
-    tokenizer_->tokenize(title, vec);
-    return assignClustering_(vec);
+    //boost::unordered_map<std::string, float> vec;
+    //tokenizer_->tokenize(title, vec);
+    //return assignClustering_(vec);
+    return -1;
 }
 
-std::size_t LaserManager::assignClustering_(const TokenVector& v) const
+std::size_t LaserManager::assignClustering_(const TokenSparseVector& v) const
 {
-    /*std::size_t size = clusteringContainer_->size();
-    float maxSim = 0.0;
+    if (v.empty())
+    {
+        return -1;
+    }
+    std::size_t size = clusteringContainer_->size();
+    /*float maxSim = 0.0;
     std::size_t maxId = -1;
     for (std::size_t i = 0; i < size; ++i)
     {
@@ -182,15 +196,11 @@ std::size_t LaserManager::assignClustering_(const TokenVector& v) const
             maxSim = sim;
             maxId = i;
         }
-    }*/
-    if (v.empty())
-    {
-        return -1;
     }
     for (std::size_t i = 0; i < THREAD_NUM; ++i)
     {
         thread_[i].second->set(&v);
-    }
+    }*/
     
     float maxSim = 0.0;
     std::size_t maxId = -1;
@@ -221,7 +231,7 @@ void LaserManager::assignClusteringFunc_(ThreadContext* context)
 
     while (!context->isExist())
     {
-        const TokenVector* v = context->get();
+        const TokenSparseVector* v = context->get();
         if (NULL == v)
         {
             boost::this_thread::sleep(boost::posix_time::milliseconds(1));
@@ -240,17 +250,20 @@ void LaserManager::assignClusteringFunc_(ThreadContext* context)
     }
 }
 
-float LaserManager::similarity_(const TokenVector& lv, const TokenVector& rv) const
+float LaserManager::similarity_(const TokenSparseVector& lv, const TokenVector& rv) const
 {
     float sim = 0.0;
-    TokenVector::const_iterator it = lv.begin(); 
+    TokenSparseVector::const_iterator it = lv.begin(); 
     for (; it != lv.end(); ++it)
     {
+        sim += rv[it->first] * it->second;
+        /*
         TokenVector::const_iterator thisIt = rv.find(it->first);
         if ( rv.end() != thisIt)
         {
             sim += it->second * thisIt->second;
         }
+        */
     }
     return sim;
 }

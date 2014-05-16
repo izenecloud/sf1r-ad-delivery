@@ -6,6 +6,7 @@
 #include "TopNClusteringDB.h"
 #include "LaserOnlineModelDB.h"
 #include "Tokenizer.h"
+#include "LaserManager.h"
 #include <boost/thread/mutex.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
@@ -16,7 +17,7 @@ class LaserRpcServer : public msgpack::rpc::server::base
 {
 public:
     LaserRpcServer(const Tokenizer* tokenzer,
-        const std::vector<boost::unordered_map<std::string, float> >* clusteringContainer,
+        const std::vector<LaserManager::TokenVector>* clusteringContainer,
         TopNClusteringDB* topnClustering,
         LaserOnlineModelDB* laserOnlineModel);
     ~LaserRpcServer();
@@ -33,7 +34,7 @@ private:
 
 private:
     const Tokenizer* tokenizer_;
-    const std::vector<boost::unordered_map<std::string, float> >* clusteringContainer_;
+    const std::vector<LaserManager::TokenVector>* clusteringContainer_;
     TopNClusteringDB* topnClustering_;
     LaserOnlineModelDB* laserOnlineModel_;
 };

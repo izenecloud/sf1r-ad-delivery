@@ -122,6 +122,38 @@ void Tokenizer::tokenize(const std::string& title, std::map<int, float>& vec) co
         vec.clear();
     }
 }
+    
+void Tokenizer::tokenize(const std::string& title, std::vector<std::pair<int, float> >& vec) const
+{
+    typedef std::pair<std::string, float> TermPair;
+    std::vector<TermPair> tks;
+    std::vector<TermPair> subtks;
+    std::string brand, mdt;
+    tok->pca(title, tks, brand, mdt, subtks, false);
+    
+    float total = 0;
+    for (size_t i = 0; i < tks.size(); ++i)
+    {
+        boost::unordered_map<std::string, std::pair<int, int> >::const_iterator it = termDict_->getTerms().find(tks[i].first);
+        if(it != termDict_->getTerms().end())
+        {
+            vec.push_back(std::make_pair(it->second.second, tks[i].second));
+            total+=tks[i].second;
+        }
+    }
+
+    if(total > 0)
+    {
+        for (std::vector<std::pair<int, float> >::iterator it = vec.begin(); it != vec.end(); it++)
+        {
+            it->second /= total;
+        }
+    }
+    else
+    {
+        vec.clear();
+    }
+}
 
 
 void Tokenizer::numeric(const boost::unordered_map<std::string, float>& pow, std::map<int, float>& res) const
@@ -163,5 +195,18 @@ void Tokenizer::numeric(const boost::unordered_map<std::string, float>& vec, std
     }
 }
 
+void Tokenizer::numeric(const boost::unordered_map<std::string, float>& vec, std::vector<float>& res) const
+{
+    res.assign(termDict_->getTerms().size(), 0.0);
+    boost::unordered_map<std::string, float>::const_iterator it = vec.begin();
+    for (; it != vec.end(); ++it)
+    {
+        boost::unordered_map<std::string, std::pair<int, int> >::const_iterator thisIt = termDict_->getTerms().find(it->first);
+        if (termDict_->getTerms().end() != thisIt)
+        {
+            res[thisIt->second.second] = it->second;
+        }
+    }
+}
 
 } }
