@@ -26,7 +26,7 @@ class PCARunner
 {
     friend class PCAProcess;
 
-    typedef boost::unordered_map<std::string, int> Dictionary;
+    typedef boost::unordered_map<std::string, unsigned> Dictionary;
     typedef std::pair<int, boost::unordered_map<std::string, float> > Clustering;
     typedef boost::unordered_map<std::string, Clustering> ClusteringContainer;
     typedef std::list<Document> DocumentVecType;

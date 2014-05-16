@@ -9,7 +9,7 @@ class LaserRecommendParam
 {
 public:
     std::string uuid_;
-    int topN_;
+    unsigned topN_;
 };
 }
 }
