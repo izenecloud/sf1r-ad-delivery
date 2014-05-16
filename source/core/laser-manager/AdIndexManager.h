@@ -47,7 +47,7 @@ private:
     const std::size_t clusteringNum_;
     ContainerType* containerPtr_;
     docid_t lastDocId_;
-    Cache* cache_;
+    //Cache* cache_;
 };
 
 } }

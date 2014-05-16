@@ -88,11 +88,17 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
             GetClusteringInfosResult gir;
             for (std::size_t i = 0; i < clusteringContainer_->size(); ++i)
             {
-                //ClusteringInfo clustering;
-                //clustering.clusteringIndex = i;
-                //LaserManager::
-                //tokenizer_->numeric((*clusteringContainer_)[i], clustering.pow);
-                //gir.info_list_.push_back(clustering);
+                ClusteringInfo clustering;
+                clustering.clusteringIndex = i;
+                const LaserManager::TokenVector& vec = (*clusteringContainer_)[i];
+                for (std::size_t k = 0; k < vec.size(); ++k)
+                {
+                    if (vec[k] > 1e-7)
+                    {
+                        clustering.pow[k] = vec[k];
+                    }
+                }
+                gir.info_list_.push_back(clustering);
             }
             req.result(gir);
         }

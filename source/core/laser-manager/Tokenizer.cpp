@@ -5,11 +5,19 @@ using namespace ilplib::knlp;
 namespace sf1r { namespace laser {
 
 Tokenizer::Tokenizer(const std::string& pcaDict, const std::string& termDict)
-    : termDict_(NULL)
-    , tok(NULL)
+    : tok(NULL)
+    , termDict_(NULL)
+    , dict_(NULL)
 {
     termDict_ = new TermDictionary(termDict);
     tok = new TitlePCA(pcaDict);
+        
+    dict_ = new std::vector<std::string>(termDict_->getTerms().size());
+    boost::unordered_map<std::string, std::pair<int, int> >::const_iterator it = termDict_->getTerms().begin();
+    for (; it != termDict_->getTerms().end(); ++it)
+    {
+        (*dict_)[it->second.second] = it->first;
+    }
 }
 
 Tokenizer::~Tokenizer()
@@ -20,10 +28,15 @@ Tokenizer::~Tokenizer()
         termDict_ = NULL;
     }
 
-    if(tok != NULL)
+    if (tok != NULL)
     {
         delete tok;
         tok = NULL;
+    }
+    if (dict_ != NULL)
+    {
+        delete dict_;
+        dict_ = NULL;
     }
 }
 
@@ -207,6 +220,14 @@ void Tokenizer::numeric(const boost::unordered_map<std::string, float>& vec, std
             res[thisIt->second.second] = it->second;
         }
     }
+}
+    
+bool Tokenizer::stringstr(const int index, std::string& str) const
+{
+    if (index >= dict_->size())
+        return false;
+    str = (*dict_)[index];
+    return true;
 }
 
 } }

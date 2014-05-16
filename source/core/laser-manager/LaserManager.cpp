@@ -39,13 +39,11 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
     recommend_.reset(new LaserRecommend(index, topnClustering_, laserOnlineModel_));
     indexTask_.reset(new LaserIndexTask(this));
 
-    initThreadPool_();
 }
    
 LaserManager::~LaserManager()
 {
     close_();
-    closeThreadPool_();
 }
     
 void LaserManager::load_()
@@ -76,7 +74,7 @@ void LaserManager::load_()
         tokenizer_->numeric(clusteringContainer[i], vec);
         (*clusteringContainer_)[i] = vec;
     }
-    
+    LOG(INFO)<<clusteringContainer_->size(); 
     rpcServer_ = new LaserRpcServer(tokenizer_, clusteringContainer_, topnClustering_, laserOnlineModel_);
     rpcServer_->start("0.0.0.0", 28611, 2);
 }
@@ -142,19 +140,16 @@ bool LaserManager::recommend(const LaserRecommendParam& param,
     
 void LaserManager::index(const docid_t& docid, const std::string& title)
 {
-    struct timeval stime, etime;
+    //struct timeval stime, etime;
     //gettimeofday(&stime, NULL);
     TokenSparseVector vec;
     tokenizer_->tokenize(title, vec);
     //gettimeofday(&etime, NULL);
     //LOG(INFO)<<"TOKENIZE : = "<<1000* (etime.tv_sec - stime.tv_sec) + (etime.tv_usec - stime.tv_usec);
-    gettimeofday(&stime, NULL);
+    //gettimeofday(&stime, NULL);
     std::size_t clusteringId = assignClustering_(vec);
-    gettimeofday(&etime, NULL);
-    LOG(INFO)<<"ASSIGN : = "<<1000* (etime.tv_sec - stime.tv_sec) + (etime.tv_usec - stime.tv_usec);
-    //LOG(INFO)<<docid<<"\t"<<title<<"\t clustering id = "<<clusteringId;
-    //std::vector<std::pair<int,float> >numericVec;
-    //tokenizer_->numeric(vec, numericVec);
+    //gettimeofday(&etime, NULL);
+    //LOG(INFO)<<"ASSIGN : = "<<1000000* (etime.tv_sec - stime.tv_sec) + (etime.tv_usec - stime.tv_usec) <<"\t"<<clusteringId;
     if ( -1 == clusteringId)
     {
         // for void
@@ -163,7 +158,7 @@ void LaserManager::index(const docid_t& docid, const std::string& title)
     //gettimeofday(&stime, NULL);
     indexManager_->index(clusteringId, docid, vec); 
     //gettimeofday(&etime, NULL);
-    //LOG(INFO)<<"INDEX : = "<<1000* (etime.tv_sec - stime.tv_sec) + (etime.tv_usec - stime.tv_usec);
+    //LOG(INFO)<<"INDEX : = "<<1000000* (etime.tv_sec - stime.tv_sec) + (etime.tv_usec - stime.tv_usec);
 }
     
 MiningTask* LaserManager::getLaserIndexTask()
@@ -173,10 +168,9 @@ MiningTask* LaserManager::getLaserIndexTask()
     
 const std::size_t LaserManager::getClustering(const std::string& title) const
 {
-    //boost::unordered_map<std::string, float> vec;
-    //tokenizer_->tokenize(title, vec);
-    //return assignClustering_(vec);
-    return -1;
+    TokenSparseVector vec;
+    tokenizer_->tokenize(title, vec);
+    return assignClustering_(vec);
 }
 
 std::size_t LaserManager::assignClustering_(const TokenSparseVector& v) const
@@ -186,7 +180,8 @@ std::size_t LaserManager::assignClustering_(const TokenSparseVector& v) const
         return -1;
     }
     std::size_t size = clusteringContainer_->size();
-    /*float maxSim = 0.0;
+    
+    float maxSim = 0.0;
     std::size_t maxId = -1;
     for (std::size_t i = 0; i < size; ++i)
     {
@@ -197,59 +192,9 @@ std::size_t LaserManager::assignClustering_(const TokenSparseVector& v) const
             maxId = i;
         }
     }
-    for (std::size_t i = 0; i < THREAD_NUM; ++i)
-    {
-        thread_[i].second->set(&v);
-    }*/
-    
-    float maxSim = 0.0;
-    std::size_t maxId = -1;
-    for (std::size_t i = 0; i < THREAD_NUM; ++i)
-    {
-        thread_[i].second->waitFinish();
-        const std::size_t maxIndex = thread_[i].second->maxIndex();
-        if (-1 == maxIndex)
-        {
-            continue;
-        }
-        const float max = thread_[i].second->max();
-        if (max > maxSim)
-        {
-            maxSim = max;
-            maxId = maxIndex;
-        }
-    }
     return maxId;
 }
     
-void LaserManager::assignClusteringFunc_(ThreadContext* context)
-{
-    const std::vector<TokenVector>* clusteringContainer = context->clusteringContainer_;
-
-    const std::size_t bIndex = context->bIndex_;
-    const std::size_t eIndex = context->eIndex_;
-
-    while (!context->isExist())
-    {
-        const TokenSparseVector* v = context->get();
-        if (NULL == v)
-        {
-            boost::this_thread::sleep(boost::posix_time::milliseconds(1));
-            continue;
-        }
-        for (std::size_t i = bIndex; i < eIndex; ++i)
-        {
-            float sim = similarity_(*v, (*clusteringContainer)[i]);
-            if (sim > context->max_)
-            {
-                context->max_ = sim;
-                context->maxIndex_ = i;
-            }
-        }
-        context->setFinish();
-    }
-}
-
 float LaserManager::similarity_(const TokenSparseVector& lv, const TokenVector& rv) const
 {
     float sim = 0.0;
@@ -257,41 +202,9 @@ float LaserManager::similarity_(const TokenSparseVector& lv, const TokenVector& 
     for (; it != lv.end(); ++it)
     {
         sim += rv[it->first] * it->second;
-        /*
-        TokenVector::const_iterator thisIt = rv.find(it->first);
-        if ( rv.end() != thisIt)
-        {
-            sim += it->second * thisIt->second;
-        }
-        */
     }
     return sim;
 }
 
     
-void LaserManager::initThreadPool_()
-{
-    thread_.reserve(THREAD_NUM);
-    std::size_t N = clusteringContainer_->size();
-    std::size_t n = ceil(N / (float) THREAD_NUM);
-    for (std::size_t i = 0; i < THREAD_NUM; ++i)
-    {
-        std::size_t eIndex = N > (i + 1) * n ? (i + 1) * n : N;
-        ThreadContext* context = new ThreadContext(clusteringContainer_, i * n, eIndex);
-        //LOG(INFO)<<i*n<<"\t"<<eIndex;
-        boost::thread* thread = new boost::thread(boost::bind(&LaserManager::assignClusteringFunc_, this, context));
-        thread_[i] = std::make_pair(thread, context);
-    }
-}
-
-void LaserManager::closeThreadPool_()
-{
-    for (std::size_t i = 0; i < THREAD_NUM; ++i)
-    {
-        thread_[i].second->set(NULL);
-        thread_[i].first->join();
-        delete thread_[i].first;
-        delete thread_[i].second;
-    }
-}
 }

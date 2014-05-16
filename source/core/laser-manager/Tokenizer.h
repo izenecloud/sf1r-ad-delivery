@@ -17,13 +17,17 @@ public:
     void tokenize(const std::string& title, boost::unordered_map<int, float>& vec) const;
     void tokenize(const std::string& title, std::map<int, float>& vec) const;
     void tokenize(const std::string& title, std::vector<std::pair<int, float> >& vec) const;
+
     void numeric(const boost::unordered_map<std::string, float>& vec, boost::unordered_map<int, float>& res) const;
     void numeric(const boost::unordered_map<std::string, float>& vec, std::map<int, float>& res) const;
     void numeric(const boost::unordered_map<std::string, float>& vec, std::vector<std::pair<int, float> >& res) const;
     void numeric(const boost::unordered_map<std::string, float>& vec, std::vector<float>& res) const;
+
+    bool stringstr(const int index, std::string& str) const;
 private:
     ilplib::knlp::TitlePCA* tok; //the pca
     clustering::type::TermDictionary* termDict_;
+    std::vector<std::string>* dict_;
 };
 } }
 
