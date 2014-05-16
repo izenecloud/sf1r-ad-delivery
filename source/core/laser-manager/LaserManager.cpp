@@ -138,7 +138,8 @@ bool LaserManager::recommend(const LaserRecommendParam& param,
 {
     std::vector<docid_t> docIdList;
     std::vector<float> itemScoreList;
-    if (!recommend_->recommend(param.uuid_, docIdList, itemScoreList, param.topN_))
+    // multiply 2 for ereased ads
+    if (!recommend_->recommend(param.uuid_, docIdList, itemScoreList, param.topN_ * 2))
     {
         res.error_ = "Internal ERROR in Recommend Engine";
         return false;
@@ -148,6 +149,12 @@ bool LaserManager::recommend(const LaserRecommendParam& param,
         actionItem.idList_.push_back(docIdList[i]);
     }
     adSearchService_->getDocumentsByIds(actionItem, res);
+    if (res.snippetTextOfDocumentInPage_.size() > param.topN_)
+    {
+        res.snippetTextOfDocumentInPage_.resize(param.topN_);
+        res.idList_.resize(param.topN_);
+        res.workeridList_.resize(param.topN_);
+    }
     return true;
 }
     
