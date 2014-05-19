@@ -335,6 +335,43 @@ private:
     const std::vector<double>& _fit;
 };
 
+static void enumKPRecursive(const std::vector<std::vector<double> >& W, const std::vector<std::vector<double> >& V, int i, std::vector<int>&curSol, double leftB, double curValue, double& maxValue, std::vector<int>& maxSol)
+{
+    if(i >= (int) W.size())
+    {
+        if(curValue > maxValue)
+        {
+            maxValue = curValue;
+            maxSol = curSol;
+        }
+        return;
+    }
+
+    //do not choose cur item.
+    curSol[i] = -1;
+    enumKPRecursive(W, V, i+1, curSol, leftB, curValue, maxValue, maxSol);
+
+    for(int j = 0; j < (int)W[i].size(); ++j)
+    {
+        if(leftB >= W[i][j])
+        {
+            curSol[i] = j;
+            enumKPRecursive(W, V, i+1, curSol, leftB - W[i][j], curValue + V[i][j], maxValue, maxSol);
+        }
+    }
+}
+
+static std::vector<int> enumKP(const std::vector<std::vector<double> >& W, const std::vector<std::vector<double> >& V, double B)
+{
+    std::vector<int> curSol(W.size(), -1);
+    std::vector<int> maxSol(W.size(), -1);
+    double maxValue = 0.0;
+
+    enumKPRecursive(W, V, 0, curSol, B, 0.0, maxValue, maxSol);
+
+    return maxSol;
+}
+
 std::vector<double> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticInfo>& qsInfos, double budget )
 {
     const int MaxAllowedEvolutions = 300 * qsInfos.size();
@@ -343,6 +380,7 @@ std::vector<double> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticI
     static const int PopulationSize = 40; //must be even
     static const int ElitismSize = 2;
     static const double MinFitVariance = 0.001;  //minimum max fitness variance ratio. variance / fit^2
+    static const long long MaxLoopNum = 100000000000000;
 
     std::vector<double> bid(qsInfos.size(), 0.0);
     if (qsInfos.empty() || budget < 0.0 || isZero(budget))
@@ -370,6 +408,31 @@ std::vector<double> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticI
         }
     }
 
+    // judge whether problem can be solved by enumerating to directly get optimal solution.
+    {
+        long long timeCP = 1;
+        for(int i = 0; i < (int)W.size(); ++i)
+        {
+            timeCP *= (W[i].size() + 1);
+            if(timeCP > MaxLoopNum) break;
+        }
+        if(timeCP < MaxLoopNum)
+        {
+            const std::vector<int>& mySol = enumKP(W, V, budget);
+            int j = 0;
+            std::list<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin();
+            for (; cit != qsInfos.end(); ++cit, ++j)
+            {
+                if (mySol[j] != -1)
+                {
+                    bid[j] = cit->cpc_[mySol[j]];
+                }
+            }
+
+            return bid;
+        }
+    }
+
     typedef std::vector<std::vector<int> > TPopType; //every individual is a vector of index of ad position for each keyword, 0-based.
     TPopType P(PopulationSize);
     TPopType newP(PopulationSize);
@@ -385,12 +448,7 @@ std::vector<double> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticI
             P[i].push_back(rand() % N - 1); //ad position is 0-based, -1 means do not bid for that keyword.
             newP[i].push_back(0);
         }
-    }
 
-    int iterNum = MaxAllowedEvolutions;
-    double averageFit = 0.0, averageSquareFit = 0.0;
-    while(iterNum--)
-    {
         //clear population for budget requirement.
         for (int i = 0; i < PopulationSize; ++i)
         {
@@ -420,7 +478,13 @@ std::vector<double> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticI
                 --aN;
             }
         }
+    }
 
+    int iterNum = MaxAllowedEvolutions;
+    double averageFit = 0.0, averageSquareFit = 0.0;
+
+    while(iterNum--)
+    {
         //selection,
         std::vector<int> SP(PopulationSize); //selected individual's index in P
         int GASize = PopulationSize - ElitismSize;
@@ -616,6 +680,38 @@ std::vector<double> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticI
         }
 
         newP.swap(P);
+
+
+        //clear population for budget requirement.
+        for (int i = 0; i < PopulationSize; ++i)
+        {
+            std::vector<std::pair<int, int> > kw; //(keyword index, selected ad position index)
+            for (int j = 0; j < (int)(P[i].size()); ++j)
+            {
+                //for each keyword
+                if (P[i][j] != -1)
+                {
+                    kw.push_back(std::make_pair(j, P[i][j]));
+                }
+            }
+
+            double totalW = 0.0;
+            for (std::vector<std::pair<int, int> >::const_iterator cit = kw.begin(); cit != kw.end(); ++cit)
+            {
+                totalW += W[cit->first][cit->second];
+            }
+
+            int aN = kw.size();
+            while(totalW > budget)
+            {
+                int r = rand() % aN;
+                totalW -= W[kw[r].first][kw[r].second];
+                P[i][kw[r].first] = -1;
+                std::swap(kw[r], kw[aN - 1]);
+                --aN;
+            }
+        }
+
     }
 
     //max fitness in population
