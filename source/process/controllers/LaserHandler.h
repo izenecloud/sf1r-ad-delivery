@@ -30,7 +30,7 @@ private:
     const IndexBundleSchema& indexSchema_;
     const MiningSchema& miningSchema_;
     const ZambeziConfig& zambeziConfig_;
-    std::vector<DisplayProperty> displayPropertyList_;
+    GetDocumentsByIdsActionItem actionItem_;
 };
 }
 #endif

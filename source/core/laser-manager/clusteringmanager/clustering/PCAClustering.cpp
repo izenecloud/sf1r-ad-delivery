@@ -76,6 +76,16 @@ void PCAClustering::execute(ClusteringDataAdapter* cda, int threadnum)
     ComputationTool ct(threadnum, infos, min_clustering_doc_num, max_clustering_doc_num,terms, cda);
     ct.start();
     ct.join();
+    std::vector<ClusteringInfo> clusteringInfos;
+    cda->loadClusteringInfos(clusteringInfos);
+    LOG(INFO)<<"clustering summary:\n\tclustering size = "<<clusteringInfos.size();
+    std::size_t totalDocs = 0;
+    for (std::size_t i = 0; i < clusteringInfos.size(); ++i)
+    {
+        totalDocs += clusteringInfos[i].clusteringDocNum;
+        //LOG(INFO)<<"\t clustering index = "<<clusteringInfos[i].clusteringHash<<" document number = "<<clusteringInfos[i].clusteringDocNum;
+    }
+    LOG(INFO)<<"\t total document number = "<<totalDocs;
 }
 
 void PCAClustering::next(const std::string& title, const std::string& category, const std::string& docid)

@@ -1735,6 +1735,9 @@ void CollectionConfig::parseMiningBundleSchema(const ticpp::Element * mining_sch
 
     task_node = getUniqChildElement(mining_schema_node, "AdIndex", false);
     parseAdIndexNode(task_node, collectionMeta);
+    
+    task_node = getUniqChildElement(mining_schema_node, "LaserIndex", false);
+    parseLaserIndexNode(task_node, collectionMeta);
 }
 
 void CollectionConfig::parseFuzzyNormalizerNode(
@@ -1776,6 +1779,20 @@ void CollectionConfig::parseAdIndexNode(
 
     getAttribute(adIndexNode, "ctrpath", adIndexConfig.clickPredictorWorkingPath);
     miningSchema.ad_index_config.isEnable = true;
+}
+    
+void CollectionConfig::parseLaserIndexNode(
+            const ticpp::Element* laserIndexNode,
+            CollectionMeta& collectionMeta) const
+{
+    if(!laserIndexNode)
+        return;
+
+    MiningSchema& miningSchema =
+        collectionMeta.miningBundleConfig_->mining_schema_;
+
+
+   miningSchema.laser_index_config.isEnable = true;
 }
 
 void CollectionConfig::parseZambeziNode(

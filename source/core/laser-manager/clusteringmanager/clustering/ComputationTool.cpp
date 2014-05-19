@@ -25,6 +25,7 @@ void ComputationTool::run()
             ValueClass value;
             KeyClass key = -1;
             next = reader->Next(key, value);
+
             if (key != lastKey)   //new clustering or the last document
             {
                 if (c_cat_vector.size() > min_clustering_doc_num)
@@ -114,5 +115,6 @@ void ComputationTool::run()
         closeFile<izene_reader>(reader);
         closeFile<izene_writer>(writer);
     }
+        
 }
 } } }

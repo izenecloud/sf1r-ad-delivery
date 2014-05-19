@@ -825,6 +825,14 @@ private:
     void parseAdIndexNode(
             const ticpp::Element* adIndexNode,
             CollectionMeta& collectionMeta) const;
+    
+    /// @brief Parse <MiningBundle> <Schema> <LaserIndex>
+    /// @param rankNode Pointer to the Element <LaserIndex>
+    /// @param collectionMeta t he config instance to update
+    void parseLaserIndexNode(
+            const ticpp::Element* laserIndexNode,
+            CollectionMeta& collectionMeta) const;
+
 
     /// @brief                  Parse <Collection> settings
     /// @param system           Pointer to the Element

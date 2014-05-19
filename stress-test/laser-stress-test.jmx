@@ -38,10 +38,16 @@
     &quot;uuid&quot;:&quot;${uuid}&quot;,
     &quot;topn&quot;:3
   },
-  &quot;select&quot;:
+   &quot;select&quot;:
   [
     {
       &quot;property&quot;:&quot;Title&quot;,
+      &quot;highlight&quot;:false,
+      &quot;snippet&quot;:false,
+      &quot;summary&quot;:false
+    },
+    {
+      &quot;property&quot;:&quot;Source&quot;,
       &quot;highlight&quot;:false,
       &quot;snippet&quot;:false,
       &quot;summary&quot;:false
