@@ -5,8 +5,10 @@
 using namespace izenelib::am;
 namespace sf1r { namespace laser {
 
-TopNClusteringDB::TopNClusteringDB(const std::string& topNClusteringPath)
+TopNClusteringDB::TopNClusteringDB(const std::string& topNClusteringPath,
+    const std::size_t& maxClustering)
     : topNClusteringPath_(topNClusteringPath)
+    , maxClustering_(maxClustering)
 {
     if (!boost::filesystem::exists(topNClusteringPath_))
     {
@@ -48,11 +50,12 @@ bool TopNClusteringDB::update(const std::string& user, const std::map<int, float
 
 bool TopNClusteringDB::get(const std::string& user, std::map<int, float>& clustering) const
 {
-    //clustering[rand() % 1000] = (rand() % 1000) / 1000.0;
-    //clustering[rand() % 1000] = (rand() % 1000) / 1000.0;
-    //clustering[rand() % 1000] = (rand() % 1000) / 1000.0;
-    //clustering[rand() % 1000] = (rand() % 1000) / 1000.0;
-    //return true;
-    return topNclusterLeveldb_->get(user, clustering);
+    if (!topNclusterLeveldb_->get(user, clustering))
+    {
+        clustering[rand() % maxClustering_] = 1.0;
+        clustering[rand() % maxClustering_] = 1.0;
+        clustering[rand() % maxClustering_] = 1.0;
+    }
+    return true;
 }
 } }
