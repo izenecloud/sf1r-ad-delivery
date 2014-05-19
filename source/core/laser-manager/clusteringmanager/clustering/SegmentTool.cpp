@@ -8,9 +8,8 @@ SegmentTool::DocumentVecType::iterator  SegmentTool::calc_(DocumentVecType& docv
 {
     typedef izenelib::util::second_greater<std::pair<std::string, float> > greater_than;
     DocumentVecType::iterator iter = docv.begin();
-    for (std::size_t i = 0; i < size; ++i, ++iter)
+    for (std::size_t k = 0; k < size; ++k, ++iter)
     {
-        //const OriDocument* iter = &(docv[i]);
         std::vector<std::pair<std::string, float> > tks;
         std::pair<std::string, float> tmp;
         std::vector<std::pair<std::string, float> > subtks;
@@ -26,7 +25,8 @@ SegmentTool::DocumentVecType::iterator  SegmentTool::calc_(DocumentVecType& docv
 
         if(tot == 0)
         {
-            continue;
+            tot = 1.0;
+            now = 1.0;
         }
             
         std::sort(tks.begin(), tks.end(), greater_than());
@@ -45,11 +45,18 @@ SegmentTool::DocumentVecType::iterator  SegmentTool::calc_(DocumentVecType& docv
             {
                 termList[tks[i].first]++;
             }
-        // TODO
-        //}
-        //for (size_t i = 0; i < tks.size(); ++i)
-        //{
-            d.add(tks[i].first, tks[i].second/tot);
+            d.add(tks[i].first, tks[i].second / tot);
+        }
+        
+        if (now >= 0.9)
+        {
+            type::ClusteringListDes::get()->get_cat_mid_writer(
+                iter->category)->Append(Hash_(cateMerge), std::make_pair(cateMerge, d));
+            continue;
+        }
+
+        for (size_t i = 0; i < tks.size(); ++i)
+        {
             now += tks[i].second;
             cateMerge += tks[i].first;
             if (now > tot * THRESHOLD_)   //check whether the document number in this category reach the limit
@@ -81,15 +88,20 @@ void SegmentTool::run(ThreadContext* context)
     DocumentVecType* docs = context->docs_;
     Dictionary* cat = context->cat_;
     Dictionary* terms = context->terms_;
-    while(!isExit_())
+    while(true)
     {
+        //DocumentVecType* docv;
         std::size_t size = 0;
         {
             boost::unique_lock<boost::shared_mutex> uniqueLock(*mutex);    
             size = docs->size();
+            //docv = new DocumentVecType(*docs);
+            //docs->clear();
         }
         if (0 == size)
         {
+            if (isExit_())
+                break;
             boost::this_thread::sleep(boost::posix_time::milliseconds(2000));
         }
         else

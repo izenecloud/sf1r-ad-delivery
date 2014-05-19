@@ -60,7 +60,7 @@ struct GetClusteringInfoRequest: public RequestData
 
 struct ClusteringInfo
 {
-    clustering::hash_t clusteringIndex;
+    int clusteringIndex;
     std::map<int, float> pow;
     MSGPACK_DEFINE(clusteringIndex, pow);
 };

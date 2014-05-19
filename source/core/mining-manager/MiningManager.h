@@ -421,7 +421,8 @@ private:
     bool initProductRankerFactory_(const ProductRankingConfig& rankConfig);
 
     bool initAdIndexManager_(AdIndexConfig& adIndexConfig);
-
+    bool initLaserManager_(LaserIndexConfig& laserIndexConfig);
+    
     const std::string& getOfferItemCountPropName_() const;
 
 public:
@@ -456,7 +457,6 @@ private:
     boost::shared_ptr<SearchManager> searchManager_;
     boost::shared_ptr<SearchCache> searchCache_;
     boost::shared_ptr<AdSearchService> adSearchService_;
-    LaserManager* laserManager_;
 
     boost::shared_ptr<izenelib::ir::idmanager::IDManager> idManager_;
 
@@ -504,6 +504,9 @@ private:
     std::string suffix_match_path_;
     SuffixMatchManager* suffixMatchManager_;
     ProductTokenizer* productTokenizer_;
+    
+    /** LaserManager */
+    LaserManager* laserManager_;
 
     /** AdIndexManager */
     AdIndexManager* adIndexManager_;

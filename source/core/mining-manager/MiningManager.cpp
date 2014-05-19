@@ -167,7 +167,6 @@ MiningManager::MiningManager(
     , searchManager_(searchManager)
     , searchCache_(searchCache)
     , adSearchService_(adSearchService)
-    , laserManager_(NULL)
     , idManager_(idManager)
     , numericTableBuilder_(NULL)
     , rtypeStringPropTableBuilder_(NULL)
@@ -184,6 +183,7 @@ MiningManager::MiningManager(
     , productRankerFactory_(NULL)
     , suffixMatchManager_(NULL)
     , productTokenizer_(NULL)
+    , laserManager_(NULL)
     , adIndexManager_(NULL)
     , miningTaskBuilder_(NULL)
     , multiThreadMiningTaskBuilder_(NULL)
@@ -268,7 +268,8 @@ bool MiningManager::open()
             mining_schema_.attr_enable ||
             mining_schema_.product_ranking_config.isEnable ||
             mining_schema_.zambezi_config.isEnable ||
-            mining_schema_.ad_index_config.isEnable)
+            mining_schema_.ad_index_config.isEnable ||
+            mining_schema_.laser_index_config.isEnable)
         {
             miningTaskBuilder_ = new MiningTaskBuilder( document_manager_);
             multiThreadMiningTaskBuilder_ = new MultiThreadMiningTaskBuilder(
@@ -367,7 +368,7 @@ bool MiningManager::open()
 
         if (customDocIdConverter_) delete customDocIdConverter_;
         customDocIdConverter_ = new CustomDocIdConverter(*idManager_);
-
+        
         /** Suffix Match */
         if (mining_schema_.suffixmatch_schema.suffix_match_enable)
         {
@@ -436,6 +437,14 @@ bool MiningManager::open()
             LOG(ERROR) << "init AdIndexManager fail"<<endl;
             return false;
         }
+        
+        /** laser */
+        if(!initLaserManager_(mining_schema_.laser_index_config))
+        {
+            LOG(ERROR) << "init LaserManager fail"<<endl;
+            return false;
+        }
+
         /** product rank */
         const ProductRankingConfig& rankConfig =
             mining_schema_.product_ranking_config;
@@ -446,8 +455,6 @@ bool MiningManager::open()
             !initProductRankerFactory_(rankConfig))
             return false;
 
-       /** laser */
-       laserManager_=new LaserManager(adSearchService_);
     }
     catch (NotEnoughMemoryException& ex)
     {
@@ -1641,6 +1648,17 @@ bool MiningManager::initAdIndexManager_(AdIndexConfig& adIndexConfig)
         adSearchService_.get(), groupManager_);
     adIndexManager_->buildMiningTask();
     miningTaskBuilder_->addTask(adIndexManager_->getMiningTask());
+
+    return true;
+}
+
+bool MiningManager::initLaserManager_(LaserIndexConfig& laserIndexConfig)
+{
+    if (!laserIndexConfig.isEnable)
+        return true;
+    LOG(INFO)<<"init LaserManager..";
+    laserManager_=new LaserManager(adSearchService_, collectionName_);
+    multiThreadMiningTaskBuilder_->addTask(laserManager_->getLaserIndexTask());
 
     return true;
 }

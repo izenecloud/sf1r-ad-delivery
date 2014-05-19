@@ -28,40 +28,40 @@ class ClusteringListDes
     
     inline izene_writer_pointer get_mid_cat_writer(const std::string& cate)
     {
-        std::string cat_mid_res_path = generate_clustering_mid_result_path(cate);
         izene_writer* writer = find_stream<izene_writer>(cate, cat_mid_clustering_writers_);
         if (NULL != writer)
             return writer;
+        std::string cat_mid_res_path = generate_clustering_mid_result_path(cate);
         return init_stream<izene_writer>(cate, cat_mid_res_path,
                                          cat_mid_clustering_writers_, true);
     }
 
     inline izene_reader_pointer get_mid_cat_reader(const std::string& cate)
     {
-        std::string cat_mid_path = generate_clustering_mid_result_path(cate);
         izene_reader* reader = find_stream<izene_reader>(cate, cat_mid_clustering_readers_);
         if (NULL != reader)
             return reader;
+        std::string cat_mid_path = generate_clustering_mid_result_path(cate);
         return init_stream<izene_reader>(cate, cat_mid_path,
                                          cat_mid_clustering_readers_, false);
     }
 
     inline izene_writer_pointer get_final_cat_writer(const std::string& cate)
     {
-        std::string cat_final_res_path = generate_clustering_final_result_path(cate);
         izene_writer* writer = find_stream<izene_writer>(cate, cat_final_clustering_writers_);
         if (NULL != writer)
             return writer;
+        std::string cat_final_res_path = generate_clustering_final_result_path(cate);
         return init_stream<izene_writer>(cate, cat_final_res_path,
                                          cat_final_clustering_writers_, true);
     }
 
     inline izene_reader_pointer get_final_cat_reader(const std::string& cate)
     {
-        std::string cat_final_res_path = generate_clustering_final_result_path(cate);
         izene_reader* reader = find_stream<izene_reader>(cate, cat_final_clustering_readers_);
         if (NULL != reader)
             return reader;
+        std::string cat_final_res_path = generate_clustering_final_result_path(cate);
         return init_stream<izene_reader>(cate, cat_final_res_path,
                                          cat_final_clustering_readers_, false);
     }
@@ -112,7 +112,8 @@ public:
         {
             ClusteringInfo ci;
             ci.clusteringname = iter->first;
-            ci.clusteringMidPath = generate_clustering_mid_result_path(iter->first);
+
+            ci.clusteringMidPath = iter->second;
             ci.clusteringResPath = generate_clustering_final_result_path(
                                        iter->first);
             ci.clusteringPowPath = generate_clustering_pow_result_path(iter->first);
@@ -162,8 +163,17 @@ private:
     {
         boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
         izenestream* izene_ptr = NULL;
-        izene_ptr = openFile<izenestream>(path.c_str(), must);
-        clustering[cate] = izene_ptr;
+        typedef typename boost::unordered_map<std::string, izenestream*>::const_iterator const_iterator;
+        const_iterator it = clustering.find(cate);
+        if ( it == clustering.end())
+        {
+            izene_ptr = openFile<izenestream>(path.c_str(), must);
+            clustering[cate] = izene_ptr;
+        }
+        else
+        {
+            izene_ptr = it->second;
+        }
         return izene_ptr;
     }
     

@@ -19,7 +19,11 @@ LaserHandler::LaserHandler(
     , indexSchema_(collectionHandler.indexSchema_)
     , miningSchema_(collectionHandler.miningSchema_)
     , zambeziConfig_(collectionHandler.zambeziConfig_)
+    , actionItem_()
 {
+    actionItem_.env_.encodingType_ = "UTF-8";
+    actionItem_.env_.ipAddress_ = request.header()[Keys::remote_ip].getString();
+    actionItem_.collectionName_ = asString(request[Keys::collection]);
 }
     
 void LaserHandler::recommend()
@@ -29,7 +33,7 @@ void LaserHandler::recommend()
     if (parseSelect_()  && parseLaserRecommendParam_(param))
     {
         RawTextResultFromMIA result;
-        laserManager->recommend(param, result);
+        laserManager->recommend(param, actionItem_, result);
         if (!result.error_.empty())
         {
             response_.addError(result.error_);
@@ -39,7 +43,7 @@ void LaserHandler::recommend()
 
         DocumentsRenderer renderer(miningSchema_);
         renderer.renderDocuments(
-            displayPropertyList_,
+            actionItem_.displayPropertyList_,
             result,
             response_[driver::Keys::resources]);
     }
@@ -54,7 +58,7 @@ bool LaserHandler::parseSelect_()
     {
         response_.addWarning(selectParser.warningMessage());
         swap(
-            displayPropertyList_,
+            actionItem_.displayPropertyList_,
             selectParser.mutableProperties()
         );
 

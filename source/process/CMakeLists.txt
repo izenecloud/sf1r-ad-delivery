@@ -26,12 +26,12 @@ FILE(GLOB_RECURSE controller_SRC "controllers/*.cpp")
 FILE(GLOB_RECURSE parsers_SRC "parsers/*.cpp")
 FILE(GLOB_RECURSE renderers_SRC "renderers/*.cpp")
 FILE(GLOB distribute_SRC "distribute/*.cpp")
-FILE(GLOB clustering_main_SRC
-    "clustering/clustering_main.cpp"
+FILE(GLOB clustering_SRC
+    "clustering/ClusteringMain.cpp"
     "clustering/Configuration.cpp"
     )
-ADD_EXECUTABLE(clustering_main ${clustering_main_SRC})
-TARGET_LINK_LIBRARIES(clustering_main
+ADD_EXECUTABLE(clustering ${clustering_SRC})
+TARGET_LINK_LIBRARIES(clustering
   sf1r_mining_manager
   sf1r_ad_manager
   sf1r_laser_manager
