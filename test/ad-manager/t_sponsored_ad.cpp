@@ -165,7 +165,7 @@ int main()
                 << ad_auctionlog_mgr_.getKeywordAvgCost(bid, 0) << "-"
                 << ad_auctionlog_mgr_.getKeywordAvgCost(bid, 1) << "-"
                 << ad_auctionlog_mgr_.getKeywordAvgCost(bid, 2) << ", ctr: "
-                << ad_auctionlog_mgr_.getKeywordCTR(bid) << std::endl;
+                << ad_auctionlog_mgr_.getKeywordCTR(bid, 0) << std::endl;
         }
     }
 

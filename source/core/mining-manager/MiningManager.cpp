@@ -1637,7 +1637,7 @@ bool MiningManager::initAdIndexManager_(AdIndexConfig& adIndexConfig)
         system_resource_path_ + "/ad_resource",
         adIndexDir.string(),
         true, true, true,
-        document_manager_, numericTableBuilder_,
+        document_manager_, idManager_.get(), numericTableBuilder_,
         adSearchService_.get(), groupManager_);
     adIndexManager_->buildMiningTask();
     miningTaskBuilder_->addTask(adIndexManager_->getMiningTask());

@@ -108,6 +108,9 @@ public:
     //    return izenelib::util::Singleton<AdAuctionLogMgr>::get();
     //}
 
+    // the (cost, ctr) pair list for all slots for each bid keyword or aditem
+    typedef std::vector<std::pair<int, double> > BidAuctionLandscapeT;
+
     AdAuctionLogMgr();
     void init(const std::string& datapath);
     void updateAdSearchStat(const std::set<BidKeywordId>& keyword_list,
@@ -116,18 +119,24 @@ public:
         int click_cost_in_fen, uint32_t click_slot);
 
     double getAdCTR(const std::string& adid);
+    int getAdAvgCost(const std::string& adid);
+    void getAdLandscape(std::vector<std::string>& ad_list,
+        std::vector<BidAuctionLandscapeT>& cost_click_list);
+
     // clicked number for a day on the keyword.
     std::size_t getAvgKeywordClickedNum(BidKeywordId keyid);
     // total clicked number for a day.
     std::size_t getAvgTotalClickedNum();
 
-    int getKeywordAvgCost(BidKeywordId keyid, std::size_t slot);
-    int getAdAvgCost(const std::string& adid);
-    double getKeywordCTR(BidKeywordId kid);
+
+    int getKeywordCurrentImpression(BidKeywordId keyid);
+    int getKeywordAvgDailyImpression(BidKeywordId keyid);
+    void getKeywordAvgCost(BidKeywordId keyid, std::vector<int>& cost_list);
+    int getKeywordAvgCost(BidKeywordId keyid, uint32_t slot);
+    void getKeywordCTR(BidKeywordId kid, std::vector<double>& ctr_list);
+    double getKeywordCTR(BidKeywordId kid, uint32_t slot);
     void getKeywordBidLandscape(std::vector<BidKeywordId>& keyword_list,
-        std::vector<std::vector<std::pair<int, double> > >& cost_click_list);
-    void getAdLandscape(std::vector<std::string>& ad_list,
-        std::vector<std::vector<std::pair<int, double> > >& cost_click_list);
+        std::vector<BidAuctionLandscapeT>& cost_click_list);
 
     void load();
     void save();

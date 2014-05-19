@@ -36,6 +36,7 @@ AdIndexManager::AdIndexManager(
         bool enable_ad_rec,
         bool enable_ad_sponsored_search,
         boost::shared_ptr<DocumentManager>& dm,
+        izenelib::ir::idmanager::IDManager* id_manager,
         NumericPropertyTableBuilder* ntb,
         AdSearchService* searcher,
         faceted::GroupManager* grp_mgr)
@@ -47,6 +48,7 @@ AdIndexManager::AdIndexManager(
       enable_ad_rec_(enable_ad_rec),
       enable_ad_sponsored_search_(enable_ad_sponsored_search),
       documentManager_(dm),
+      id_manager_(id_manager),
       numericTableBuilder_(ntb),
       ad_searcher_(searcher),
       groupManager_(grp_mgr)
@@ -97,7 +99,7 @@ bool AdIndexManager::buildMiningTask()
     {
         ad_sponsored_mgr_.reset(new AdSponsoredMgr());
         ad_sponsored_mgr_->init(ad_res_path_ + "/ad_sponsored", ad_data_path_ + "ad_sponsored",
-            groupManager_, documentManager_.get(), ad_searcher_);
+            groupManager_, documentManager_.get(), id_manager_, ad_searcher_);
     }
 
     adMiningTask_ = new AdMiningTask(indexPath_, documentManager_, ad_dnf_index_, ad_selector_, rwMutex_);

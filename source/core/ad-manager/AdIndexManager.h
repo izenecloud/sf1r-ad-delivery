@@ -10,6 +10,7 @@
 #include <common/PropSharedLockSet.h>
 #include <search-manager/NumericPropertyTableBuilder.h>
 #include <ir/be_index/InvIndex.hpp>
+#include <ir/id_manager/IDManager.h>
 
 
 #define CPM 0
@@ -48,6 +49,7 @@ public:
             bool enable_ad_rec,
             bool enable_ad_sponsored_search,
             boost::shared_ptr<DocumentManager>& dm,
+            izenelib::ir::idmanager::IDManager* id_manager,
             NumericPropertyTableBuilder* ntb,
             AdSearchService* searcher,
             faceted::GroupManager* grp_mgr);
@@ -98,6 +100,7 @@ private:
     bool enable_ad_sponsored_search_;
 
     boost::shared_ptr<DocumentManager>& documentManager_;
+    izenelib::ir::idmanager::IDManager* id_manager_;
     AdMiningTask* adMiningTask_;
     AdClickPredictor* ad_click_predictor_;
     NumericPropertyTableBuilder* numericTableBuilder_;
