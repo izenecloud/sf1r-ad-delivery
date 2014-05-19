@@ -14,7 +14,8 @@ class TopNClusteringDB
 {
     typedef izenelib::am::leveldb::Table<std::string, std::map<int, float> > TopNclusterLeveldbType;
 public:
-    TopNClusteringDB(const std::string& topNClusteringPath);
+    TopNClusteringDB(const std::string& topNClusteringPath,
+        const std::size_t& maxClustering);
     ~TopNClusteringDB();
 
 public:
@@ -27,6 +28,7 @@ private:
 private:
     TopNclusterLeveldbType* topNclusterLeveldb_;
     std::string topNClusteringPath_;
+    const std::size_t maxClustering_;
 };
 } }
 

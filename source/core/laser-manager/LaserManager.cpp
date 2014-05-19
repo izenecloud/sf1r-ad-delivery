@@ -74,9 +74,6 @@ void LaserManager::load_()
     tokenizer_ = new Tokenizer(MiningManager::system_resource_path_ + "/dict/title_pca/",
         MiningManager::system_resource_path_ + "/laser_resource/terms_dic.dat");
 
-    topnClustering_ = new TopNClusteringDB(workdir_ + "/topnclustering");
-    laserOnlineModel_ = new LaserOnlineModelDB(workdir_ + "/laser_online_model/"); 
-    
     std::vector<boost::unordered_map<std::string, float> > clusteringContainer;
     laser::clustering::loadClusteringResult(clusteringContainer, MiningManager::system_resource_path_ + "/laser_resource/clustering_result");
     
@@ -87,7 +84,11 @@ void LaserManager::load_()
         tokenizer_->numeric(clusteringContainer[i], vec);
         (*clusteringContainer_)[i] = vec;
     }
-    LOG(INFO)<<clusteringContainer_->size(); 
+    //LOG(INFO)<<clusteringContainer_->size(); 
+    
+    topnClustering_ = new TopNClusteringDB(workdir_ + "/topnclustering", clusteringContainer_->size());
+    laserOnlineModel_ = new LaserOnlineModelDB(workdir_ + "/laser_online_model/"); 
+    
     rpcServer_ = new LaserRpcServer(tokenizer_, clusteringContainer_, topnClustering_, laserOnlineModel_);
     rpcServer_->start("0.0.0.0", 28611, 2);
 }
