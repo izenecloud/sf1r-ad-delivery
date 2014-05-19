@@ -149,11 +149,9 @@ bool LaserManager::recommend(const LaserRecommendParam& param,
         actionItem.idList_.push_back(docIdList[i]);
     }
     adSearchService_->getDocumentsByIds(actionItem, res);
-    if (res.snippetTextOfDocumentInPage_.size() > param.topN_)
+    if (res.idList_.size() > param.topN_)
     {
-        res.snippetTextOfDocumentInPage_.resize(param.topN_);
         res.idList_.resize(param.topN_);
-        res.workeridList_.resize(param.topN_);
     }
     return true;
 }
