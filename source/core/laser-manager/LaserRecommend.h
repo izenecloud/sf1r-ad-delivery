@@ -32,7 +32,11 @@ public:
         const std::size_t num) const;
 private:
     bool getAD(const std::size_t& clusteringId, AdIndexManager::ADVector& advec) const;
-    void topN(const std::vector<float>& model, const AdIndexManager::ADVector& advec, const std::size_t n, priority_queue& queue) const;
+    void topN(const std::vector<float>& model, 
+        const float offset, 
+        const AdIndexManager::ADVector& advec, 
+        const std::size_t n, 
+        priority_queue& queue) const;
 private:
     const AdIndexManager* indexManager_;
     const TopNClusteringDB* topnClustering_;

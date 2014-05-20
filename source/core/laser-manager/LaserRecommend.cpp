@@ -22,7 +22,7 @@ bool LaserRecommend::recommend(const std::string& uuid,
             AdIndexManager::ADVector advec;
             if (getAD(it->first, advec))
             {
-                topN(model, advec, num, queue);
+                topN(model, it->second, advec, num, queue);
             }
         }
 
@@ -45,7 +45,11 @@ bool LaserRecommend::getAD(const std::size_t& clusteringId, AdIndexManager::ADVe
     return indexManager_->get(clusteringId, advec);
 }
 
-void LaserRecommend::topN(const std::vector<float>& model, const AdIndexManager::ADVector& advec, const std::size_t n, priority_queue& queue) const
+void LaserRecommend::topN(const std::vector<float>& model, 
+        const float offset, 
+        const AdIndexManager::ADVector& advec, 
+        const std::size_t n, 
+        priority_queue& queue) const
 {
     for (std::size_t i = 0; i < advec.size(); ++i)
     {
@@ -59,6 +63,7 @@ void LaserRecommend::topN(const std::vector<float>& model, const AdIndexManager:
             weight += model[it->first + 1] * it->second;
         }
         weight += model[0];
+        weight += offset;
         if(queue.size() >= n)
         {
             if(weight > queue.top().second)
