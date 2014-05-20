@@ -13,6 +13,7 @@
 #include <time.h>
 #include <cstdlib>
 #include <boost/unordered_map.hpp>
+#include <boost/multi_array.hpp>
 #include "AdBidStrategy.h"
 
 namespace sf1r
@@ -370,6 +371,51 @@ static std::vector<int> enumKP(const std::vector<std::vector<double> >& W, const
     enumKPRecursive(W, V, 0, curSol, B, 0.0, maxValue, maxSol);
 
     return maxSol;
+}
+
+//dynamic programming for knapsack problem
+static std::vector<int> dpKP(const std::vector<std::vector<double> >& W, const std::vector<std::vector<double> >& V, double B)
+{
+    typedef boost::multi_array<int, 2> array_type;
+    typedef array_type::index index;
+    array_type	S(boost::extents[W.size()][(int)B+1]);
+    std::vector<double> F((int)B + 1, 0.0);
+
+    for(int i = 0; i < (int)W.size(); ++i)
+    {
+        for(int v = B; v >= 0; --v)
+        {
+            double maxF = F[v];
+            int maxI = -1;
+            for(int j = 0; j < (int)W[i].size(); ++j)
+            {
+                if(v >= W[i][j])
+                {
+                    double myF = F[v - W[i][j]] + V[i][j];
+                    if(myF > maxF)
+                    {
+                        maxF = myF;
+                        maxI = j;
+                    }
+                }
+            }
+            F[v] = maxF;
+            S[i][v] = maxI;
+        }
+    }
+
+    //construct solution.
+    std::vector<int> Sol(W.size(), -1);
+    for(int i = W.size() - 1, v = (int)B; i >= 0; --i)
+    {
+        Sol[i] = S[i][v];
+        if(S[i][v] != -1)
+        {
+            v = (int)(v - W[i][Sol[i]]);
+        }
+    }
+
+    return Sol;
 }
 
 std::vector<double> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticInfo>& qsInfos, double budget )
