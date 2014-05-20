@@ -28,17 +28,20 @@ namespace sponsored
 
 struct AdQueryStatisticInfo
 {
-    /** cost per click for each ad position. */
-    std::vector<double> cpc_;
+    /** cost per click for each ad position. in unit fen*/
+    std::vector<int> cpc_;
 
     /** click through rate for each ad position. from top to bottom.*/
     std::vector<double> ctr_;
 
     /** impression for this query. */
-    double impression_;
+    int impression_;
 
     /** min bid for this query. */
-    double minBid_;
+    int minBid_;
+
+    /** predefined bid for this query, if having not, just set to -1. if a non-negative predefined bid is given, this keyword's bid will just be this bid.*/
+    int bid_;
 };
 
 
@@ -60,7 +63,7 @@ public:
     * @param budget Budget for a single auction.
     * @return Returning a list of two bids, <bid, probability> for each.
     */
-    static std::vector<std::pair<double, double> > convexUniformBid(const std::list<AdQueryStatisticInfo>& qsInfos, double budget);
+    static std::vector<std::pair<int, double> > convexUniformBid(const std::list<AdQueryStatisticInfo>& qsInfos, int budget);
 
     /**
     * @brief provide one bid for each interesting keyword, to maximize revenue(clicks traffic). This strategy take the budget left in current charging period and the time remaining into consideration. So it is a real time bid method.
@@ -70,7 +73,7 @@ public:
     * @param vpc value per click for current ad, such as 8.0, 10.0, 12.0.
     * @return Returning bid value.
     */
-    static double realtimeBidWithRevenueMax(const AdQueryStatisticInfo& qsInfo, double budgetUsed, double budgetLeft, double vpc = 10.0);
+    static int realtimeBidWithRevenueMax(const AdQueryStatisticInfo& qsInfo, int budgetUsed, int budgetLeft, int vpc = 1000);
 
     /**
     * @brief provide one bid for each interesting keyword, to maximize profit(revenue - cost). This strategy take the budget left in current charging period and the time remaining into consideration. So it is a real time bid method.
@@ -80,7 +83,7 @@ public:
     * @param vpc value per click for current ad, such as 8.0, 10.0, 12.0.
     * @return Returning bid value for current query.
     */
-    static double realtimeBidWithProfitMax(const AdQueryStatisticInfo& qsInfo, double budgetUsed, double budgetLeft, double vpc = 10.0);
+    static int realtimeBidWithProfitMax(const AdQueryStatisticInfo& qsInfo, int budgetUsed, int budgetLeft, int vpc = 1000);
 
 
     /**
@@ -89,7 +92,7 @@ public:
     * @param budget total Budget in budget period.
     * @return Returning a list of bids, whose length is equal to qsInfos.
     */
-    static std::vector<double> geneticBid(const std::list<AdQueryStatisticInfo>& qsInfos, double budget);
+    static std::vector<int> geneticBid(const std::list<AdQueryStatisticInfo>& qsInfos, int budget);
 };
 
 
