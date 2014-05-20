@@ -14,12 +14,20 @@ class AdIndexConfig
 {
 public:
     bool isEnable;
-
     std::string indexFilePath;
-
     std::string clickPredictorWorkingPath;
+    bool enable_selector;
+    bool enable_rec;
+    bool enable_sponsored_search;
+    std::string dmp_ip;
+    uint16_t dmp_port;
+    std::string stream_log_ip;
+    uint16_t stream_log_port;
 
     AdIndexConfig() : isEnable(false)
+                      , enable_selector(false)
+                      , enable_rec(false)
+                      , enable_sponsored_search(false)
     {}
 
 private:
@@ -30,6 +38,14 @@ private:
     {
         ar & isEnable;
         ar & indexFilePath;
+        ar & clickPredictorWorkingPath;
+        ar & enable_selector;
+        ar & enable_rec;
+        ar & enable_sponsored_search;
+        ar & dmp_ip;
+        ar & dmp_port;
+        ar & stream_log_ip;
+        ar & stream_log_port;
     }
 };
 

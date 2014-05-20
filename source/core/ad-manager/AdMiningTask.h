@@ -19,6 +19,7 @@ using namespace std;
 
 namespace sf1r{
 
+class AdSelector;
 class AdMiningTask : public MiningTask
 {
 public:
@@ -31,6 +32,7 @@ public:
             const std::string& path,
             boost::shared_ptr<DocumentManager>& dm,
             boost::shared_ptr<AdDNFIndexType>& ad_dnf_index,
+            boost::shared_ptr<AdSelector>& ad_selector,
             boost::shared_mutex& ad_dnf_mutex);
 
     ~AdMiningTask();
@@ -64,6 +66,7 @@ private:
 
     boost::shared_ptr<DocumentManager>& documentManager_;
     boost::shared_ptr<AdDNFIndexType>& ad_dnf_index_;
+    boost::shared_ptr<AdSelector>& ad_selector_;
     boost::shared_mutex& rwDNFMutex_;
 
     boost::shared_ptr<AdDNFIndexType> incrementalAdIndex_;

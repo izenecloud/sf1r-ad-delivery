@@ -22,6 +22,8 @@ struct SearchingMode
         SUFFIX_MATCH,
         ZAMBEZI,
         AD_INDEX,
+        SPONSORED_AD_SEARCH,
+        SPONSORED_AD_SEARCH_SUFFIX,
         NotUseSearchingMode
     }; //end - enum SearchingModeType
 
