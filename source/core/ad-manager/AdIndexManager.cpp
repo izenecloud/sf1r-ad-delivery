@@ -80,6 +80,9 @@ bool AdIndexManager::buildMiningTask()
 {
     ad_dnf_index_.reset(new AdDNFIndexType());
 
+    ad_click_predictor_ = AdClickPredictor::get();
+    ad_click_predictor_->init(clickPredictorWorkingPath_);
+
     std::ifstream ifs(indexPath_.c_str(), std::ios_base::binary);
     if(ifs.good())
     {
@@ -113,8 +116,6 @@ bool AdIndexManager::buildMiningTask()
     adMiningTask_ = new AdMiningTask(indexPath_, documentManager_, ad_dnf_index_, ad_selector_, rwMutex_);
     adMiningTask_->setPostProcessFunc(boost::bind(&AdIndexManager::postMining, this, _1, _2));
 
-    ad_click_predictor_ = AdClickPredictor::get();
-    ad_click_predictor_->init(clickPredictorWorkingPath_);
     bool ret = AdStreamSubscriber::get()->subscribe(adlog_topic, boost::bind(&AdIndexManager::onAdStreamMessage, this, _1));
     if (!ret)
     {
