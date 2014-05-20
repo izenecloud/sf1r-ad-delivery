@@ -77,6 +77,13 @@
                 <xs:element name="Property" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
             <xs:attribute name="ctrpath" type="xs:string" use="required"/>
+            <xs:attribute name="enable_selector" type="YesNoType" use="required"/>
+            <xs:attribute name="enable_rec" type="YesNoType" use="required"/>
+            <xs:attribute name="enable_sponsored_search" type="YesNoType" use="required"/>
+            <xs:attribute name="dmp_ip" type="xs:string" use="required"/>
+            <xs:attribute name="dmp_port" type="xs:string" use="required"/>
+            <xs:attribute name="stream_log_ip" type="xs:string" use="required"/>
+            <xs:attribute name="stream_log_port" type="xs:string" use="required"/>
         </xs:complexType>
     </xs:element>
     

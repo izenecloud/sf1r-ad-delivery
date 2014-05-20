@@ -52,7 +52,7 @@ public:
         izenelib::ir::idmanager::IDManager* id_manager,
         AdSearchService* searcher);
 
-    void miningAdCreatives(ad_docid_t start_id);
+    void miningAdCreatives(ad_docid_t start_id, ad_docid_t end_id);
     void tokenize(const std::string& str, std::vector<std::string>& tokens);
     void generateBidPhrase(const std::string& ad_title, BidPhraseT& bidphrase_list);
     void generateBidPrice(ad_docid_t adid, std::vector<int>& price_list);
@@ -63,8 +63,6 @@ public:
     void getAdBidPrice(ad_docid_t adid, const std::string& query, int leftbudget, int& price);
     int getBudgetLeft(ad_docid_t adid);
     double getAdCTR(ad_docid_t adid);
-    double getAdRelevantScore(const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list);
-    double getAdQualityScore(ad_docid_t adid, const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list);
     void getBidPhrase(const std::string& adid, BidPhraseT& bidphrase);
     bool getAdIdFromAdStrId(const std::string& strid, ad_docid_t& adid);
     bool getAdStrIdFromAdId(ad_docid_t adid, std::string& ad_strid);
@@ -80,6 +78,8 @@ private:
     typedef boost::unordered_map<std::string, uint32_t>  StrIdMapT;
     typedef std::vector<std::pair<int, double> > BidAuctionLandscapeT;
 
+    double getAdRelevantScore(const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list);
+    double getAdQualityScore(ad_docid_t adid, const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list);
     void consumeBudget(ad_docid_t adid, int cost);
     void load();
     void resetDailyLeftBudget();

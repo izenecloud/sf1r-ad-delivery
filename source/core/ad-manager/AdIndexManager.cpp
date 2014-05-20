@@ -35,6 +35,10 @@ AdIndexManager::AdIndexManager(
         bool enable_ad_selector,
         bool enable_ad_rec,
         bool enable_ad_sponsored_search,
+        const std::string& dmp_ip,
+        uint16_t dmp_port,
+        const std::string& stream_log_ip,
+        uint16_t stream_log_port,
         boost::shared_ptr<DocumentManager>& dm,
         izenelib::ir::idmanager::IDManager* id_manager,
         NumericPropertyTableBuilder* ntb,
@@ -53,6 +57,8 @@ AdIndexManager::AdIndexManager(
       ad_searcher_(searcher),
       groupManager_(grp_mgr)
 {
+    AdFeedbackMgr::get()->init(dmp_ip, dmp_port);
+    AdStreamSubscriber::get()->init(stream_log_ip, stream_log_port);
 }
 
 AdIndexManager::~AdIndexManager()
@@ -64,8 +70,10 @@ AdIndexManager::~AdIndexManager()
     if(adMiningTask_)
         delete adMiningTask_;
 
-    ad_click_predictor_->stop();
-    AdClickPredictor::get()->stop();
+    if (ad_click_predictor_)
+        ad_click_predictor_->stop();
+
+    AdStreamSubscriber::get()->stop();
 }
 
 bool AdIndexManager::buildMiningTask()
@@ -176,6 +184,10 @@ void AdIndexManager::postMining(docid_t startid, docid_t endid)
     if (ad_selector_)
     {
         ad_selector_->miningAdSegmentStr(startid, endid);
+    }
+    if (ad_sponsored_mgr_)
+    {
+        ad_sponsored_mgr_->miningAdCreatives(startid, endid);
     }
 }
 

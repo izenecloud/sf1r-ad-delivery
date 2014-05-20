@@ -24,6 +24,7 @@
 #include <parsers/SortParser.h>
 #include <parsers/CustomRankingParser.h>
 #include <common/BundleSchemaHelpers.h>
+#include <ad-manager/sponsored-ad-search/AdResultType.h>
 
 #include <common/Keys.h>
 #include <common/parsers/PageInfoParser.h>
@@ -93,13 +94,21 @@ void DocumentsSearchHandler::search()
     if (parse())
     {
         addAclFilters();
-        KeywordSearchResult searchResult;
-        preprocess(searchResult);
+        std::auto_ptr<KeywordSearchResult> searchResult;
+        if (actionItem_.searchingMode_.mode_ == SearchingMode::SPONSORED_AD_SEARCH)
+        {
+            searchResult.reset(new AdKeywordSearchResult());
+        }
+        else
+        {
+            searchResult.reset(new KeywordSearchResult());
+        }
+        preprocess(*searchResult);
 
-        searchResult.TOP_K_NUM = TOP_K_NUM;
+        searchResult->TOP_K_NUM = TOP_K_NUM;
         if (actionItem_.searchingMode_.mode_ == SearchingMode::SUFFIX_MATCH)
         {
-            searchResult.TOP_K_NUM = actionItem_.searchingMode_.lucky_;
+            searchResult->TOP_K_NUM = actionItem_.searchingMode_.lucky_;
         }
         else if (actionItem_.searchingMode_.mode_ == SearchingMode::AD_INDEX)
         {
@@ -110,34 +119,34 @@ void DocumentsSearchHandler::search()
                 actionItem_.env_.queryString_ += (it->first + it->second);
             }
         }
-        renderer_.setTopKNum(searchResult.TOP_K_NUM);
+        renderer_.setTopKNum(searchResult->TOP_K_NUM);
 
         int topKStart = actionItem_.pageInfo_.topKStart(TOP_K_NUM, IsTopKComesFromConfig(actionItem_));
 
         {
             // initialize before search to record start time.
             detail::DocumentsSearchKeywordsLogger keywordsLogger;
-            if (doSearch(searchResult))
+            if (doSearch(*searchResult))
             {
-                response_[Keys::total_count] = searchResult.totalCount_;
+                response_[Keys::total_count] = searchResult->totalCount_;
 
-                std::size_t topKCount = searchResult.topKDocs_.size();
+                std::size_t topKCount = searchResult->topKDocs_.size();
                 if(IsTopKComesFromConfig(actionItem_))
-                    if (topKStart + topKCount <= searchResult.totalCount_)
+                    if (topKStart + topKCount <= searchResult->totalCount_)
                         topKCount += topKStart;
 
                 response_[Keys::top_k_count] = topKCount;
 
-                renderDocuments(searchResult);
-                renderMiningResult(searchResult);
-                renderRangeResult(searchResult);
-                renderCountResult(searchResult);
+                renderDocuments(*searchResult);
+                renderMiningResult(*searchResult);
+                renderRangeResult(*searchResult);
+                renderCountResult(*searchResult);
                 renderRefinedQuery();
             }
 
             try
             {
-                keywordsLogger.log(actionItem_, searchResult, response_.success());
+                keywordsLogger.log(actionItem_, *searchResult, response_.success());
             }
             catch (const std::exception& e)
             {

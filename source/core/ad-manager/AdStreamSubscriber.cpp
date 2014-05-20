@@ -139,8 +139,11 @@ void AdStreamSubscriber::stop()
         rpcserver_->stop();
         rpcserver_.reset();
     }
-    delete conn_mgr_;
-    conn_mgr_ = NULL;
+    if (conn_mgr_)
+    {
+        delete conn_mgr_;
+        conn_mgr_ = NULL;
+    }
 }
 
 void AdStreamSubscriber::onAdMessage(const std::vector<AdMessage>& msg_list, int calltype)

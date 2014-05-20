@@ -171,4 +171,26 @@ bool MiningSearchService::GetProductScore(
     return miningManager_->getProductScore(docIdStr, scoreType, scoreValue);
 }
 
+bool MiningSearchService::setKeywordBidPrice(const std::string& keyword, double bidprice)
+{
+    LOG(INFO) << "keyword bid price setting: " << keyword << ":" << bidprice;
+    return true;
+}
+
+bool MiningSearchService::setAdCampaignBudget(const std::string& ad_campaign_name, double budget)
+{
+    LOG(INFO) << "ad campaign budget setting: " << ad_campaign_name << ":" << budget;
+    return true;
+}
+
+bool MiningSearchService::setAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list)
+{
+    LOG(INFO) << "ad bid phrase setting: " << ad_strid << ":";
+    for(std::size_t i = 0; i < bid_phrase_list.size(); ++i) 
+    {
+        LOG(INFO) << bid_phrase_list[i];
+    }
+    return true;
+}
+
 }

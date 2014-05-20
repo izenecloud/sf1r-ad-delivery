@@ -197,4 +197,8 @@ int main()
         ofs << std::endl;
     }
 
+    ofs.close();
+
+    LOG(INFO) << "begin test sponsored ad manager.";
+
 }
