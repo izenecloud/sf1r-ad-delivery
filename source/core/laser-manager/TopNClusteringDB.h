@@ -29,6 +29,7 @@ private:
     TopNclusterLeveldbType* topNclusterLeveldb_;
     std::string topNClusteringPath_;
     const std::size_t maxClustering_;
+    const static std::size_t TOP_N = 10;
 };
 } }
 
