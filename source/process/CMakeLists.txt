@@ -30,6 +30,55 @@ FILE(GLOB clustering_SRC
     "clustering/ClusteringMain.cpp"
     "clustering/Configuration.cpp"
     )
+FILE(GLOB clusteringMather_SRC
+    "clustering/ClusteringMatcher.cpp"
+    )
+
+ADD_EXECUTABLE(clusteringMatcher ${clusteringMather_SRC})
+TARGET_LINK_LIBRARIES(clusteringMatcher
+  sf1r_mining_manager
+  sf1r_ad_manager
+  sf1r_laser_manager
+
+  sf1r_log_manager
+  sf1r_document_manager
+  sf1r_ranking_manager
+  sf1r_search_manager
+  sf1r_query_manager
+  sf1r_la_manager
+  sf1r_configuration_manager
+  sf1r_index_manager
+  sf1r_directory_manager
+  sf1r_common
+  sf1r_aggregator_manager
+  sf1r_node_manager
+  sf1r_net
+
+  sf1r_bundle_index
+  sf1r_bundle_mining
+
+  ${idmlib_LIBRARIES}
+  ${imllib_LIBRARIES}
+  ${ilplib_LIBRARIES}
+  ${wisekma_LIBRARIES}
+  ${izenecma_LIBRARIES}
+  ${izenejma_LIBRARIES}
+  ${izenelib_LIBRARIES}
+
+  #external
+  ${XML2_LIBRARIES}
+  ${Boost_LIBRARIES}
+  ${TokyoCabinet_LIBRARIES}
+  ${Glog_LIBRARIES}
+  ${SQLITE3_LIBRARIES}
+  ${MYSQL_LIBRARIES}
+  ${LibCURL_LIBRARIES}
+  ${ImageMagick_LIBRARIES}
+  ${AVRO_LIBRARIES}
+  ${LIBCOUCHBASE_LIBRARIES}
+  )
+ 
+
 ADD_EXECUTABLE(clustering ${clustering_SRC})
 TARGET_LINK_LIBRARIES(clustering
   sf1r_mining_manager
