@@ -25,7 +25,7 @@ namespace sf1r
 static const int MAX_SEARCH_AD_COUNT = 20000;
 static const int MAX_SELECT_AD_COUNT = 20;
 static const int MAX_RECOMMEND_ITEM_NUM = 10;
-static const std::string adlog_topic = "b5manlog";
+static const std::string adlog_topic = "log_b5t_sf1";
 
 using namespace sponsored;
 
