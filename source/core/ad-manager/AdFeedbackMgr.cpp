@@ -8,6 +8,7 @@
 #include <avro/Specific.hh>
 #include <avro/Encoder.hh>
 #include <avro/Stream.hh>
+#include "B5MEvent.hh"
 
 #define USER_PROFILE_CACHE_SECS 60*10
 
@@ -331,23 +332,32 @@ bool AdFeedbackMgr::parserFeedbackLogForAVRO(const std::string& log_data, Feedba
     //test_d->init(*test_in);
     //avro::decode(*test_d, test_result);
 
-    AvroLog raw_data;
-    std::auto_ptr<avro::InputStream> in = avro::memoryInputStream((const uint8_t*)log_data.data(), log_data.size());
-    avro::DecoderPtr d = avro::jsonDecoder(log_schema);
-    d->init(*in);
+    //AvroLog raw_data;
+    //std::auto_ptr<avro::InputStream> in = avro::memoryInputStream((const uint8_t*)log_data.data(), log_data.size());
+    //avro::DecoderPtr d = avro::jsonDecoder(log_schema);
+    //avro::DecoderPtr d = avro::binaryDecoder();
+    //d->init(*in);
 
-    try
-    {
-        avro::decode(*d, raw_data);
-    }
-    catch(const std::exception& e)
-    {
-        LOG(WARNING) << "decoding avro log data failed." << e.what();
-        return false;
-    }
-    feedback_info.user_id = raw_data.args["uid"];
-    feedback_info.ad_id = raw_data.args["aid"];
-    if ("103" == raw_data.args["ad"])
+    //try
+    //{
+    //    avro::decode(*d, raw_data);
+    //}
+    //catch(const std::exception& e)
+    //{
+    //    LOG(WARNING) << "decoding avro log data failed." << e.what();
+    //    return false;
+    //}
+    B5MEvent raw_data;
+    avro::OutputBuffer out;
+    out.writeTo(log_data.data(), log_data.size());
+    avro::InputBuffer buf(out);
+    avro::Reader reader(buf);
+    avro::parse(reader, raw_data);
+
+    Map_of_string::MapType& args_v = raw_data.args.value;
+    feedback_info.user_id = args_v["uid"];
+    feedback_info.ad_id = args_v["aid"];
+    if ("103" == args_v["ad"])
     {
         feedback_info.action = Click;
     }
@@ -360,8 +370,8 @@ bool AdFeedbackMgr::parserFeedbackLogForAVRO(const std::string& log_data, Feedba
     {
         try
         {
-            feedback_info.click_cost = boost::lexical_cast<double>(raw_data.args["click_cost"]);
-            feedback_info.click_slot = boost::lexical_cast<uint32_t>(raw_data.args["click_slot"]);
+            feedback_info.click_cost = boost::lexical_cast<double>(args_v["click_cost"]);
+            feedback_info.click_slot = boost::lexical_cast<uint32_t>(args_v["click_slot"]);
         }
         catch(const std::exception& e)
         {
