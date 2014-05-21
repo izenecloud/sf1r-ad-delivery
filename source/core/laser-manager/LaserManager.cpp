@@ -21,11 +21,13 @@ laser::TopNClusteringDB* LaserManager::topnClustering_ = NULL;
 laser::LaserOnlineModelDB* LaserManager::laserOnlineModel_ = NULL;
 boost::shared_mutex LaserManager::mutex_;
 
-LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService,
-    const std::string& collection)
+LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService, 
+        const boost::shared_ptr<DocumentManager>& documentManager,
+        const std::string& collection)
     : workdir_(MiningManager::system_working_path_ + "/LASER/")
     , collection_(collection)
     , adSearchService_(adSearchService)
+    , documentManager_(documentManager)
     , recommend_(NULL)
     , indexManager_(NULL)
 {
@@ -36,7 +38,7 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
 
     load_();
     
-    indexManager_ = new laser::AdIndexManager(workdir_, collection_, clusteringContainer_->size());
+    indexManager_ = new laser::AdIndexManager(workdir_, collection_, clusteringContainer_->size(), documentManager_);
     recommend_ = new LaserRecommend(indexManager_, topnClustering_, laserOnlineModel_);
     // delete by TaskBuilder
     indexTask_ = new LaserIndexTask(this);
@@ -139,10 +141,9 @@ bool LaserManager::recommend(const LaserRecommendParam& param,
 {
     std::vector<docid_t> docIdList;
     std::vector<float> itemScoreList;
-    // multiply 2 for ereased ads
-    if (!recommend_->recommend(param.uuid_, docIdList, itemScoreList, param.topN_ * 2))
+    if (!recommend_->recommend(param.uuid_, docIdList, itemScoreList, param.topN_))
     {
-        res.error_ = "Internal ERROR in Recommend Engine";
+        res.error_ = "Internal ERROR in Recommend Engine, no data for uuid: " + param.uuid_;;
         return false;
     }
     for (std::size_t i = 0; i < docIdList.size(); ++i)
@@ -150,10 +151,6 @@ bool LaserManager::recommend(const LaserRecommendParam& param,
         actionItem.idList_.push_back(docIdList[i]);
     }
     adSearchService_->getDocumentsByIds(actionItem, res);
-    if (res.idList_.size() > param.topN_)
-    {
-        res.idList_.resize(param.topN_);
-    }
     return true;
 }
     

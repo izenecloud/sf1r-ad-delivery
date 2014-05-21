@@ -23,7 +23,9 @@ class LaserManager
     typedef std::vector<float> TokenVector;
     typedef std::vector<std::pair<int, float> > TokenSparseVector;
 public:
-    LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService, const std::string& collection);
+    LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService, 
+        const boost::shared_ptr<DocumentManager>& documentManager,
+        const std::string& collection);
     ~LaserManager();
 public:
     bool recommend(const laser::LaserRecommendParam& param, 
@@ -34,6 +36,8 @@ public:
     MiningTask* getLaserIndexTask();
 
     const std::size_t getClustering(const std::string& title) const;
+
+    void deleteDocuments(const std::vector<docid_t>& lastDeletedDocIdList);
 private:
     std::size_t assignClustering_(const TokenSparseVector& v) const;
     float similarity_(const TokenSparseVector& lv, const TokenVector& rv) const;
@@ -47,6 +51,7 @@ private:
     const std::string workdir_;
     const std::string collection_;
     boost::shared_ptr<AdSearchService> adSearchService_;
+    const boost::shared_ptr<DocumentManager>& documentManager_;
     laser::LaserRecommend* recommend_;
     laser::AdIndexManager* indexManager_;
     laser::LaserIndexTask* indexTask_;
