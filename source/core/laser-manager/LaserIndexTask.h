@@ -52,8 +52,8 @@ public:
 
     virtual bool postProcess()
     {
-        laserManager_->indexManager_->postIndex();
         laserManager_->indexManager_->setLastDocId(docid_);
+        laserManager_->indexManager_->postIndex();
         return true;
     }
 

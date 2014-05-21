@@ -15,6 +15,7 @@ namespace sf1r
 const static std::size_t THREAD_NUM = 8;
     
 std::vector<LaserManager::TokenVector>* LaserManager::clusteringContainer_ = NULL;
+std::vector<std::vector<int> >* LaserManager::similarClustering_ = NULL;
 laser::Tokenizer* LaserManager::tokenizer_ = NULL;
 laser::LaserRpcServer* LaserManager::rpcServer_ = NULL;
 laser::TopNClusteringDB* LaserManager::topnClustering_ = NULL;
@@ -38,8 +39,10 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
 
     load_();
     
-    indexManager_ = new laser::AdIndexManager(workdir_, collection_, clusteringContainer_->size(), documentManager_);
-    recommend_ = new LaserRecommend(indexManager_, topnClustering_, laserOnlineModel_);
+    indexManager_ = new laser::AdIndexManager(MiningManager::system_working_path_ + "/collection/" + collection_ + "/collection-data/", 
+        clusteringContainer_->size(), 
+        documentManager_);
+    recommend_ = new LaserRecommend(indexManager_, topnClustering_, laserOnlineModel_, similarClustering_);
     // delete by TaskBuilder
     indexTask_ = new LaserIndexTask(this);
 
@@ -47,7 +50,7 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
    
 LaserManager::~LaserManager()
 {
-    close_();
+    //close_();
     if (NULL != indexManager_)
     {
         delete indexManager_;
@@ -87,7 +90,14 @@ void LaserManager::load_()
         (*clusteringContainer_)[i] = vec;
     }
     //LOG(INFO)<<clusteringContainer_->size(); 
-    
+   
+    similarClustering_ = new std::vector<std::vector<int> >(clusteringContainer_->size());
+    {
+        std::ifstream ifs((MiningManager::system_resource_path_ + "/laser_resource/clustering_similar").c_str(), std::ios::binary);
+        boost::archive::text_iarchive ia(ifs);
+        ia >> *similarClustering_;
+    }
+
     topnClustering_ = new TopNClusteringDB(workdir_ + "/topnclustering", clusteringContainer_->size());
     laserOnlineModel_ = new LaserOnlineModelDB(workdir_ + "/laser_online_model/"); 
     
@@ -122,6 +132,11 @@ void LaserManager::close_()
     {
         delete clusteringContainer_;
         clusteringContainer_ = NULL;
+    }
+    if (NULL != similarClustering_)
+    {
+        delete similarClustering_;
+        similarClustering_ = NULL;
     }
     if (NULL != topnClustering_)
     {

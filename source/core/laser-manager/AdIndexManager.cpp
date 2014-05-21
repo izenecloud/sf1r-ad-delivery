@@ -7,10 +7,9 @@
 namespace sf1r { namespace laser {
 
 AdIndexManager::AdIndexManager(const std::string& workdir, 
-        const std::string& collection,
         const std::size_t clusteringNum,
         const boost::shared_ptr<DocumentManager>& documentManager)
-    : workdir_(workdir + "/" + collection + "/ad-index-manager/")
+    : workdir_(workdir + "/LASER/")
     , clusteringNum_(clusteringNum)
     , containerPtr_(NULL)
     , lastDocId_(0)
@@ -19,10 +18,6 @@ AdIndexManager::AdIndexManager(const std::string& workdir,
 {
     if (!boost::filesystem::exists(workdir_))
     {
-        if (!boost::filesystem::exists(workdir + "/" + collection))
-        {
-            boost::filesystem::create_directory(workdir + "/" + collection);
-        }
         boost::filesystem::create_directory(workdir_);
     }
     containerPtr_ = new ContainerType(Lux::IO::NONCLUSTER);
@@ -163,17 +158,6 @@ void AdIndexManager::preIndex()
 
 void AdIndexManager::postIndex()
 {
-    //LOG(INFO)<<"flush cache to LUX IO ...";
-    /*for (std::size_t i = 0; i < cache_->size(); ++i)
-    {
-        ADVector& advec = (*cache_)[i];
-        izenelib::util::izene_serialization<ADVector> izs(advec);
-        char* src;
-        size_t srcLen;
-        izs.write_image(src, srcLen);
-        containerPtr_->put(i, src, srcLen, Lux::IO::OVERWRITE);
-    }
-    cache_->clear();*/
    {
         const std::string filename = workdir_ + "/last_docid";
         if ( boost::filesystem::exists(filename) )

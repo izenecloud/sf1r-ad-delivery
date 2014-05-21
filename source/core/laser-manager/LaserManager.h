@@ -58,6 +58,7 @@ private:
 
     
     static std::vector<TokenVector>* clusteringContainer_;
+    static std::vector<std::vector<int> >* similarClustering_;
     static laser::Tokenizer* tokenizer_;
     static laser::LaserRpcServer* rpcServer_;
     static laser::TopNClusteringDB* topnClustering_;

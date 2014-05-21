@@ -26,7 +26,11 @@ bool LaserRecommend::recommend(const std::string& uuid,
             }
             else
             {
-                LOG(INFO)<<"no ad in clustering = "<<it->first;
+                LOG(INFO)<<"no ad in clustering = "<<it->first<<", use similar clustering instead";
+                if (getSimilarAd(it->first, advec))
+                {
+                    topN(model, it->second, advec, num, queue);
+                }
             }
         }
 
@@ -48,6 +52,23 @@ bool LaserRecommend::recommend(const std::string& uuid,
 bool LaserRecommend::getAD(const std::size_t& clusteringId, AdIndexManager::ADVector& advec) const
 {
     return indexManager_->get(clusteringId, advec);
+}
+    
+bool LaserRecommend::getSimilarAd(const std::size_t& clusteringId, AdIndexManager::ADVector& advec) const
+{
+    bool ret = false;
+    std::vector<int> idvec;
+    getSimilarClustering(clusteringId, idvec);
+    for (std::size_t i = 0; i < idvec.size(); ++i )
+    {
+        ret |= getAD(idvec[i], advec);
+    }
+    return ret;
+}
+
+void LaserRecommend::getSimilarClustering(const std::size_t& clusteringId, std::vector<int>& idvec) const
+{
+    idvec = (*similarClustering_)[clusteringId];
 }
 
 void LaserRecommend::topN(const std::vector<float>& model, 

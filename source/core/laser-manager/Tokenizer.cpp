@@ -20,6 +20,22 @@ Tokenizer::Tokenizer(const std::string& pcaDict, const std::string& termDict)
     }
 }
 
+Tokenizer::Tokenizer(const std::string& termDict)
+    : tok(NULL)
+    , termDict_(NULL)
+    , dict_(NULL)
+{
+    termDict_ = new TermDictionary(termDict);
+        
+    dict_ = new std::vector<std::string>(termDict_->getTerms().size());
+    boost::unordered_map<std::string, std::pair<int, int> >::const_iterator it = termDict_->getTerms().begin();
+    for (; it != termDict_->getTerms().end(); ++it)
+    {
+        (*dict_)[it->second.second] = it->first;
+    }
+}
+
+
 Tokenizer::~Tokenizer()
 {
     if (NULL != termDict_)
