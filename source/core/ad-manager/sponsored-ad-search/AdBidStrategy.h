@@ -42,6 +42,11 @@ struct AdQueryStatisticInfo
 
     /** predefined bid for this query, if having not, just set to -1. if a non-negative predefined bid is given, this keyword's bid will just be this bid.*/
     int bid_;
+
+    AdQueryStatisticInfo():impression_(0), minBid_(1), bid_(-1)
+    {
+
+    }
 };
 
 

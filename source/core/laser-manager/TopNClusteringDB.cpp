@@ -52,9 +52,10 @@ bool TopNClusteringDB::get(const std::string& user, std::map<int, float>& cluste
 {
     if (!topNclusterLeveldb_->get(user, clustering))
     {
-        clustering[rand() % maxClustering_] = 1.0;
-        clustering[rand() % maxClustering_] = 1.0;
-        clustering[rand() % maxClustering_] = 1.0;
+        for (std::size_t i = 0; i < TOP_N; i++)
+        {
+            clustering[rand() % maxClustering_] = 1.0;
+        }
     }
     return true;
 }

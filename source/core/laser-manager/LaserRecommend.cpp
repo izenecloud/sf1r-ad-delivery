@@ -9,20 +9,24 @@ bool LaserRecommend::recommend(const std::string& uuid,
     std::vector<float>& itemScoreList, 
     const std::size_t num) const
 {
-    LOG(INFO)<<"user request: uuid="<<uuid<<"\t topn="<<num;
     std::map<int, float> clustering;
     std::vector<float> model;
     if (topnClustering_->get(uuid, clustering) && laserOnlineModel_->get(uuid, model))
     {
         priority_queue queue;
-        
+        LOG(INFO)<<"uuid = "<<uuid<<", top clustering num = "<<clustering.size();
         for (std::map<int, float>::const_iterator it = clustering.begin();
             it != clustering.end(); ++it)
         {
             AdIndexManager::ADVector advec;
             if (getAD(it->first, advec))
             {
+                LOG(INFO)<<"clusteringId = "<<it->first<<", ad num = "<<advec.size();
                 topN(model, it->second, advec, num, queue);
+            }
+            else
+            {
+                LOG(INFO)<<"no ad in clustering = "<<it->first;
             }
         }
 
@@ -36,6 +40,7 @@ bool LaserRecommend::recommend(const std::string& uuid,
     }
     else
     {
+        LOG(INFO)<<"top clustering or online model does not exist";
         return false;
     }
 }

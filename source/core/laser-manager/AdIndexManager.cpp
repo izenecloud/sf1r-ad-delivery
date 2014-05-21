@@ -8,11 +8,13 @@ namespace sf1r { namespace laser {
 
 AdIndexManager::AdIndexManager(const std::string& workdir, 
         const std::string& collection,
-        const std::size_t clusteringNum)
+        const std::size_t clusteringNum,
+        const boost::shared_ptr<DocumentManager>& documentManager)
     : workdir_(workdir + "/" + collection + "/ad-index-manager/")
     , clusteringNum_(clusteringNum)
     , containerPtr_(NULL)
     , lastDocId_(0)
+    , documentManager_(documentManager)
 //    , cache_(NULL)
 {
     if (!boost::filesystem::exists(workdir_))
@@ -28,6 +30,14 @@ AdIndexManager::AdIndexManager(const std::string& workdir,
     containerPtr_->set_lock_type(Lux::IO::LOCK_THREAD);
     open_();
 //    cache_ = new Cache(clusteringNum_);
+    for (std::size_t i = 0; i < clusteringNum_; i++)
+    {
+        ADVector advec;
+        if (get(i, advec))
+        {
+            LOG(INFO)<<"clustering  = "<<i<<" ad num = "<<advec.size();
+        }
+    }
 }
 
 AdIndexManager::~AdIndexManager()
@@ -92,15 +102,25 @@ bool AdIndexManager::get(const std::size_t& clusteringId, ADVector& advec) const
     }
     else
     {
+        ADVector vec;
         izenelib::util::izene_deserialization<ADVector> izd((char*)val_p->data, val_p->size);
-        izd.read_image(advec);
+        izd.read_image(vec);
         containerPtr_->clean_data(val_p);
+        ADVector::const_iterator it = vec.begin();
+        for (; it != vec.end(); ++it)
+        {
+            if (!documentManager_->isDeleted(it->first))
+            {
+                advec.push_back(*it);
+            }
+        }
     }
     return true;
 }
 
 void AdIndexManager::open_()
 {
+    LOG(INFO)<<"AdIndexManager worddir = "<<workdir_;
     try
     {
         const std::string filename = workdir_ + "/index";

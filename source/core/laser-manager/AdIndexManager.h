@@ -2,10 +2,13 @@
 #define SF1R_LASER_AD_INDEX_MANAGER_H
 
 #include <3rdparty/am/luxio/array.h>
+#include <boost/shared_ptr.hpp>
 #include <vector>
 #include <common/inttypes.h>
+#include <document-manager/DocumentManager.h>
 
 namespace sf1r { namespace laser {
+
 
 class AdIndexManager
 {
@@ -19,7 +22,8 @@ class AdIndexManager
 public:
     AdIndexManager(const std::string& workdir, 
         const std::string& collection,
-        const std::size_t clusteringNum);
+        const std::size_t clusteringNum,
+        const boost::shared_ptr<DocumentManager>& documentManager);
     ~AdIndexManager();
 
 public:
@@ -47,6 +51,8 @@ private:
     const std::size_t clusteringNum_;
     ContainerType* containerPtr_;
     docid_t lastDocId_;
+
+    const boost::shared_ptr<DocumentManager>& documentManager_;
     //Cache* cache_;
 };
 
