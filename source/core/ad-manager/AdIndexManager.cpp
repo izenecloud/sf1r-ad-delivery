@@ -57,7 +57,7 @@ AdIndexManager::AdIndexManager(
       ad_searcher_(searcher),
       groupManager_(grp_mgr)
 {
-    AdFeedbackMgr::get()->init(dmp_ip, dmp_port);
+    AdFeedbackMgr::get()->init(dmp_ip, dmp_port, ad_resource_path + "/feedback-schema.json");
     AdStreamSubscriber::get()->init(stream_log_ip, stream_log_port);
 }
 
@@ -137,43 +137,55 @@ void AdIndexManager::onAdStreamMessage(const std::vector<AdMessage>& msg_list)
         LOG(INFO) << "got ad stream data. size: " << msg_list.size() << ", total " << cnt;
     }
     cnt += msg_list.size();
-    std::vector<AdFeedbackMgr::FeedbackInfo> feedback_info_list;
-    std::vector<AdClickPredictor::AssignmentT> ad_segs;
-    std::vector<AdClickPredictor::AssignmentT> user_segs;
-    feedback_info_list.resize(msg_list.size());
+    AdFeedbackMgr::FeedbackInfo feedback_info;
+    AdClickPredictor::AssignmentT ad_feature;
+    AdClickPredictor::AssignmentT user_feature;
     // read from stream msg and convert it to assignment list.
-    if (enable_ad_sponsored_search_)
+    for (size_t i = 0; i < msg_list.size(); ++i)
     {
-        for (size_t i = 0; i < msg_list.size(); ++i)
+        bool ret = AdFeedbackMgr::get()->parserFeedbackLogForAVRO(msg_list[i].body, feedback_info);
+        if (!ret)
+            continue;
+
+        std::map<std::string, double>::const_iterator it = feedback_info.user_profiles.profile_data.begin();
+        std::size_t feature_index = 0;
+        user_feature.resize(feedback_info.user_profiles.profile_data.size());
+        for(; it != feedback_info.user_profiles.profile_data.end(); ++it)
         {
-            AdFeedbackMgr::get()->parserFeedbackLog(msg_list[i].body, feedback_info_list[i]);
-            if (feedback_info_list[i].action == AdFeedbackMgr::Click)
-            {
-                ad_sponsored_mgr_->updateAuctionLogData(feedback_info_list[i].ad_id,
-                    feedback_info_list[i].click_cost, feedback_info_list[i].click_slot);
-            }
+            // TODO: 
         }
-    }
-    
-    if (enable_ad_selector_)
-    {
-        for(size_t i = 0; i < feedback_info_list.size(); ++i)
+        bool is_clicked = feedback_info.action > AdFeedbackMgr::View;
+        if (enable_ad_sponsored_search_)
         {
-            const AdFeedbackMgr::FeedbackInfo& info = feedback_info_list[i];
-            bool is_clicked = info.action > AdFeedbackMgr::View;
-            ad_click_predictor_->update(user_segs[i], ad_segs[i],
-                is_clicked);
             if (is_clicked)
             {
-                // get docid from adid.
-                docid_t docid = 0;
-                ad_selector_->updateClicked(docid);
+                ad_sponsored_mgr_->updateAuctionLogData(feedback_info.ad_id,
+                    feedback_info.click_cost, feedback_info.click_slot);
             }
-            ad_selector_->updateSegments(user_segs[i], AdSelector::UserSeg);
+        }
+        if (enable_ad_selector_)
+        {
+            docid_t docid = 0;
+            uint128_t num_docid = Utilities::md5ToUint128(feedback_info.ad_id);
+            bool ret = id_manager_->getDocIdByDocName(num_docid, docid, false);
+            if (ret)
+            {
+                ad_selector_->getAdFeatureList(docid, ad_feature);
+                ad_click_predictor_->update(user_feature, ad_feature,
+                    is_clicked);
+            }
+            if (is_clicked)
+            {
+                if (!feedback_info.ad_id.empty())
+                {
+                    ad_selector_->updateClicked(docid);
+                }
+            }
+            ad_selector_->updateSegments(user_feature, AdSelector::UserSeg);
             if (enable_ad_rec_)
             {
-                ad_selector_->trainOnlineRecommender(info.user_id,
-                    user_segs[i], info.ad_id, is_clicked);
+                ad_selector_->trainOnlineRecommender(feedback_info.user_id,
+                    user_feature, feedback_info.ad_id, is_clicked);
             }
         }
     }

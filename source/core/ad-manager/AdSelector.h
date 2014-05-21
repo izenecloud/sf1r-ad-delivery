@@ -78,6 +78,7 @@ public:
     void load();
     void save();
     void getDefaultFeatures(FeatureMapT& feature_name_list, SegType type);
+    void getAdFeatureList(docid_t ad_id, std::vector<std::pair<std::string, std::string> >& feature_list);
     void getAdSegmentStrList(docid_t ad_id, std::vector<std::string>& retstr_list);
     void updateAdSegmentStr(docid_t ad_docid, const FeatureMapT& ad_feature, std::vector<SegIdT>& segids);
     void updateAdSegmentStr(const std::vector<docid_t>& ad_doclist, const std::vector<FeatureMapT>& ad_feature_list);

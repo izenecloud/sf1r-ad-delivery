@@ -103,8 +103,6 @@ private:
     std::vector<uint32_t>  ad_campaign_belong_list_; 
     std::vector<std::set<BidKeywordId> >  ad_campaign_bid_keyword_list_;
 
-    std::auto_ptr<TitlePCAWrapper>  bid_title_pca_;
-
     faceted::GroupManager* grp_mgr_;
     DocumentManager* doc_mgr_;
     izenelib::ir::idmanager::IDManager* id_manager_;

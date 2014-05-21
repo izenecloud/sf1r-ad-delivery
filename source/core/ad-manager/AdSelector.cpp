@@ -371,6 +371,39 @@ void AdSelector::buildDocument(docid_t docid, const Document& doc)
 {
 }
 
+void AdSelector::getAdFeatureList(docid_t ad_id, std::vector<std::pair<std::string, std::string> >& feature_list)
+{
+    feature_list.clear();
+    PropSharedLockSet propSharedLockSet;
+    std::vector<faceted::PropValueTable*> pvt_list;
+    std::vector<std::string>  prop_name;
+    const FeatureMapT& def_feature_names = default_full_features_[AdSeg];
+    for (FeatureMapT::const_iterator feature_it = def_feature_names.begin();
+        feature_it != def_feature_names.end(); ++feature_it)
+    {
+        faceted::PropValueTable* pvt = groupManager_->getPropValueTable(feature_it->first);
+        if (pvt)
+            propSharedLockSet.insertSharedLock(pvt);
+        pvt_list.push_back(pvt);
+        prop_name.push_back(feature_it->first);
+    }
+
+    faceted::PropValueTable::PropIdList propids;
+    FeatureValueT value_list;
+    for (std::size_t feature_index = 0; feature_index < pvt_list.size(); ++feature_index)
+    {
+        if (pvt_list[feature_index])
+        {
+            pvt_list[feature_index]->getPropIdList(ad_id, propids);
+            getValueStrFromPropId(pvt_list[feature_index], propids, value_list);
+            for (std::size_t i = 0; i < value_list.size(); ++i)
+            {
+                feature_list.push_back(std::make_pair(prop_name[feature_index], value_list[i]));
+            }
+        }
+    }
+}
+
 void AdSelector::miningAdSegmentStr(docid_t startid, docid_t endid)
 {
     if (groupManager_ == NULL)

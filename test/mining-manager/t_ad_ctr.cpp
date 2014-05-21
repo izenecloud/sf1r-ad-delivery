@@ -411,7 +411,7 @@ int main()
     LOG(INFO) << "end update ad segment string.";
 
     LOG(INFO) << "begin test ad log parser";
-    AdFeedbackMgr::get()->init("10.10.103.123", 8091);
+    AdFeedbackMgr::get()->init("10.10.103.123", 8091, "/opt/mine/feedback-schema.json");
 
     std::ifstream ifs_adlog("/home/vincentlee/workspace/ad-clicked-log.json");
     std::size_t ad_impression = 0;

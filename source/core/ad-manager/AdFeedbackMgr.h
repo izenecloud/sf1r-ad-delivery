@@ -51,7 +51,7 @@ public:
         UserProfile user_profiles;
     };
 
-    void init(const std::string& dmp_server_ip, uint16_t port);
+    void init(const std::string& dmp_server_ip, uint16_t port, const std::string& schema_path);
     bool parserFeedbackLog(const std::string& log_data, FeedbackInfo& feedback_info);
     bool parserFeedbackLogForAVRO(const std::string& log_data, FeedbackInfo& feedback_info);
 

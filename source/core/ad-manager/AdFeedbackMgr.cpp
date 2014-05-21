@@ -54,6 +54,12 @@ namespace avro{
 namespace sf1r
 {
 
+static bool convertToUserProfile(const std::string& data, AdFeedbackMgr::UserProfile& user_profile)
+{
+    // TODO:convert the json string data to user_profile and cache it.
+    return true;
+}
+
 static void get_callback(lcb_t instance, const void* cookie, lcb_error_t error, const lcb_get_resp_t *resp)
 {
     if (error == LCB_SUCCESS)
@@ -142,16 +148,16 @@ AdFeedbackMgr::~AdFeedbackMgr()
     dmp_conn_pool_.clear();
 }
 
-void AdFeedbackMgr::init(const std::string& dmp_server_ip, uint16_t port)
+void AdFeedbackMgr::init(const std::string& dmp_server_ip, uint16_t port, const std::string& schema_path)
 {
     dmp_server_ip_ = dmp_server_ip;
     dmp_server_port_ = port;
 
-    std::ifstream ifs("/opt/mine/feedback-schema.json");
+    std::ifstream ifs(schema_path.c_str());
     std::string errinfo;
     if (!avro::compileJsonSchema(ifs, log_schema, errinfo))
     {
-        LOG(WARNING) << "schema error." << errinfo;
+        LOG(WARNING) << "schema error." << errinfo << ", file :" << schema_path;
     }
 }
 
@@ -172,6 +178,7 @@ bool AdFeedbackMgr::getUserProfileFromDMP(const std::string& user_id, UserProfil
             return true;
         }
     }
+    user_profile.profile_data.clear();
     lcb_t conn = get_conn_from_pool();
     if (conn == NULL)
         return false;
@@ -196,9 +203,16 @@ bool AdFeedbackMgr::getUserProfileFromDMP(const std::string& user_id, UserProfil
         }
         else
         {
-            // convert to user_profile and cache it.
-            user_profile.timestamp = time(NULL);
-            cached_user_profiles_.insert(user_id, user_profile);
+            if(!convertToUserProfile(rsp_it->second, user_profile))
+            {
+                LOG(WARNING) << "DMP response data convert to user profile failed.";
+                result = false;
+            }
+            else
+            {
+                user_profile.timestamp = time(NULL);
+                cached_user_profiles_.insert(user_id, user_profile);
+            }
         }
     }
     else

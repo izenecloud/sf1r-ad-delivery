@@ -115,7 +115,7 @@ AdSponsoredMgr::~AdSponsoredMgr()
     save();
 }
 
-void AdSponsoredMgr::init(const std::string& dict_path,
+void AdSponsoredMgr::init(const std::string& res_path,
     const std::string& data_path,
     faceted::GroupManager* grp_mgr,
     DocumentManager* doc_mgr,
@@ -123,8 +123,6 @@ void AdSponsoredMgr::init(const std::string& dict_path,
     AdSearchService* searcher)
 {
     data_path_ = data_path;
-    bid_title_pca_.reset(new TitlePCAWrapper());
-    bid_title_pca_->loadDictFiles(dict_path);
     grp_mgr_ = grp_mgr;
     doc_mgr_ = doc_mgr;
     id_manager_ = id_manager;
