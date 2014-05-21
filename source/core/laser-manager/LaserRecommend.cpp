@@ -24,6 +24,10 @@ bool LaserRecommend::recommend(const std::string& uuid,
                 LOG(INFO)<<"clusteringId = "<<it->first<<", ad num = "<<advec.size();
                 topN(model, it->second, advec, num, queue);
             }
+            else
+            {
+                LOG(INFO)<<"no ad in clustering = "<<it->first;
+            }
         }
 
         while (!queue.empty())

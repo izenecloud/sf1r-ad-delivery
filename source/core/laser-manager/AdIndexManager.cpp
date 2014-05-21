@@ -58,6 +58,14 @@ AdIndexManager::~AdIndexManager()
     //    delete cache_;
     //    cache_ = NULL;
     //}
+    for (std::size_t i = 0; i < clusteringNum_; i++)
+    {
+        ADVector advec;
+        if (get(i, advec))
+        {
+            LOG(INFO)<<"clustering  = "<<i<<" ad num = "<<advec.size();
+        }
+    }
 }
     
 void AdIndexManager::index(const std::size_t& clusteringId, 
