@@ -12,9 +12,12 @@ AdMiningTask::AdMiningTask(
         const std::string& path,
         boost::shared_ptr<DocumentManager>& dm,
         boost::shared_ptr<AdDNFIndexType>& ad_dnf_index,
+        boost::shared_ptr<AdSelector>& ad_selector,
         boost::shared_mutex& ad_dnf_mutex)
     :indexPath_(path), documentManager_(dm),
-    ad_dnf_index_(ad_dnf_index), rwDNFMutex_(ad_dnf_mutex)
+    ad_dnf_index_(ad_dnf_index),
+    ad_selector_(ad_selector),
+    rwDNFMutex_(ad_dnf_mutex)
 {
 }
 
@@ -47,7 +50,8 @@ bool AdMiningTask::buildDocument(docid_t docID, const Document& doc)
     dnf.conjunctions[0].assignments.push_back(a2);
     dnf.conjunctions[0].assignments.push_back(a3);
     incrementalAdIndex_->addDNF(docID, dnf);
-    AdSelector::get()->buildDocument(docID, doc);
+    if (ad_selector_)
+        ad_selector_->buildDocument(docID, doc);
     return true;
 }
 

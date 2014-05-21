@@ -4,6 +4,7 @@ headers:
   - controllers/StatusController.h
   - controllers/CollectionController.h
   - controllers/LaserController.h
+  - controllers/AdController.h
 
 controllers:
   CommandsController:
@@ -52,4 +53,10 @@ controllers:
   LaserController:
     actions:
       - recommend
+
+  AdController:
+    actions:
+      - set_keyword_bidprice
+      - set_ad_campaign_budget
+      - set_ad_bid_phrase
 

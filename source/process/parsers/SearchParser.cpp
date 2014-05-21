@@ -385,6 +385,10 @@ bool SearchParser::parse(const Value& search)
         {
             searchingModeInfo_.mode_ = SearchingMode::AD_INDEX;
         }
+        else if (mode == "sponsored_ad_search")
+        {
+            searchingModeInfo_.mode_ = SearchingMode::SPONSORED_AD_SEARCH;
+        }
         else
         {
             warning() = "Unknown searchingMode. Default searching mode is used.";

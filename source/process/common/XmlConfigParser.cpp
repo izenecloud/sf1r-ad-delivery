@@ -1778,6 +1778,13 @@ void CollectionConfig::parseAdIndexNode(
     AdIndexConfig& adIndexConfig = miningSchema.ad_index_config;
 
     getAttribute(adIndexNode, "ctrpath", adIndexConfig.clickPredictorWorkingPath);
+    getAttribute(adIndexNode, "enable_selector", adIndexConfig.enable_selector);
+    getAttribute(adIndexNode, "enable_rec", adIndexConfig.enable_rec);
+    getAttribute(adIndexNode, "enable_sponsored_search", adIndexConfig.enable_sponsored_search);
+    getAttribute(adIndexNode, "dmp_ip", adIndexConfig.dmp_ip);
+    getAttribute_IntType(adIndexNode, "dmp_port", adIndexConfig.dmp_port);
+    getAttribute(adIndexNode, "stream_log_ip", adIndexConfig.stream_log_ip);
+    getAttribute_IntType(adIndexNode, "stream_log_port", adIndexConfig.stream_log_port);
     miningSchema.ad_index_config.isEnable = true;
 }
     

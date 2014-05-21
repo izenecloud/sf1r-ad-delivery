@@ -497,6 +497,37 @@ bool SearchWorker::getSearchResult_(
         }
         break;
 
+    case SearchingMode::SPONSORED_AD_SEARCH_SUFFIX:
+        resultItem.TOP_K_NUM = fuzzy_lucky;
+        if (!miningManager_->DoSponsoredAdSearch(actionOperation,
+                                            fuzzy_lucky,
+                                            actionOperation.actionItem_.searchingMode_.usefuzzy_,
+                                            filteringRules,
+                                            resultItem.topKDocs_,
+                                            resultItem.topKRankScoreList_,
+                                            resultItem.topKCustomRankScoreList_,
+                                            resultItem.totalCount_,
+                                            actionOperation.actionItem_.isAnalyzeResult_,
+                                            resultItem.analyzedQuery_,
+                                            resultItem.pruneQueryString_,
+                                            resultItem.distSearchInfo_
+                                            ))
+        {
+            return true;
+        }
+
+        break;
+
+    case SearchingMode::SPONSORED_AD_SEARCH:
+        if (!miningManager_->getAdIndexManager())
+        {
+            LOG(INFO) << "no sponsored ad manager.";
+            return true;
+        }
+        if (!miningManager_->getAdIndexManager()->sponsoredAdSearch(actionOperation, resultItem))
+        {
+            return true;
+        }
     default:
         unsigned int QueryPruneTimes = 2;
         bool isUsePrune = false;

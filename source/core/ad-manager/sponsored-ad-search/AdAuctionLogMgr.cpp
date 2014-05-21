@@ -2,6 +2,11 @@
 #include <time.h>
 #include <boost/lexical_cast.hpp>
 #include <glog/logging.h>
+#include <fstream>
+#include <util/izene_serialization.h>
+#include <boost/serialization/map.hpp>
+#include <boost/serialization/set.hpp>
+#include <boost/serialization/unordered_map.hpp>
 
 namespace sf1r { namespace sponsored {
 
@@ -48,6 +53,79 @@ inline double getDefaultCTRForSlot(int slot)
 AdAuctionLogMgr::AdAuctionLogMgr()
 {
 
+}
+
+void AdAuctionLogMgr::init(const std::string& datapath)
+{
+    data_path_ = datapath;
+    load();
+}
+
+void AdAuctionLogMgr::load()
+{
+    std::ifstream ifs(std::string(data_path_ + "/sponsored_ad_auction.data").c_str());
+    std::string data;
+
+    if (ifs.good())
+    {
+        std::size_t len = 0;
+        {
+            ifs.read((char*)&len, sizeof(len));
+            data.resize(len);
+            ifs.read((char*)&data[0], len);
+            izenelib::util::izene_deserialization<AdStatContainerT> izd(data.data(), data.size());
+            izd.read_image(ad_stat_data_);
+        }
+
+        {
+            len = 0;
+            ifs.read((char*)&len, sizeof(len));
+            data.resize(len);
+            ifs.read((char*)&data[0], len);
+            izenelib::util::izene_deserialization<KeywordStatContainerT> izd(data.data(), data.size());
+            izd.read_image(keyword_stat_data_);
+        }
+
+        {
+            len = 0;
+            ifs.read((char*)&len, sizeof(len));
+            data.resize(len);
+            ifs.read((char*)&data[0], len);
+            izenelib::util::izene_deserialization<GlobalInfoDayListT> izd(data.data(), data.size());
+            izd.read_image(global_stat_data_);
+        }
+    }
+    ifs.close();
+}
+
+void AdAuctionLogMgr::save()
+{
+    std::ofstream ofs(std::string(data_path_ + "/sponsored_ad_auction.data").c_str());
+    std::size_t len = 0;
+    char* buf = NULL;
+    {
+        izenelib::util::izene_serialization<AdStatContainerT> izs(ad_stat_data_);
+        izs.write_image(buf, len);
+        ofs.write((const char*)&len, sizeof(len));
+        ofs.write(buf, len);
+        ofs.flush();
+    }
+    {
+        len = 0;
+        izenelib::util::izene_serialization<KeywordStatContainerT> izs(keyword_stat_data_);
+        izs.write_image(buf, len);
+        ofs.write((const char*)&len, sizeof(len));
+        ofs.write(buf, len);
+        ofs.flush();
+    }
+    {
+        len = 0;
+        izenelib::util::izene_serialization<GlobalInfoDayListT> izs(global_stat_data_);
+        izs.write_image(buf, len);
+        ofs.write((const char*)&len, sizeof(len));
+        ofs.write(buf, len);
+        ofs.flush();
+    }
 }
 
 // update the impression info after search request.
@@ -145,13 +223,13 @@ double AdAuctionLogMgr::getAdCTR(const std::string& adid)
     {
         total_impression += tmp1[i].impression_num;
         // we leverage the low ranked slot click since it means the more possible click if rank on the first.
-        total_click += tmp1[i].click_num * (1 + 0.1*i);
+        total_click += tmp1[i].click_num * (1 + 0.2*i);
     }
     for (std::size_t i = 0; i < tmp2.size(); ++i)
     {
         total_impression += tmp2[i].impression_num;
         // we leverage the low ranked slot click since it means the more possible click if rank on the first.
-        total_click += tmp2[i].click_num * (1 + 0.1*i);
+        total_click += tmp2[i].click_num * (1 + 0.2*i);
     }
     if (total_impression < MIN_SEARCH_NUM || total_click < 1)
         return DEFAULT_AD_CTR;
@@ -188,7 +266,55 @@ std::size_t AdAuctionLogMgr::getAvgTotalClickedNum()
     return total_click;
 }
 
-int AdAuctionLogMgr::getKeywordAvgCost(BidKeywordId keyid, std::size_t slot)
+int AdAuctionLogMgr::getKeywordCurrentImpression(BidKeywordId keyid)
+{
+    if (keyid >= keyword_stat_data_.size())
+        return 0;
+    const KeywordViewInfo& keyinfo = keyword_stat_data_[keyid][getdaystr(0)];
+    return keyinfo.searched_num;
+}
+
+int AdAuctionLogMgr::getKeywordAvgDailyImpression(BidKeywordId keyid)
+{
+    if (keyid >= keyword_stat_data_.size())
+        return 0;
+    int impression = 0;
+    for(int i = -1; i >= -3; --i)
+    {
+        const KeywordViewInfo& keyinfo = keyword_stat_data_[keyid][getdaystr(i)];
+        impression += keyinfo.searched_num;
+    }
+    return impression / 3;
+}
+
+void AdAuctionLogMgr::getKeywordAvgCost(BidKeywordId keyid, std::vector<int>& cost_list)
+{
+    cost_list.clear();
+    if (keyid >= keyword_stat_data_.size())
+        return;
+    const KeywordViewInfo& keyinfo = keyword_stat_data_[keyid][getdaystr(YESTODAY)];
+    cost_list.resize(keyinfo.view_info.size());
+    for(std::size_t slot = 0; slot < keyinfo.view_info.size(); ++slot)
+    {
+        const KeywordViewInfo::KeywordViewSlotInfo& key_slotinfo = keyinfo.view_info[slot];
+        int total_cost = 0;
+        int total_num = 0;
+        std::map<int, int>::const_iterator it = key_slotinfo.cost_list.begin();
+        for(; it != key_slotinfo.cost_list.end(); ++it)
+        {
+            total_cost += it->first * it->second;
+            total_num += it->second;
+        }
+        if (total_num < 1)
+            cost_list[slot] = getDefaultCostForSlot(slot);
+        else
+        {
+            cost_list[slot] = total_cost/total_num;
+        }
+    }
+}
+
+int AdAuctionLogMgr::getKeywordAvgCost(BidKeywordId keyid, uint32_t slot)
 {
     if (keyid >= keyword_stat_data_.size())
         return getDefaultCostForSlot(slot);
@@ -231,29 +357,39 @@ int AdAuctionLogMgr::getAdAvgCost(const std::string& adid)
     return total_cost / total_click;
 }
 
-double AdAuctionLogMgr::getKeywordCTR(BidKeywordId kid)
+void AdAuctionLogMgr::getKeywordCTR(BidKeywordId kid, std::vector<double>& ctr_list)
+{
+    ctr_list.clear();
+    if (kid >= keyword_stat_data_.size())
+        return;
+    const KeywordViewInfo& keyinfo = keyword_stat_data_[kid][getdaystr(YESTODAY)];
+    if (keyinfo.searched_num < MIN_SEARCH_NUM)
+        return;
+    ctr_list.resize(keyinfo.view_info.size(), 0);
+    for (std::size_t i = 0; i < keyinfo.view_info.size(); ++i)
+    {
+        ctr_list[i] = keyinfo.view_info[i].click_num / keyinfo.searched_num;
+    }
+}
+
+double AdAuctionLogMgr::getKeywordCTR(BidKeywordId kid, uint32_t slot)
 {
     if (kid >= keyword_stat_data_.size())
         return DEFAULT_AD_CTR;
     std::size_t clicked = 0;
-    const KeywordViewInfo& keyinfo1 = keyword_stat_data_[kid][getdaystr(YESTODAY)];
-    const KeywordViewInfo& keyinfo2 = keyword_stat_data_[kid][getdaystr(YESTODAY2)];
-    for (std::size_t i = 0; i < keyinfo1.view_info.size(); ++i)
+    const KeywordViewInfo& keyinfo = keyword_stat_data_[kid][getdaystr(YESTODAY)];
+    if (slot < keyinfo.view_info.size())
     {
-        clicked += keyinfo1.view_info[i].click_num;
-    }
-    for (std::size_t i = 0; i < keyinfo2.view_info.size(); ++i)
-    {
-        clicked += keyinfo2.view_info[i].click_num;
+        clicked += keyinfo.view_info[slot].click_num;
     }
 
-    if (clicked < 1 || (keyinfo1.searched_num + keyinfo2.searched_num < MIN_SEARCH_NUM))
+    if (clicked < 1 || (keyinfo.searched_num < MIN_SEARCH_NUM))
         return DEFAULT_AD_CTR;
-    return clicked/(keyinfo1.searched_num + keyinfo2.searched_num);
+    return (double)clicked/(keyinfo.searched_num);
 }
 
 void AdAuctionLogMgr::getAdLandscape(std::vector<std::string>& ad_list,
-    std::vector<std::vector<std::pair<int, double> > >& cost_click_list)
+    std::vector<BidAuctionLandscapeT>& cost_click_list)
 {
     // ad -> slot -> (cpc, ctr)
     ad_list.clear();
@@ -274,7 +410,7 @@ void AdAuctionLogMgr::getAdLandscape(std::vector<std::string>& ad_list,
             continue;
 
         ad_list.push_back(cit->first);
-        cost_click_list.push_back(std::vector<std::pair<int, double> >(adview.size()));
+        cost_click_list.push_back(BidAuctionLandscapeT(adview.size()));
         int all_slot_clicked = 0;
         for (std::size_t slot = 0; slot < adview.size(); ++slot)
         {
@@ -307,7 +443,7 @@ void AdAuctionLogMgr::getAdLandscape(std::vector<std::string>& ad_list,
 }
 
 void AdAuctionLogMgr::getKeywordBidLandscape(std::vector<BidKeywordId>& keyword_list,
-    std::vector<std::vector<std::pair<int, double> > >& cost_click_list)
+    std::vector<BidAuctionLandscapeT>& cost_click_list)
 {
     // key -> slot -> (cost per click, click ratio)
     
@@ -325,7 +461,7 @@ void AdAuctionLogMgr::getKeywordBidLandscape(std::vector<BidKeywordId>& keyword_
             continue;
 
         keyword_list.push_back(kid);
-        cost_click_list.push_back(std::vector<std::pair<int, double> >(slot_num));
+        cost_click_list.push_back(BidAuctionLandscapeT(slot_num));
 
         int all_slot_clicked = 0;
         for(std::size_t slot = 0; slot < slot_num; ++slot)

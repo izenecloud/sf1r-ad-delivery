@@ -97,13 +97,14 @@ void stream_update_func()
 
 void select_ad_func(const std::vector<docid_t>& cand_docs,
     const std::vector<AdSelector::FeatureMapT> cand_ad_info,
-    const AdSelector::FeatureT& userinfo)
+    const AdSelector::FeatureT& userinfo,
+    AdSelector& ad_selector)
 {
     std::vector<double> score_list;
     for (size_t i = 0; i < 10000; ++i)
     {
         std::vector<docid_t> results = cand_docs;
-        AdSelector::get()->selectForTest(userinfo, 10, results, score_list);
+        ad_selector.selectForTest(userinfo, 10, results, score_list);
 
         if (i % 1000 == 0)
         {
@@ -292,8 +293,9 @@ int main()
     ofs_selector << "Age" << std::endl;
     ofs_selector << "Gender" << std::endl;
     ofs_selector.close();
-    AdSelector::get()->init(selector_base_path, selector_base_path,
-        selector_base_path + "/rec", &ad, NULL, NULL);
+    AdSelector ad_selector;
+    ad_selector.init(selector_base_path, selector_base_path,
+        selector_base_path + "/rec", true, &ad, NULL, NULL);
     bfs::remove(selector_base_path + "/clicked_ad.data");
 
     static const int total_ad_num = 7000000;
@@ -303,7 +305,7 @@ int main()
     for (size_t i = 0; i < total_ad_num; ++i)
     {
         if (i % clicked_rate == 0)
-            AdSelector::get()->updateClicked(i);
+            ad_selector.updateClicked(i);
     }
     AdSelector::FeatureT new_ad_segs;
     new_ad_segs.push_back(std::make_pair("Category", "Computer"));
@@ -318,7 +320,7 @@ int main()
     {
         new_ad_segs.push_back(std::make_pair("Topic", gen_rand_str()));
     }
-    AdSelector::get()->updateSegments(new_ad_segs, AdSelector::AdSeg);
+    ad_selector.updateSegments(new_ad_segs, AdSelector::AdSeg);
 
     AdSelector::FeatureT new_user_segs;
     new_user_segs.push_back(std::make_pair("Age", "18"));
@@ -331,7 +333,7 @@ int main()
     }
     new_user_segs.push_back(std::make_pair("Gender", "male"));
     new_user_segs.push_back(std::make_pair("Gender", "female"));
-    AdSelector::get()->updateSegments(new_user_segs, AdSelector::UserSeg);
+    ad_selector.updateSegments(new_user_segs, AdSelector::UserSeg);
     AdSelector::FeatureT userinfo;
     userinfo.push_back(std::make_pair("Age", "28"));
     userinfo.push_back(std::make_pair("Age", "38"));
@@ -379,7 +381,7 @@ int main()
         }
         else
         {
-            AdSelector::get()->updateAdSegmentStr(i, rand_ad_info[rand()%rand_ad_info.size()], tmp_segids);
+            ad_selector.updateAdSegmentStr(i, rand_ad_info[rand()%rand_ad_info.size()], tmp_segids);
         }
         if (i % clicked_rate == 0)
         {
@@ -405,7 +407,7 @@ int main()
         }
     }
     LOG(INFO) << "begin update ad segment string.";
-    AdSelector::get()->updateAdSegmentStr(cand_docs, cand_ad_info);
+    ad_selector.updateAdSegmentStr(cand_docs, cand_ad_info);
     LOG(INFO) << "end update ad segment string.";
 
     LOG(INFO) << "begin test ad log parser";
@@ -474,7 +476,7 @@ int main()
     for (size_t i = 0; i < 100; ++i)
     {
         std::vector<docid_t> results = cand_docs;
-        AdSelector::get()->selectForTest(userinfo, 10, results, score_list);
+        ad_selector.selectForTest(userinfo, 10, results, score_list);
         //if (i % 1000 == 0)
         //{
         //    LOG(INFO) << "selected ads are :";

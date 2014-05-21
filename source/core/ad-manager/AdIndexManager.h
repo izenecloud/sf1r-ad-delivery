@@ -10,6 +10,7 @@
 #include <common/PropSharedLockSet.h>
 #include <search-manager/NumericPropertyTableBuilder.h>
 #include <ir/be_index/InvIndex.hpp>
+#include <ir/id_manager/IDManager.h>
 
 
 #define CPM 0
@@ -44,7 +45,15 @@ public:
     AdIndexManager(
             const std::string& ad_resource_path,
             const std::string& ad_data_path,
+            bool enable_ad_selector,
+            bool enable_ad_rec,
+            bool enable_ad_sponsored_search,
+            const std::string& dmp_ip,
+            uint16_t dmp_port,
+            const std::string& stream_log_ip,
+            uint16_t stream_log_port,
             boost::shared_ptr<DocumentManager>& dm,
+            izenelib::ir::idmanager::IDManager* id_manager,
             NumericPropertyTableBuilder* ntb,
             AdSearchService* searcher,
             faceted::GroupManager* grp_mgr);
@@ -76,6 +85,9 @@ public:
     bool searchByRecommend(const SearchKeywordOperation& actionOperation,
         KeywordSearchResult& searchResult);
 
+    bool sponsoredAdSearch(const SearchKeywordOperation& actionOperation,
+        KeywordSearchResult& searchResult);
+
     void postMining(docid_t startid, docid_t endid);
 
 private:
@@ -84,10 +96,15 @@ private:
     std::string indexPath_;
 
     std::string clickPredictorWorkingPath_;
-    std::string ad_selector_res_path_;
-    std::string ad_selector_data_path_;
+    std::string ad_res_path_;
+    std::string ad_data_path_;
+
+    bool enable_ad_selector_;
+    bool enable_ad_rec_;
+    bool enable_ad_sponsored_search_;
 
     boost::shared_ptr<DocumentManager>& documentManager_;
+    izenelib::ir::idmanager::IDManager* id_manager_;
     AdMiningTask* adMiningTask_;
     AdClickPredictor* ad_click_predictor_;
     NumericPropertyTableBuilder* numericTableBuilder_;
@@ -95,6 +112,7 @@ private:
     faceted::GroupManager* groupManager_;
     boost::shared_mutex  rwMutex_;
     boost::shared_ptr<AdDNFIndexType> ad_dnf_index_;
+    boost::shared_ptr<AdSelector> ad_selector_;
     boost::shared_ptr<sponsored::AdSponsoredMgr> ad_sponsored_mgr_;
 };
 

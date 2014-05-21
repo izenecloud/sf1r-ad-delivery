@@ -12,6 +12,7 @@
 #include <cmath>
 #include <time.h>
 #include <cstdlib>
+#include <cstdio>
 #include <boost/unordered_map.hpp>
 #include <boost/multi_array.hpp>
 #include "AdBidStrategy.h"
@@ -84,15 +85,16 @@ private:
     Point base_;
 };
 
-std::vector<std::pair<double, double> > AdBidStrategy::convexUniformBid( const std::list<AdQueryStatisticInfo>& qsInfos, double budget)
+std::vector<std::pair<int, double> > AdBidStrategy::convexUniformBid( const std::list<AdQueryStatisticInfo>& qsInfos, int budget)
 {
-    static const std::vector<std::pair<double, double> > NULLBID_(2, std::make_pair(0.0, 0.0));
+    static const std::vector<std::pair<int, double> > NULLBID_(2, std::make_pair(0, 0.0));
 
     //aggregate landscape
-    boost::unordered_map<double, Point> landscape; //(cpc, <cost, clicks>)
+    boost::unordered_map<int, Point> landscape; //(cpc, <cost, clicks>)
     for (std::list<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin(); cit != qsInfos.end(); ++cit)
     {
-        std::vector<double>::const_iterator cpcit = cit->cpc_.begin(), ctrit = cit->ctr_.begin();
+        std::vector<int>::const_iterator cpcit = cit->cpc_.begin();
+        std::vector<double>::const_iterator ctrit = cit->ctr_.begin();
         for (; cpcit != cit->cpc_.end() && ctrit != cit->ctr_.end(); ++cpcit, ++ctrit)
         {
             Point& curP = landscape[*cpcit];
@@ -105,7 +107,7 @@ std::vector<std::pair<double, double> > AdBidStrategy::convexUniformBid( const s
     allPoints.reserve(landscape.size());
     Point minP(std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
     size_t minI = -1;
-    for (boost::unordered_map<double, Point>::const_iterator cit = landscape.begin(); cit != landscape.end(); ++cit)
+    for (boost::unordered_map<int, Point>::const_iterator cit = landscape.begin(); cit != landscape.end(); ++cit)
     {
         if (cit->second.y > 0 && cit->second.x > 0)
         {
@@ -188,12 +190,12 @@ std::vector<std::pair<double, double> > AdBidStrategy::convexUniformBid( const s
     ch.clear();
 
     //convex combination
-    std::vector<std::pair<double, double> > bid;
+    std::vector<std::pair<int, double> > bid;
     Point budgetPoint(budget, 0.0);
     std::vector<struct Point>::const_iterator uit = std::upper_bound(canch.begin(), canch.end(), budgetPoint, xsmall);
     if (uit == canch.end())
     {
-        double mybid = canch.back().x / canch.back().y;
+        int mybid = int(canch.back().x / canch.back().y);
         bid.push_back(std::make_pair(mybid, 0.5));
         bid.push_back(std::make_pair(mybid, 0.5));
     }
@@ -202,41 +204,41 @@ std::vector<std::pair<double, double> > AdBidStrategy::convexUniformBid( const s
         std::vector<struct Point>::const_iterator preit = uit - 1;
         if (isZero(preit->x - budget))
         {
-            double mybid = preit->x / preit->y;
+            int mybid = int(preit->x / preit->y);
             bid.push_back(std::make_pair(mybid, 0.5));
             bid.push_back(std::make_pair(mybid, 0.5));
         }
         else
         {
-            double p = (budget - preit->x) / (uit->x - preit->x);
-            bid.push_back(std::make_pair(preit->x / preit->y, p));
-            bid.push_back(std::make_pair(uit->x / uit->y, 1.0 - p));
+            double p = float((budget - preit->x) / (uit->x - preit->x));
+            bid.push_back(std::make_pair(int(preit->x / preit->y), p));
+            bid.push_back(std::make_pair(int(uit->x / uit->y), 1.0 - p));
         }
     }
 
     return bid;
 }
 
-double AdBidStrategy::realtimeBidWithRevenueMax(const AdQueryStatisticInfo& qsInfo,  double budgetUsed, double budgetLeft, double vpc /*= 10.0*/)
+int AdBidStrategy::realtimeBidWithRevenueMax(const AdQueryStatisticInfo& qsInfo,  int budgetUsed, int budgetLeft, int vpc /*= 1000*/)
 {
-    double budget = budgetLeft + budgetUsed;
-    if (isZero(budget) || qsInfo.cpc_.empty())
+    int budget = budgetLeft + budgetUsed;
+    if (budget <= 0 || qsInfo.cpc_.empty())
     {
-        return 0.0;
+        return 0;
     }
 
     double U = std::numeric_limits<double>::max();
-    double minBid = qsInfo.minBid_;
-    if (minBid < 0.0)
+    int minBid = qsInfo.minBid_;
+    if (minBid < 0)
     {
-        minBid = 0.0;
+        minBid = 0;
     }
-    if (!isZero(minBid))
+    if (minBid > 0)
     {
-        U = vpc / minBid;
+        U = ((double)vpc) / minBid;
     }
 
-    double z = budgetUsed / budget;
+    double z = ((double)budgetUsed) / budget;
 
     //efficiency
     double eff = pow(U * E, z) / E;
@@ -244,7 +246,7 @@ double AdBidStrategy::realtimeBidWithRevenueMax(const AdQueryStatisticInfo& qsIn
     for (int i = 0; i < (int)qsInfo.cpc_.size(); ++i)
     {
         double avaiableB = budgetLeft / (qsInfo.ctr_[i] * qsInfo.impression_);
-        double myeff = vpc / qsInfo.cpc_[i];
+        double myeff = ((double)vpc) / qsInfo.cpc_[i];
         if (eff > myeff && qsInfo.cpc_[i] <= avaiableB)
         {
             eff = myeff;
@@ -253,38 +255,38 @@ double AdBidStrategy::realtimeBidWithRevenueMax(const AdQueryStatisticInfo& qsIn
 
     for (int i = 0; i < (int)qsInfo.cpc_.size(); ++i)
     {
-        double myeff = vpc / qsInfo.cpc_[i];
+        double myeff = ((double)vpc) / qsInfo.cpc_[i];
         if (myeff >= eff)
         {
             return qsInfo.cpc_[i];
         }
     }
 
-    return vpc / (1 + eff);
+    return int(vpc / (1 + eff));
 }
 
-double AdBidStrategy::realtimeBidWithProfitMax( const AdQueryStatisticInfo& qsInfo, double budgetUsed, double budgetLeft, double vpc /*= 10.0*/)
+int AdBidStrategy::realtimeBidWithProfitMax( const AdQueryStatisticInfo& qsInfo, int budgetUsed, int budgetLeft, int vpc /*= 1000*/)
 {
     static const double MINEFF = 0.1;
 
-    double budget = budgetLeft + budgetUsed;
-    if (isZero(budget) || qsInfo.cpc_.empty())
+    int budget = budgetLeft + budgetUsed;
+    if (budget <= 0 || qsInfo.cpc_.empty())
     {
-        return 0.0;
+        return 0;
     }
 
     double U = std::numeric_limits<double>::max();
-    double minBid = qsInfo.minBid_;
-    if (minBid < 0.0)
+    int minBid = qsInfo.minBid_;
+    if (minBid < 0)
     {
-        minBid = 0.0;
+        minBid = 0;
     }
-    if (!isZero(minBid))
+    if (minBid > 0)
     {
-        U = vpc / minBid - 1;
+        U = ((double)vpc) / minBid - 1;
     }
 
-    double z = budgetUsed / budget;
+    double z = ((double)budgetUsed) / budget;
 
     //efficiency
     double eff = pow(U * E / MINEFF, z) * MINEFF / E;
@@ -292,7 +294,7 @@ double AdBidStrategy::realtimeBidWithProfitMax( const AdQueryStatisticInfo& qsIn
     for (int i = 0; i < (int)qsInfo.cpc_.size(); ++i)
     {
         double avaiableB = budgetLeft / (qsInfo.ctr_[i] * qsInfo.impression_);
-        double myeff = vpc / qsInfo.cpc_[i] - 1;
+        double myeff = ((double)vpc) / qsInfo.cpc_[i] - 1;
         if (eff > myeff && qsInfo.cpc_[i] <= avaiableB)
         {
             eff = myeff;
@@ -303,7 +305,7 @@ double AdBidStrategy::realtimeBidWithProfitMax( const AdQueryStatisticInfo& qsIn
     double maxV = -1.0;
     for (int i = 0; i < (int)qsInfo.cpc_.size(); ++i)
     {
-        double myeff = vpc / qsInfo.cpc_[i] - 1;
+        double myeff = ((double)vpc) / qsInfo.cpc_[i] - 1;
         if (myeff >= eff)
         {
             double myV = (vpc - qsInfo.cpc_[i]) * qsInfo.ctr_[i];
@@ -319,7 +321,7 @@ double AdBidStrategy::realtimeBidWithProfitMax( const AdQueryStatisticInfo& qsIn
         return qsInfo.cpc_[maxI];
     }
     else
-        return vpc / (1 + eff);
+        return int(vpc / (1 + eff));
 }
 
 
@@ -362,7 +364,7 @@ static void enumKPRecursive(const std::vector<std::vector<double> >& W, const st
     }
 }
 
-static std::vector<int> enumKP(const std::vector<std::vector<double> >& W, const std::vector<std::vector<double> >& V, double B)
+static std::vector<int> enumKP(const std::vector<std::vector<double> >& W, const std::vector<std::vector<double> >& V, int B)
 {
     std::vector<int> curSol(W.size(), -1);
     std::vector<int> maxSol(W.size(), -1);
@@ -374,12 +376,12 @@ static std::vector<int> enumKP(const std::vector<std::vector<double> >& W, const
 }
 
 //dynamic programming for knapsack problem
-static std::vector<int> dpKP(const std::vector<std::vector<double> >& W, const std::vector<std::vector<double> >& V, double B)
+static std::vector<int> dpKP(const std::vector<std::vector<double> >& W, const std::vector<std::vector<double> >& V, int B)
 {
     typedef boost::multi_array<int, 2> array_type;
     typedef array_type::index index;
-    array_type	S(boost::extents[W.size()][(int)B+1]);
-    std::vector<double> F((int)B + 1, 0.0);
+    array_type	S(boost::extents[W.size()][B+1]);
+    std::vector<double> F(B + 1, 0.0);
 
     for(int i = 0; i < (int)W.size(); ++i)
     {
@@ -406,7 +408,7 @@ static std::vector<int> dpKP(const std::vector<std::vector<double> >& W, const s
 
     //construct solution.
     std::vector<int> Sol(W.size(), -1);
-    for(int i = W.size() - 1, v = (int)B; i >= 0; --i)
+    for(int i = W.size() - 1, v = B; i >= 0; --i)
     {
         Sol[i] = S[i][v];
         if(S[i][v] != -1)
@@ -418,29 +420,118 @@ static std::vector<int> dpKP(const std::vector<std::vector<double> >& W, const s
     return Sol;
 }
 
-std::vector<double> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticInfo>& qsInfos, double budget )
+static void convertIndexToBid(const std::list<AdQueryStatisticInfo>& qsInfos, const std::vector<int>& bidindex, std::vector<int>& bid)
 {
-    const int MaxAllowedEvolutions = 300 * qsInfos.size();
-    const int MinAllowedEvolutions = 50 * qsInfos.size();
+    std::list<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin();
+    int i = 0;
+    int bi = 0;
+    for (; cit != qsInfos.end(); ++cit, ++i)
+    {
+        if (cit->bid_ != -1)
+        {
+            bid[i] = cit->bid_;
+        }
+        else
+        {
+            if (bidindex[bi] != -1)
+            {
+                bid[i] = cit->cpc_[bidindex[bi]];
+            }
+            else
+            {
+                bid[i] = 0;
+            }
+
+            ++bi;
+        }
+    }
+
+}
+
+//for debug.
+static double computeValue(const std::list<AdQueryStatisticInfo>& qsInfos, const std::vector<int>& sol)
+{
+    double myV = 0.0;
+    std::list<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin();
+    std::vector<int>::const_iterator sit = sol.begin();
+    for (; cit != qsInfos.end(); ++cit)
+    {
+        if (cit->bid_ == -1)
+        {
+            if (*sit != -1)
+            {
+                myV += cit->ctr_[*sit] * cit->impression_;
+            }
+            ++sit;
+        }
+    }
+
+    return myV;
+}
+
+std::vector<int> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticInfo>& qsInfos, int budget )
+{
+    std::vector<int> bid(qsInfos.size(), 0);
+
+
+    //support for predefined bidding.
+    int tmpKeywordNum = 0, tmpBidIndex = 0, tmpBudget = budget;
+    for (std::list<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin(); cit != qsInfos.end(); ++cit, ++tmpBidIndex)
+    {
+        if (cit->bid_ == -1)
+        {
+            ++tmpKeywordNum;
+            bid[tmpBidIndex] = 0;
+        }
+        else
+        {
+            bid[tmpBidIndex] = cit->bid_;
+            int i = 0;
+            for (; i <(int)cit->cpc_.size(); ++i)
+            {
+                if (cit->bid_ >= cit->cpc_[i])
+                {
+                    break;
+                }
+            }
+            if (i < (int)cit->cpc_.size())
+            {
+                tmpBudget -= cit->cpc_[i] * cit->ctr_[i] * cit->impression_;
+            }
+        }
+    }
+
+    const int KeywordNum = tmpKeywordNum;
+    const int AvaiableBudget = tmpBudget;
+
+
+    const int MaxAllowedEvolutions = 300 * KeywordNum;
+    const int MinAllowedEvolutions = 50 * KeywordNum;
     static const double EndPopulationRate = 0.90;  //when 90% of the population has same fitness value, stop evolute.
     static const int PopulationSize = 40; //must be even
     static const int ElitismSize = 2;
     static const double MinFitVariance = 0.001;  //minimum max fitness variance ratio. variance / fit^2
-    static const long long MaxLoopNum = 100000000000000;
+    static const long long MaxLoopNum = 10000000000;
+    static const long long MaxDPSpace = 100000000;
 
-    std::vector<double> bid(qsInfos.size(), 0.0);
-    if (qsInfos.empty() || budget < 0.0 || isZero(budget))
+
+    if (KeywordNum <= 0 || AvaiableBudget <= 0)
     {
         return bid;
     }
 
     typedef std::vector<std::vector<double> > TQSDataType;
-    TQSDataType W(qsInfos.size()), V(qsInfos.size());
-    std::vector<int> adP(qsInfos.size());  //ad position num for each keyword.
+    TQSDataType W(KeywordNum), V(KeywordNum);
+    std::vector<int> adP(KeywordNum);  //ad position num for each keyword.
     int kNum = 0;
-    for (std::list<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin(); cit != qsInfos.end(); ++cit, ++kNum)
+    for (std::list<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin(); cit != qsInfos.end(); ++cit)
     {
-        const std::vector<double>& cpc = cit->cpc_;
+        if (cit->bid_ != -1)
+        {
+            continue;
+        }
+
+        const std::vector<int>& cpc = cit->cpc_;
         const std::vector<double>& ctr = cit->ctr_;
 
         W[kNum].reserve(cpc.size());
@@ -452,29 +543,35 @@ std::vector<double> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticI
             W[kNum].push_back(cpc[j] * cit->impression_ * ctr[j]);
             V[kNum].push_back(cit->impression_ * ctr[j]);  //max traffics. value is defined as click traffics.
         }
+
+        ++kNum;
     }
 
     // judge whether problem can be solved by enumerating to directly get optimal solution.
     {
         long long timeCP = 1;
-        for(int i = 0; i < (int)W.size(); ++i)
+        for(int i = 0; i < KeywordNum; ++i)
         {
             timeCP *= (W[i].size() + 1);
             if(timeCP > MaxLoopNum) break;
         }
         if(timeCP < MaxLoopNum)
         {
-            const std::vector<int>& mySol = enumKP(W, V, budget);
-            int j = 0;
-            std::list<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin();
-            for (; cit != qsInfos.end(); ++cit, ++j)
-            {
-                if (mySol[j] != -1)
-                {
-                    bid[j] = cit->cpc_[mySol[j]];
-                }
-            }
+            const std::vector<int>& mySol = enumKP(W, V, AvaiableBudget);
+            convertIndexToBid(qsInfos, mySol, bid);
 
+            return bid;
+        }
+    }
+
+    // judge whether problem can be solved by dynamic programming to directly get optimal solution.
+    {
+        long long spaceComplexity = KeywordNum;
+        spaceComplexity *= (AvaiableBudget + 1);
+        if (spaceComplexity <= MaxDPSpace)
+        {
+            const std::vector<int>& mySol = dpKP(W, V, AvaiableBudget);
+            convertIndexToBid(qsInfos, mySol, bid);
             return bid;
         }
     }
@@ -486,9 +583,9 @@ std::vector<double> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticI
     srand(time(NULL));
     for (int i = 0; i < PopulationSize; ++i)
     {
-        P[i].reserve(qsInfos.size());
-        newP[i].reserve(qsInfos.size());
-        for (size_t j = 0; j < qsInfos.size(); ++j)
+        P[i].reserve(KeywordNum);
+        newP[i].reserve(KeywordNum);
+        for (size_t j = 0; j < KeywordNum; ++j)
         {
             int N = adP[j] + 1;
             P[i].push_back(rand() % N - 1); //ad position is 0-based, -1 means do not bid for that keyword.
@@ -515,7 +612,7 @@ std::vector<double> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticI
             }
 
             int aN = kw.size();
-            while(totalW > budget)
+            while(totalW > AvaiableBudget)
             {
                 int r = rand() % aN;
                 totalW -= W[kw[r].first][kw[r].second];
@@ -657,7 +754,7 @@ std::vector<double> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticI
                 const std::vector<int>& lp = P[SP[i]];
                 const std::vector<int>& rp = P[SP[i+1]];
 
-                for (int j = 0; j < (int)qsInfos.size(); ++j)
+                for (int j = 0; j < KeywordNum; ++j)
                 {
                     double p = (double)rand() / RAND_MAX * 1.50 - 0.25;
 
@@ -712,10 +809,10 @@ std::vector<double> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticI
         }
 
         //mutation, mutation rate, 1/countof(var)
-        int mRate = qsInfos.size();
+        int mRate = KeywordNum;
         for (int i = 0; i < GASize; ++i)
         {
-            for (int j = 0; j < (int)qsInfos.size(); ++j)
+            for (int j = 0; j < KeywordNum; ++j)
             {
                 if (rand() % mRate == 0)
                 {
@@ -748,7 +845,7 @@ std::vector<double> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticI
             }
 
             int aN = kw.size();
-            while(totalW > budget)
+            while(totalW > AvaiableBudget)
             {
                 int r = rand() % aN;
                 totalW -= W[kw[r].first][kw[r].second];
@@ -766,7 +863,7 @@ std::vector<double> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticI
     for (int i = 0; i < PopulationSize; ++i)
     {
         double ft = 0.0;
-        for (int j = 0; j < (int)qsInfos.size(); ++j)
+        for (int j = 0; j < KeywordNum; ++j)
         {
             if (P[i][j] != -1)
             {
@@ -783,15 +880,7 @@ std::vector<double> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticI
 
     if (maxI != -1)
     {
-        int j = 0;
-        std::list<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin();
-        for (; cit != qsInfos.end(); ++cit, ++j)
-        {
-            if (P[maxI][j] != -1)
-            {
-                bid[j] = cit->cpc_[P[maxI][j]];
-            }
-        }
+        convertIndexToBid(qsInfos, P[maxI], bid);
     }
 
     return bid;
