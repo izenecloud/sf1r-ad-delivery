@@ -30,6 +30,14 @@ AdIndexManager::AdIndexManager(const std::string& workdir,
     containerPtr_->set_lock_type(Lux::IO::LOCK_THREAD);
     open_();
 //    cache_ = new Cache(clusteringNum_);
+    for (std::size_t i = 0; i < clusteringNum_; i++)
+    {
+        ADVector advec;
+        if (get(i, advec))
+        {
+            LOG(INFO)<<"clustering  = "<<i<<" ad num = "<<advec.size();
+        }
+    }
 }
 
 AdIndexManager::~AdIndexManager()
@@ -58,14 +66,6 @@ AdIndexManager::~AdIndexManager()
     //    delete cache_;
     //    cache_ = NULL;
     //}
-    for (std::size_t i = 0; i < clusteringNum_; i++)
-    {
-        ADVector advec;
-        if (get(i, advec))
-        {
-            LOG(INFO)<<"clustering  = "<<i<<" ad num = "<<advec.size();
-        }
-    }
 }
     
 void AdIndexManager::index(const std::size_t& clusteringId, 
@@ -120,6 +120,7 @@ bool AdIndexManager::get(const std::size_t& clusteringId, ADVector& advec) const
 
 void AdIndexManager::open_()
 {
+    LOG(INFO)<<"AdIndexManager worddir = "<<workdir_;
     try
     {
         const std::string filename = workdir_ + "/index";
