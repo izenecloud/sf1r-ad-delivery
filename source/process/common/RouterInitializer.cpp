@@ -509,7 +509,7 @@ void initializeDriverRouter(::izenelib::driver::Router& router, IService* servic
     }
 
     {
-        /*AdController ad;
+        AdController ad;
         const std::string controllerName("ad");
         typedef ::izenelib::driver::ActionHandler<AdController> handler_type;
         typedef std::auto_ptr<handler_type> handler_ptr;
@@ -554,7 +554,7 @@ void initializeDriverRouter(::izenelib::driver::Router& router, IService* servic
             "set_keyword_bidprice",
             set_keyword_bidpriceHandler.get()
         );
-        set_keyword_bidpriceHandler.release();*/
+        set_keyword_bidpriceHandler.release();
     }
 
 }
