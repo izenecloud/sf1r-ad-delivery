@@ -55,9 +55,41 @@ namespace avro{
 namespace sf1r
 {
 
-static bool convertToUserProfile(const std::string& data, AdFeedbackMgr::UserProfile& user_profile)
+static std::string profile_name_list[] = {"page_categories", "product_categories",
+"product_price", "product_source"};
+
+static bool convertToUserProfile(const std::string& data, std::map<std::string, std::map<std::string, double> >& user_profile)
 {
-    // TODO:convert the json string data to user_profile and cache it.
+    namespace rj = rapidjson;
+    // extract the user id, ad id and action from log
+    rj::Document user_doc;
+    bool err = user_doc.Parse<0>(data.c_str()).HasParseError();
+    if (err)
+    {
+        LOG(ERROR) << "parsing user json log data error." << data;
+        return false;
+    }
+    if (!user_doc.IsObject())
+    {
+        LOG(WARNING) << "user profile json data not object.";
+        return false;
+    }
+    std::size_t len = sizeof(profile_name_list)/sizeof(profile_name_list[0]);
+    for(std::size_t i = 0; i < len; ++i)
+    {
+        const std::string& profile_name = profile_name_list[i];
+        if (user_doc.HasMember(profile_name.c_str()))
+        {
+            const rj::Value& value = user_doc[profile_name.c_str()];
+            if (!value.IsObject())
+                continue;
+            std::map<std::string, double>& user_data = user_profile[profile_name];
+            for(rj::Value::ConstMemberIterator itr = value.MemberBegin(); itr != value.MemberEnd(); ++itr)
+            {
+                user_data[itr->name.GetString()] = itr->value.GetDouble();
+            }
+        }
+    }
     return true;
 }
 
@@ -204,9 +236,9 @@ bool AdFeedbackMgr::getUserProfileFromDMP(const std::string& user_id, UserProfil
         }
         else
         {
-            if(!convertToUserProfile(rsp_it->second, user_profile))
+            if(!convertToUserProfile(rsp_it->second, user_profile.profile_data))
             {
-                LOG(WARNING) << "DMP response data convert to user profile failed.";
+                LOG(WARNING) << "DMP response data convert to user profile failed." << rsp_it->second;
                 result = false;
             }
             else
@@ -241,7 +273,7 @@ bool AdFeedbackMgr::parserFeedbackLog(const std::string& log_data, FeedbackInfo&
     bool err = log_doc.Parse<0>(log_data.c_str()).HasParseError();
     if (err)
     {
-        LOG(ERROR) << "parsing json log data error.";
+        LOG(ERROR) << "parsing json log data error." << log_data;
         return false;
     }
     if (!log_doc.HasMember("args"))
@@ -257,7 +289,6 @@ bool AdFeedbackMgr::parserFeedbackLog(const std::string& log_data, FeedbackInfo&
     }
     if (!args.HasMember("ad") ||
         !args.HasMember("uid") ||
-        !args.HasMember("dstl") ||
         !args.HasMember("aid"))
     {
         // some of necessary value missing, just ignore.
@@ -286,6 +317,7 @@ bool AdFeedbackMgr::parserFeedbackLog(const std::string& log_data, FeedbackInfo&
         {
             feedback_info.click_slot = args["click_slot"].GetInt();
         }
+        LOG(INFO) << "got clicked log : " << feedback_info.user_id << "," << feedback_info.ad_id;
     }
     if (feedback_info.user_id.empty() &&
         feedback_info.ad_id.empty())

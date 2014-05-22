@@ -4,7 +4,7 @@
 #include <node-manager/SuperNodeManager.h>
 
 #define QUEUE_SIZE 1000
-#define LOCAL_RPC_PORT  9999
+#define LOCAL_RPC_PORT  19991
 #define HEART_CHECK_INTERVAL  10
 
 namespace sf1r
@@ -73,6 +73,7 @@ void AdStreamReceiveServer::dispatch(msgpack::rpc::request req)
             LOG(INFO) << "got heart check msg.";
             //msgpack::type::tuple<bool> params;
             //req.params().convert(&params);
+            AdStreamSubscriber::get()->updateServerHeartCheck();
             req.result(true);
         }
         else if (method == AdStreamReceiveServerRequest::method_names[AdStreamReceiveServerRequest::METHOD_PUSH_ADMESSAGE])
@@ -120,6 +121,7 @@ void AdStreamSubscriber::init(const std::string& sub_server_ip, uint16_t sub_ser
     config.host = sub_server_ip;
     config.rpcPort = sub_server_port;
     conn_mgr_->init(config);
+    last_heart_check_ = time(NULL);
     heart_check_thread_ = boost::thread(boost::bind(&AdStreamSubscriber::heart_check, this));
 }
 
@@ -144,6 +146,11 @@ void AdStreamSubscriber::stop()
         delete conn_mgr_;
         conn_mgr_ = NULL;
     }
+}
+
+void AdStreamSubscriber::updateServerHeartCheck()
+{
+    last_heart_check_ = time(NULL);
 }
 
 void AdStreamSubscriber::onAdMessage(const std::vector<AdMessage>& msg_list, int calltype)
@@ -172,6 +179,10 @@ void AdStreamSubscriber::heart_check()
         {
             server_lost = !conn_mgr_->testServer();
             boost::this_thread::interruption_point();
+            if (time(NULL) - last_heart_check_ > HEART_CHECK_INTERVAL * 5)
+            {
+                server_lost = true;
+            }
             sleep(HEART_CHECK_INTERVAL);
             if (server_lost)
             {

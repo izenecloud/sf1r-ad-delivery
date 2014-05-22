@@ -32,7 +32,7 @@ public:
 
     struct UserProfile
     {
-        std::map<std::string, double> profile_data;
+        std::map<std::string, std::map<std::string, double> > profile_data;
         time_t timestamp;
         MSGPACK_DEFINE(profile_data, timestamp);
     };

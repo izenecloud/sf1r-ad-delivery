@@ -121,6 +121,7 @@ public:
     bool subscribe(const std::string& topic, MessageCBFuncT on_message);
     void unsubscribe(const std::string& topic, bool remove_retry = true);
     void onAdMessage(const std::vector<AdMessage>& msg_list, int calltype = 0);
+    void updateServerHeartCheck();
 
 private:
     typedef std::map<std::string, MessageCBFuncT>  SubscriberListT;
@@ -140,6 +141,7 @@ private:
     RpcServerConnection* conn_mgr_;
     SubscriberListT  retry_sub_list_;
     boost::thread    heart_check_thread_;
+    time_t last_heart_check_;
 };
 
 }

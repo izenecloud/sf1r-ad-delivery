@@ -143,16 +143,19 @@ void AdIndexManager::onAdStreamMessage(const std::vector<AdMessage>& msg_list)
     // read from stream msg and convert it to assignment list.
     for (size_t i = 0; i < msg_list.size(); ++i)
     {
-        bool ret = AdFeedbackMgr::get()->parserFeedbackLogForAVRO(msg_list[i].body, feedback_info);
+        bool ret = AdFeedbackMgr::get()->parserFeedbackLog(msg_list[i].body, feedback_info);
         if (!ret)
             continue;
 
-        std::map<std::string, double>::const_iterator it = feedback_info.user_profiles.profile_data.begin();
-        std::size_t feature_index = 0;
-        user_feature.resize(feedback_info.user_profiles.profile_data.size());
+        std::map<std::string, std::map<std::string, double> >::const_iterator it = feedback_info.user_profiles.profile_data.begin();
+        user_feature.clear();
         for(; it != feedback_info.user_profiles.profile_data.end(); ++it)
         {
-            // TODO: 
+            std::map<std::string, double>::const_iterator it2 = it->second.begin();
+            for(; it2 != it->second.end(); ++it2)
+            {
+                user_feature.push_back(std::make_pair(it->first, it2->first));
+            }
         }
         bool is_clicked = feedback_info.action > AdFeedbackMgr::View;
         if (enable_ad_sponsored_search_)
