@@ -45,6 +45,7 @@ public:
     void postIndex();
 private:
     void open_();
+    void serializeLastDocid_();
 private:
     const std::string workdir_;
     const std::size_t clusteringNum_;

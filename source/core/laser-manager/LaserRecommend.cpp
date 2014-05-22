@@ -59,6 +59,7 @@ bool LaserRecommend::getSimilarAd(const std::size_t& clusteringId, AdIndexManage
     bool ret = false;
     std::vector<int> idvec;
     getSimilarClustering(clusteringId, idvec);
+    LOG(INFO)<<"clustering = "<<clusteringId<<", similar clustering size = "<<idvec.size();
     for (std::size_t i = 0; i < idvec.size(); ++i )
     {
         ret |= getAD(idvec[i], advec);

@@ -42,25 +42,7 @@ AdIndexManager::~AdIndexManager()
         containerPtr_->close();
         delete containerPtr_;
     }
-    {
-        const std::string filename = workdir_ + "/last_docid";
-        std::ofstream ofs(filename .c_str(), std::ofstream::binary | std::ofstream::trunc);
-        boost::archive::text_oarchive oa(ofs);
-        try
-        {
-            oa << lastDocId_;
-        }
-        catch(std::exception& e)
-        {
-            LOG(INFO)<<e.what();
-        }
-        ofs.close();
-    }
-    //if (NULL != cache_)
-    //{
-    //    delete cache_;
-    //    cache_ = NULL;
-    //}
+    serializeLastDocid_();
 }
     
 void AdIndexManager::index(const std::size_t& clusteringId, 
@@ -158,15 +140,23 @@ void AdIndexManager::preIndex()
 
 void AdIndexManager::postIndex()
 {
-   {
-        const std::string filename = workdir_ + "/last_docid";
-        if ( boost::filesystem::exists(filename) )
-        {
-            std::ifstream ifs(filename.c_str(), std::ios::binary);
-            boost::archive::text_iarchive ia(ifs);
-            ia >> lastDocId_;
-        }
-   }
+    serializeLastDocid_();
+}
+    
+void AdIndexManager::serializeLastDocid_()
+{
+    const std::string filename = workdir_ + "/last_docid";
+    std::ofstream ofs(filename .c_str(), std::ofstream::binary | std::ofstream::trunc);
+    boost::archive::text_oarchive oa(ofs);
+    try
+    {
+        oa << lastDocId_;
+    }
+    catch(std::exception& e)
+    {
+        LOG(INFO)<<e.what();
+    }
+    ofs.close();
 }
 
 } }
