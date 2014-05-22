@@ -439,6 +439,10 @@ DistributeFileSyncMgr::DistributeFileSyncMgr()
     ignore_list_.insert("cookie");
     ignore_list_.insert("CURRENT");
     ignore_list_.insert("barrels");
+
+    // ignore for laser
+    ignore_list_.insert("index.aidx");
+    ignore_list_.insert("index.data");
     reporting_ = false;
 }
 

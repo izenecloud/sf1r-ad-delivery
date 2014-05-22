@@ -14,7 +14,9 @@ namespace sf1r
 
 const static std::size_t THREAD_NUM = 8;
     
+std::string LaserManager::workdir_ = "";
 std::vector<LaserManager::TokenVector>* LaserManager::clusteringContainer_ = NULL;
+std::vector<std::vector<int> >* LaserManager::similarClustering_ = NULL;
 laser::Tokenizer* LaserManager::tokenizer_ = NULL;
 laser::LaserRpcServer* LaserManager::rpcServer_ = NULL;
 laser::TopNClusteringDB* LaserManager::topnClustering_ = NULL;
@@ -24,22 +26,17 @@ boost::shared_mutex LaserManager::mutex_;
 LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService, 
         const boost::shared_ptr<DocumentManager>& documentManager,
         const std::string& collection)
-    : workdir_(MiningManager::system_working_path_ + "/LASER/")
-    , collection_(collection)
+    : collection_(collection)
     , adSearchService_(adSearchService)
     , documentManager_(documentManager)
     , recommend_(NULL)
     , indexManager_(NULL)
 {
-    if (!boost::filesystem::exists(workdir_))
-    {
-        boost::filesystem::create_directory(workdir_);
-    }
-
-    load_();
-    
-    indexManager_ = new laser::AdIndexManager(workdir_, collection_, clusteringContainer_->size(), documentManager_);
-    recommend_ = new LaserRecommend(indexManager_, topnClustering_, laserOnlineModel_);
+    loadLaserDependency(); 
+    indexManager_ = new laser::AdIndexManager(MiningManager::system_working_path_ + "/collection/" + collection_ + "/collection-data/", 
+        clusteringContainer_->size(), 
+        documentManager_);
+    recommend_ = new LaserRecommend(indexManager_, topnClustering_, laserOnlineModel_, similarClustering_);
     // delete by TaskBuilder
     indexTask_ = new LaserIndexTask(this);
 
@@ -47,7 +44,6 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
    
 LaserManager::~LaserManager()
 {
-    close_();
     if (NULL != indexManager_)
     {
         delete indexManager_;
@@ -61,80 +57,6 @@ LaserManager::~LaserManager()
     //delete indexTask_;
 }
     
-void LaserManager::load_()
-{
-    boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
-    if (NULL != clusteringContainer_ ||
-        NULL != rpcServer_ ||
-        NULL != tokenizer_ ||
-        NULL != topnClustering_ ||
-        NULL != laserOnlineModel_)
-    {
-        return;
-    }
-    LOG(INFO)<<"open all dependencies of LaserManager...";
-    tokenizer_ = new Tokenizer(MiningManager::system_resource_path_ + "/dict/title_pca/",
-        MiningManager::system_resource_path_ + "/laser_resource/terms_dic.dat");
-
-    std::vector<boost::unordered_map<std::string, float> > clusteringContainer;
-    laser::clustering::loadClusteringResult(clusteringContainer, MiningManager::system_resource_path_ + "/laser_resource/clustering_result");
-    
-    clusteringContainer_ = new std::vector<TokenVector>(clusteringContainer.size());
-    for (std::size_t i = 0; i < clusteringContainer.size(); ++i)
-    {
-        TokenVector vec;
-        tokenizer_->numeric(clusteringContainer[i], vec);
-        (*clusteringContainer_)[i] = vec;
-    }
-    //LOG(INFO)<<clusteringContainer_->size(); 
-    
-    topnClustering_ = new TopNClusteringDB(workdir_ + "/topnclustering", clusteringContainer_->size());
-    laserOnlineModel_ = new LaserOnlineModelDB(workdir_ + "/laser_online_model/"); 
-    
-    rpcServer_ = new LaserRpcServer(tokenizer_, clusteringContainer_, topnClustering_, laserOnlineModel_);
-    rpcServer_->start("0.0.0.0", 28611, 2);
-}
-    
-void LaserManager::close_()
-{
-    boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
-    if (NULL == clusteringContainer_ ||
-        NULL == rpcServer_ ||
-        NULL == tokenizer_ ||
-        NULL == topnClustering_ ||
-        NULL == laserOnlineModel_)
-    {
-        return;
-    }
-    LOG(INFO)<<"close all dependencies of LaserManager..";
-    if (NULL != rpcServer_)
-    {
-        rpcServer_->stop();
-        delete rpcServer_;
-        rpcServer_ = NULL;
-    }
-    if (NULL != tokenizer_)
-    {
-        delete tokenizer_;
-        tokenizer_ = NULL;
-    }
-    if (NULL != clusteringContainer_)
-    {
-        delete clusteringContainer_;
-        clusteringContainer_ = NULL;
-    }
-    if (NULL != topnClustering_)
-    {
-        delete topnClustering_;
-        topnClustering_ = NULL;
-    }
-    if (NULL != laserOnlineModel_)
-    {
-        delete laserOnlineModel_;
-        laserOnlineModel_ = NULL;
-    }
-}
-
 bool LaserManager::recommend(const LaserRecommendParam& param, 
     GetDocumentsByIdsActionItem& actionItem,
     RawTextResultFromMIA& res) const 
@@ -223,4 +145,100 @@ float LaserManager::similarity_(const TokenSparseVector& lv, const TokenVector& 
 }
 
     
+void loadLaserDependency()
+{
+    boost::unique_lock<boost::shared_mutex> uniqueLock(LaserManager::mutex_);
+    if (NULL != LaserManager::clusteringContainer_ ||
+        NULL != LaserManager::rpcServer_ ||
+        NULL != LaserManager::tokenizer_ ||
+        NULL != LaserManager::topnClustering_ ||
+        NULL != LaserManager::laserOnlineModel_)
+    {
+        return;
+    }
+    LOG(INFO)<<"open all dependencies of LaserManager...";
+    LaserManager::workdir_ = MiningManager::system_working_path_ + "/LASER/";
+    if (!boost::filesystem::exists(LaserManager::workdir_))
+    {
+        boost::filesystem::create_directory(LaserManager::workdir_);
+    }
+
+    LaserManager::tokenizer_ = new Tokenizer(MiningManager::system_resource_path_ + "/dict/title_pca/",
+        MiningManager::system_resource_path_ + "/laser_resource/terms_dic.dat");
+
+    std::vector<boost::unordered_map<std::string, float> > clusteringContainer;
+    laser::clustering::loadClusteringResult(clusteringContainer, MiningManager::system_resource_path_ + "/laser_resource/clustering_result");
+    
+    LaserManager::clusteringContainer_ = new std::vector<LaserManager::TokenVector>(clusteringContainer.size());
+    for (std::size_t i = 0; i < clusteringContainer.size(); ++i)
+    {
+        LaserManager::TokenVector vec;
+        LaserManager::tokenizer_->numeric(clusteringContainer[i], vec);
+        (*LaserManager::clusteringContainer_)[i] = vec;
+    }
+    //LOG(INFO)<<clusteringContainer_->size(); 
+   
+    LaserManager::similarClustering_ = new std::vector<std::vector<int> >(LaserManager::clusteringContainer_->size());
+    {
+        std::ifstream ifs((MiningManager::system_resource_path_ + "/laser_resource/clustering_similar").c_str(), std::ios::binary);
+        boost::archive::text_iarchive ia(ifs);
+        ia >> *LaserManager::similarClustering_;
+    }
+
+    LaserManager::topnClustering_ = new TopNClusteringDB(LaserManager::workdir_ + "/topnclustering", 
+        LaserManager::clusteringContainer_->size());
+    LaserManager::laserOnlineModel_ = new LaserOnlineModelDB(LaserManager::workdir_ + "/laser_online_model/"); 
+    
+    LaserManager::rpcServer_ = new LaserRpcServer(LaserManager::tokenizer_, 
+        LaserManager::clusteringContainer_, 
+        LaserManager::topnClustering_, 
+        LaserManager::laserOnlineModel_);
+    LaserManager::rpcServer_->start("0.0.0.0", 28611, 2);
+}
+
+void closeLaserDependency()
+{
+    boost::unique_lock<boost::shared_mutex> uniqueLock(LaserManager::mutex_);
+    if (NULL == LaserManager::clusteringContainer_ ||
+        NULL == LaserManager::rpcServer_ ||
+        NULL == LaserManager::tokenizer_ ||
+        NULL == LaserManager::topnClustering_ ||
+        NULL == LaserManager::laserOnlineModel_)
+    {
+        return;
+    }
+    LOG(INFO)<<"close all dependencies of LaserManager..";
+    if (NULL != LaserManager::rpcServer_)
+    {
+        LaserManager::rpcServer_->stop();
+        delete LaserManager::rpcServer_;
+        LaserManager::rpcServer_ = NULL;
+    }
+    if (NULL != LaserManager::tokenizer_)
+    {
+        delete LaserManager::tokenizer_;
+        LaserManager::tokenizer_ = NULL;
+    }
+    if (NULL != LaserManager::clusteringContainer_)
+    {
+        delete LaserManager::clusteringContainer_;
+        LaserManager::clusteringContainer_ = NULL;
+    }
+    if (NULL != LaserManager::similarClustering_)
+    {
+        delete LaserManager::similarClustering_;
+        LaserManager::similarClustering_ = NULL;
+    }
+    if (NULL != LaserManager::topnClustering_)
+    {
+        delete LaserManager::topnClustering_;
+        LaserManager::topnClustering_ = NULL;
+    }
+    if (NULL != LaserManager::laserOnlineModel_)
+    {
+        delete LaserManager::laserOnlineModel_;
+        LaserManager::laserOnlineModel_ = NULL;
+    }
+}
+
 }

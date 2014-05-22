@@ -191,18 +191,33 @@ std::vector<std::pair<int, double> > AdBidStrategy::convexUniformBid( const std:
 
     //convex combination
     std::vector<std::pair<int, double> > bid;
-    Point budgetPoint(budget, 0.0);
+
+    int singleBudget = 1000000000;
+    int totalImpression = 0;
+    for (std::list<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin(); cit != qsInfos.end(); ++cit)
+    {
+        totalImpression += cit->impression_;
+        singleBudget = std::min(cit->minBid_, singleBudget);
+    }
+    if (totalImpression > 0)
+    {
+        singleBudget = std::max(singleBudget, (int)(budget / (totalImpression / (double)qsInfos.size())));
+    }
+    
+
+
+    Point budgetPoint(singleBudget, 0.0);
     std::vector<struct Point>::const_iterator uit = std::upper_bound(canch.begin(), canch.end(), budgetPoint, xsmall);
     if (uit == canch.end())
     {
-        int mybid = int(canch.back().x / canch.back().y);
-        bid.push_back(std::make_pair(mybid, 0.5));
-        bid.push_back(std::make_pair(mybid, 0.5));
+        //int mybid = int(canch.back().x / canch.back().y);
+        bid.push_back(std::make_pair(singleBudget, 0.5));
+        bid.push_back(std::make_pair(singleBudget, 0.5));
     }
     else
     {
         std::vector<struct Point>::const_iterator preit = uit - 1;
-        if (isZero(preit->x - budget))
+        if (isZero(preit->x - singleBudget))
         {
             int mybid = int(preit->x / preit->y);
             bid.push_back(std::make_pair(mybid, 0.5));
@@ -210,8 +225,8 @@ std::vector<std::pair<int, double> > AdBidStrategy::convexUniformBid( const std:
         }
         else
         {
-            double p = float((budget - preit->x) / (uit->x - preit->x));
-            bid.push_back(std::make_pair(int(preit->x / preit->y), p));
+            double p = double((singleBudget - preit->x) / (uit->x - preit->x));
+            bid.push_back(std::make_pair(int(isZero(preit->y)? 0 : preit->x / preit->y), p));
             bid.push_back(std::make_pair(int(uit->x / uit->y), 1.0 - p));
         }
     }
@@ -442,10 +457,10 @@ static void convertIndexToBid(const std::list<AdQueryStatisticInfo>& qsInfos, co
                 bid[i] = 0;
             }
 
-            ++bi;
+            ++bi;            
         }
     }
-
+    
 }
 
 //for debug.
@@ -462,10 +477,10 @@ static double computeValue(const std::list<AdQueryStatisticInfo>& qsInfos, const
             {
                 myV += cit->ctr_[*sit] * cit->impression_;
             }
-            ++sit;
+            ++sit;            
         }
     }
-
+    
     return myV;
 }
 
@@ -492,15 +507,15 @@ std::vector<int> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticInfo
                 if (cit->bid_ >= cit->cpc_[i])
                 {
                     break;
-                }
+                }                
             }
             if (i < (int)cit->cpc_.size())
             {
                 tmpBudget -= cit->cpc_[i] * cit->ctr_[i] * cit->impression_;
-            }
+            }                        
         }
     }
-
+    
     const int KeywordNum = tmpKeywordNum;
     const int AvaiableBudget = tmpBudget;
 
@@ -514,7 +529,7 @@ std::vector<int> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticInfo
     static const long long MaxLoopNum = 10000000000;
     static const long long MaxDPSpace = 100000000;
 
-
+    
     if (KeywordNum <= 0 || AvaiableBudget <= 0)
     {
         return bid;
@@ -530,7 +545,7 @@ std::vector<int> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticInfo
         {
             continue;
         }
-
+        
         const std::vector<int>& cpc = cit->cpc_;
         const std::vector<double>& ctr = cit->ctr_;
 
@@ -573,7 +588,7 @@ std::vector<int> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticInfo
             const std::vector<int>& mySol = dpKP(W, V, AvaiableBudget);
             convertIndexToBid(qsInfos, mySol, bid);
             return bid;
-        }
+        }        
     }
 
     typedef std::vector<std::vector<int> > TPopType; //every individual is a vector of index of ad position for each keyword, 0-based.

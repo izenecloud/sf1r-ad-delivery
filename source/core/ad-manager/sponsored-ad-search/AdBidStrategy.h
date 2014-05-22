@@ -65,7 +65,7 @@ public:
     /**
     * @brief generate two bids with probabilities for randomly selecting, this bid is independent of keywords.
     * @param qsInfos query statistic infos related to current bid.
-    * @param budget Budget for a single auction.
+    * @param budget total Budget in budget period.
     * @return Returning a list of two bids, <bid, probability> for each.
     */
     static std::vector<std::pair<int, double> > convexUniformBid(const std::list<AdQueryStatisticInfo>& qsInfos, int budget);

@@ -7,10 +7,9 @@
 namespace sf1r { namespace laser {
 
 AdIndexManager::AdIndexManager(const std::string& workdir, 
-        const std::string& collection,
         const std::size_t clusteringNum,
         const boost::shared_ptr<DocumentManager>& documentManager)
-    : workdir_(workdir + "/" + collection + "/ad-index-manager/")
+    : workdir_(workdir + "/LASER/")
     , clusteringNum_(clusteringNum)
     , containerPtr_(NULL)
     , lastDocId_(0)
@@ -19,10 +18,6 @@ AdIndexManager::AdIndexManager(const std::string& workdir,
 {
     if (!boost::filesystem::exists(workdir_))
     {
-        if (!boost::filesystem::exists(workdir + "/" + collection))
-        {
-            boost::filesystem::create_directory(workdir + "/" + collection);
-        }
         boost::filesystem::create_directory(workdir_);
     }
     containerPtr_ = new ContainerType(Lux::IO::NONCLUSTER);
@@ -47,25 +42,7 @@ AdIndexManager::~AdIndexManager()
         containerPtr_->close();
         delete containerPtr_;
     }
-    {
-        const std::string filename = workdir_ + "/last_docid";
-        std::ofstream ofs(filename .c_str(), std::ofstream::binary | std::ofstream::trunc);
-        boost::archive::text_oarchive oa(ofs);
-        try
-        {
-            oa << lastDocId_;
-        }
-        catch(std::exception& e)
-        {
-            LOG(INFO)<<e.what();
-        }
-        ofs.close();
-    }
-    //if (NULL != cache_)
-    //{
-    //    delete cache_;
-    //    cache_ = NULL;
-    //}
+    serializeLastDocid_();
 }
     
 void AdIndexManager::index(const std::size_t& clusteringId, 
@@ -163,26 +140,23 @@ void AdIndexManager::preIndex()
 
 void AdIndexManager::postIndex()
 {
-    //LOG(INFO)<<"flush cache to LUX IO ...";
-    /*for (std::size_t i = 0; i < cache_->size(); ++i)
+    serializeLastDocid_();
+}
+    
+void AdIndexManager::serializeLastDocid_()
+{
+    const std::string filename = workdir_ + "/last_docid";
+    std::ofstream ofs(filename .c_str(), std::ofstream::binary | std::ofstream::trunc);
+    boost::archive::text_oarchive oa(ofs);
+    try
     {
-        ADVector& advec = (*cache_)[i];
-        izenelib::util::izene_serialization<ADVector> izs(advec);
-        char* src;
-        size_t srcLen;
-        izs.write_image(src, srcLen);
-        containerPtr_->put(i, src, srcLen, Lux::IO::OVERWRITE);
+        oa << lastDocId_;
     }
-    cache_->clear();*/
-   {
-        const std::string filename = workdir_ + "/last_docid";
-        if ( boost::filesystem::exists(filename) )
-        {
-            std::ifstream ifs(filename.c_str(), std::ios::binary);
-            boost::archive::text_iarchive ia(ifs);
-            ia >> lastDocId_;
-        }
-   }
+    catch(std::exception& e)
+    {
+        LOG(INFO)<<e.what();
+    }
+    ofs.close();
 }
 
 } }

@@ -31,6 +31,8 @@
 
 #include <question-answering/QuestionAnalysis.h>
 
+#include <laser-manager/LaserManager.h>
+
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
@@ -402,7 +404,7 @@ int CobraProcess::run()
         driverServer_->run();
 
         stopCollections();
-
+        closeLaserDependency();
         LOG(INFO) << "CobraProcess has exited";
         waitSignalThread();
     }
