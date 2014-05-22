@@ -18,10 +18,12 @@ typedef std::priority_queue<std::pair<docid_t, float>, std::vector<std::pair<doc
 public:
     LaserRecommend(const AdIndexManager* index,
         const TopNClusteringDB* topnClustering,
-        const LaserOnlineModelDB* laserOnlineModel)
+        const LaserOnlineModelDB* laserOnlineModel,
+        const std::vector<std::vector<int> >* similarClustering)
         : indexManager_(index)
         , topnClustering_(topnClustering)
         , laserOnlineModel_(laserOnlineModel)
+        , similarClustering_(similarClustering)
     {
     }
 
@@ -32,6 +34,9 @@ public:
         const std::size_t num) const;
 private:
     bool getAD(const std::size_t& clusteringId, AdIndexManager::ADVector& advec) const;
+    bool getSimilarAd(const std::size_t& clusteringId, AdIndexManager::ADVector& advec) const;
+    void getSimilarClustering(const std::size_t& clusteringId, std::vector<int>& idvec) const;
+
     void topN(const std::vector<float>& model, 
         const float offset, 
         const AdIndexManager::ADVector& advec, 
@@ -41,6 +46,7 @@ private:
     const AdIndexManager* indexManager_;
     const TopNClusteringDB* topnClustering_;
     const LaserOnlineModelDB* laserOnlineModel_;
+    const std::vector<std::vector<int> >* similarClustering_;
 };
 
 } }

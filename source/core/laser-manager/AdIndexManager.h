@@ -21,7 +21,6 @@ class AdIndexManager
     friend class LaserRecommend;
 public:
     AdIndexManager(const std::string& workdir, 
-        const std::string& collection,
         const std::size_t clusteringNum,
         const boost::shared_ptr<DocumentManager>& documentManager);
     ~AdIndexManager();
@@ -46,6 +45,7 @@ public:
     void postIndex();
 private:
     void open_();
+    void serializeLastDocid_();
 private:
     const std::string workdir_;
     const std::size_t clusteringNum_;

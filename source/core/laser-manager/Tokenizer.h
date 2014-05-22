@@ -10,6 +10,7 @@ class Tokenizer
 {
 public:
     Tokenizer(const std::string& pcaDict, const std::string& termDict);
+    Tokenizer(const std::string& termDict);
     ~Tokenizer();
 
 public:    

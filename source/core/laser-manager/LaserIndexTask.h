@@ -47,18 +47,25 @@ public:
     {
         laserManager_->indexManager_->preIndex();
         docid_ = laserManager_->indexManager_->getLastDocId();
+        if (docid_ > laserManager_->documentManager_->getMaxDocId())
+        {
+            return false;
+        }
         return true;
     }
 
     virtual bool postProcess()
     {
-        laserManager_->indexManager_->postIndex();
+        boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
+        docid_++;
         laserManager_->indexManager_->setLastDocId(docid_);
+        laserManager_->indexManager_->postIndex();
         return true;
     }
 
     virtual docid_t getLastDocId()
     {
+        boost::shared_lock<boost::shared_mutex> sharedLock(mutex_);
         return docid_;
     }
 
