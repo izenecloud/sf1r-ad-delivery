@@ -18,6 +18,8 @@ class LaserRpcServer;
 } }
 namespace sf1r {
 
+void loadLaserDependency();
+void closeLaserDependency();
 class LaserManager
 {
     typedef std::vector<float> TokenVector;
@@ -38,17 +40,17 @@ public:
     const std::size_t getClustering(const std::string& title) const;
 
     void deleteDocuments(const std::vector<docid_t>& lastDeletedDocIdList);
+
+    friend void loadLaserDependency();
+    friend void closeLaserDependency();
 private:
     std::size_t assignClustering_(const TokenSparseVector& v) const;
     float similarity_(const TokenSparseVector& lv, const TokenVector& rv) const;
 
-    void load_();
-    void close_();
 
     friend class laser::LaserIndexTask;
     friend class laser::LaserRpcServer;
 private:
-    const std::string workdir_;
     const std::string collection_;
     boost::shared_ptr<AdSearchService> adSearchService_;
     const boost::shared_ptr<DocumentManager>& documentManager_;
@@ -57,6 +59,7 @@ private:
     laser::LaserIndexTask* indexTask_;
 
     
+    static std::string workdir_;
     static std::vector<TokenVector>* clusteringContainer_;
     static std::vector<std::vector<int> >* similarClustering_;
     static laser::Tokenizer* tokenizer_;
