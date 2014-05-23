@@ -57,6 +57,7 @@ namespace sf1r
 
 static std::string profile_name_list[] = {"page_categories", "product_categories",
 "product_price", "product_source"};
+static int failed_user_cnt = 0;
 
 static bool convertToUserProfile(const std::string& data, std::map<std::string, std::map<std::string, double> >& user_profile)
 {
@@ -100,7 +101,7 @@ static void get_callback(lcb_t instance, const void* cookie, lcb_error_t error, 
         std::string body((const char*)resp->v.v0.bytes, resp->v.v0.nbytes);
         AdFeedbackMgr::get()->setDMPRsp(std::string((const char*)cookie), body);
     }
-    else
+    else if (error != LCB_KEY_ENOENT)
     {
         LOG(WARNING) << "couchbase get error." << lcb_strerror(instance, error);
     }
@@ -164,7 +165,7 @@ void AdFeedbackMgr::free_conn_to_pool(lcb_t conn)
 }
 
 AdFeedbackMgr::AdFeedbackMgr()
-    :cached_user_profiles_(100000, izenelib::cache::LRLFU)
+    :cached_user_profiles_(1000000, izenelib::cache::LRLFU)
 {
 }
 
@@ -192,6 +193,7 @@ void AdFeedbackMgr::init(const std::string& dmp_server_ip, uint16_t port, const 
     {
         LOG(WARNING) << "schema error." << errinfo << ", file :" << schema_path;
     }
+    failed_user_cnt = 0;
 }
 
 void AdFeedbackMgr::setDMPRsp(const std::string& cookie, const std::string& data)
@@ -231,14 +233,17 @@ bool AdFeedbackMgr::getUserProfileFromDMP(const std::string& user_id, UserProfil
         std::map<std::string, std::string>::const_iterator rsp_it = tmp_rsp_list_.find(user_id);
         if (rsp_it == tmp_rsp_list_.end())
         {
-            LOG(WARNING) << "DMP no response for user : " << user_id;
+            if (++failed_user_cnt % 1000 == 0)
+            {
+                LOG(WARNING) << "DMP no response for user total count: " << failed_user_cnt;
+            }
             result = false;
         }
         else
         {
             if(!convertToUserProfile(rsp_it->second, user_profile.profile_data))
             {
-                LOG(WARNING) << "DMP response data convert to user profile failed." << rsp_it->second;
+                //LOG(WARNING) << "DMP response data convert to user profile failed." << rsp_it->second;
                 result = false;
             }
             else

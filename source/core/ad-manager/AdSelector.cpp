@@ -1022,6 +1022,10 @@ void AdSelector::trainOnlineRecommender(const std::string& user_str_id, const Fe
 {
     if (!ad_feature_item_rec_)
         return;
+    if (is_clicked)
+    {
+        LOG(INFO) << "training clicked data for recommend : " << user_str_id << ". adid: " << ad_docid;
+    }
     ad_feature_item_rec_->update(user_str_id, user_info, ad_docid, is_clicked);
 }
 

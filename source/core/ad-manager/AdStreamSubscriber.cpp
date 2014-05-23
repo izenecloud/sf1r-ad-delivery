@@ -166,6 +166,7 @@ void AdStreamSubscriber::onAdMessage(const std::vector<AdMessage>& msg_list, int
         }
         consume_task_list_[msg_list[i].topic]->push(msg_list[i]);
     }
+    updateServerHeartCheck();
 }
 
 void AdStreamSubscriber::heart_check()

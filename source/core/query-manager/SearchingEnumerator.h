@@ -22,6 +22,7 @@ struct SearchingMode
         SUFFIX_MATCH,
         ZAMBEZI,
         AD_INDEX,
+        AD_RECOMMEND,
         SPONSORED_AD_SEARCH,
         SPONSORED_AD_SEARCH_SUFFIX,
         NotUseSearchingMode

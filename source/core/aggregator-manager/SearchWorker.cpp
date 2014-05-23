@@ -205,7 +205,14 @@ bool SearchWorker::doLocalSearch(const KeywordSearchActionItem& actionItem, Keyw
     QueryIdentity identity;
     makeQueryIdentity(identity, actionItem, resultItem.distSearchInfo_.option_, topKStart);
 
-    if (!searchCache_->get(identity, resultItem))
+    bool disable_cache = false;
+    if (actionItem.searchingMode_.mode_ == SearchingMode::AD_RECOMMEND ||
+        actionItem.searchingMode_.mode_ == SearchingMode::SPONSORED_AD_SEARCH)
+    {
+        disable_cache = true;
+    }
+
+    if (disable_cache || !searchCache_->get(identity, resultItem))
     {
         STOP_PROFILER( cacheoverhead )
 
@@ -491,6 +498,19 @@ bool SearchWorker::getSearchResult_(
             return true;
         }
         if (!miningManager_->getAdIndexManager()->searchByQuery(
+                    actionOperation, resultItem))
+        {
+            return true;
+        }
+        break;
+
+    case SearchingMode::AD_RECOMMEND:
+        if (!miningManager_->getAdIndexManager())
+        {
+            LOG(INFO) << "ad index manager was NULL.";
+            return true;
+        }
+        if (!miningManager_->getAdIndexManager()->searchByRecommend(
                     actionOperation, resultItem))
         {
             return true;

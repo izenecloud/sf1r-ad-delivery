@@ -133,6 +133,8 @@ void AdIndexManager::onAdStreamMessage(const std::vector<AdMessage>& msg_list)
         for (size_t i = 0; i < msg_list.size(); ++i)
         {
             LOG(INFO) << "stream data: " << msg_list[i].body;
+            // print only first log
+            break;
         }
         LOG(INFO) << "got ad stream data. size: " << msg_list.size() << ", total " << cnt;
     }
@@ -160,7 +162,7 @@ void AdIndexManager::onAdStreamMessage(const std::vector<AdMessage>& msg_list)
         bool is_clicked = feedback_info.action > AdFeedbackMgr::View;
         if (enable_ad_sponsored_search_)
         {
-            if (is_clicked)
+            if (is_clicked && !feedback_info.ad_id.empty())
             {
                 ad_sponsored_mgr_->updateAuctionLogData(feedback_info.ad_id,
                     feedback_info.click_cost, feedback_info.click_slot);

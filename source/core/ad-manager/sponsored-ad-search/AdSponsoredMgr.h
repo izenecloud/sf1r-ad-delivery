@@ -78,6 +78,7 @@ private:
     typedef boost::unordered_map<std::string, uint32_t>  StrIdMapT;
     typedef std::vector<std::pair<int, double> > BidAuctionLandscapeT;
 
+    void generateBidPhrase(const std::string& ad_title, std::vector<std::string>& bidphrase);
     double getAdRelevantScore(const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list);
     double getAdQualityScore(ad_docid_t adid, const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list);
     void consumeBudget(ad_docid_t adid, int cost);

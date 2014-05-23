@@ -16,7 +16,10 @@
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/set.hpp>
 #include <boost/serialization/unordered_map.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string/split.hpp>
 
+namespace bfs = boost::filesystem;
 namespace sf1r
 {
 
@@ -132,6 +135,10 @@ void AdSponsoredMgr::init(const std::string& res_path,
     ad_log_mgr_->init(data_path_);
     ad_bid_strategy_.reset(new AdBidStrategy());
 
+    if (!bfs::exists(data_path_))
+    {
+        bfs::create_directories(data_path_);
+    }
     load();
 }
 
@@ -147,6 +154,7 @@ void AdSponsoredMgr::updateAuctionLogData(const std::string& ad_strid,
         LOG(INFO) << "ad string id not found: " << ad_strid;
         return;
     }
+    LOG(INFO) << "ad :" << ad_strid << " used budget: " << click_cost_in_fen << " at slot: " << click_slot;
     consumeBudget(adid, click_cost_in_fen);
 }
 
@@ -325,6 +333,7 @@ void AdSponsoredMgr::miningAdCreatives(ad_docid_t start_id, ad_docid_t end_id)
     }
     ad_bidphrase_list_.resize(end_id + 1);
     std::string ad_title;
+    std::vector<std::string> ad_bid_phrase;
     BidPhraseT bidphrase;
     for(ad_docid_t i = start_id; i <= end_id; ++i)
     {
@@ -332,6 +341,20 @@ void AdSponsoredMgr::miningAdCreatives(ad_docid_t start_id, ad_docid_t end_id)
         doc_mgr_->getPropertyValue(i, "Title", prop_value);
         ad_title = propstr_to_str(prop_value);
         generateBidPhrase(ad_title, bidphrase);
+        doc_mgr_->getPropertyValue(i, "BidPhrase", prop_value);
+        const std::string bidstr = propstr_to_str(prop_value);
+        if (!bidstr.empty())
+        {
+            ad_bid_phrase.clear();
+            boost::split(ad_bid_phrase, bidstr, boost::is_any_of(",;"));
+        }
+        BidKeywordId kid = 0;
+        for(std::size_t j = 0; j < ad_bid_phrase.size(); ++j)
+        {
+            getBidKeywordId(ad_bid_phrase[j], true, kid);
+            bidphrase.push_back(kid);
+        }
+
         ad_bidphrase_list_[i].swap(bidphrase);
         doc_mgr_->getPropertyValue(i, "Campaign", prop_value);
         std::string campaign = propstr_to_str(prop_value);
@@ -341,6 +364,10 @@ void AdSponsoredMgr::miningAdCreatives(ad_docid_t start_id, ad_docid_t end_id)
             campaign = propstr_to_str(prop_value);
         }
         updateAdCampaign(i, campaign);
+        if (i % 10000 == 0)
+        {
+            LOG(INFO) << "mining ad creative for sponsored search : " << i;
+        }
     }
 }
 
@@ -613,59 +640,48 @@ void AdSponsoredMgr::getBidPhrase(const std::string& adid, BidPhraseT& bidphrase
     bidphrase = ad_bidphrase_list_[adid_int];
 }
 
-void AdSponsoredMgr::tokenize(const std::string& str, std::vector<std::string>& tokens)
+void AdSponsoredMgr::generateBidPhrase(const std::string& ad_title, std::vector<std::string>& bidphrase)
 {
-    tokens.clear();
-    std::string pattern = str;
+    bidphrase.clear();
+    std::string pattern = ad_title;
     boost::to_lower(pattern);
 
-    // TODO: tokenize the str using the bid phrase dictionary.
-    //
-    //const bool isLongQuery = QueryNormalizer::get()->isLongQuery(pattern);
-    //boost::shared_ptr<KNlpWrapper> knlpWrapper = KNlpResourceManager::getResource();
-    //if (isLongQuery)
-    //    pattern = knlpWrapper->cleanStopword(pattern);
-    //else
-    //    pattern = knlpWrapper->cleanGarbage(pattern);
+    std::vector<std::pair<std::string, float> > tokens, subtokens;
+    std::string brand;
+    std::string model;
 
-    //ProductTokenParam tokenParam(pattern, false);
-
-    //// use Fuzzy Search Threshold 
-    //if (actionOperation.actionItem_.searchingMode_.useFuzzyThreshold_)
-    //{
-    //    tokenParam.useFuzzyThreshold = true;
-    //    tokenParam.fuzzyThreshold = actionOperation.actionItem_.searchingMode_.fuzzyThreshold_;
-    //    tokenParam.tokensThreshold = actionOperation.actionItem_.searchingMode_.tokensThreshold_;
-    //}
-
-    //productTokenizer_->tokenize(tokenParam);
-
-    //for (ProductTokenParam::TokenScoreListIter it = tokenParam.majorTokens.begin();
-    //    it != tokenParam.majorTokens.end(); ++it)
-    //{
-    //    std::string key;
-    //    it->first.convertString(key, izenelib::util::UString::UTF_8);
-    //    tokens.push_back(key);
-    //}
-    //for (ProductTokenParam::TokenScoreListIter it = tokenParam.minorTokens.begin();
-    //    it != tokenParam.minorTokens.end(); ++it)
-    //{
-    //    std::string key;
-    //    it->first.convertString(key, izenelib::util::UString::UTF_8);
-    //    tokens.push_back(key);
-    //}
+    TitlePCAWrapper::get()->pca(pattern, tokens, brand, model, subtokens, false);
+    if (!brand.empty())
+    {
+        bidphrase.push_back(brand);
+    }
+    if (!model.empty())
+    {
+        bidphrase.push_back(model);
+    }
+    std::sort(tokens.begin(), tokens.end(), sort_tokens_func);
+    for (size_t i = 0; i < tokens.size(); ++i)
+    {
+        if (tokens[i].first.length() > 1)
+        {
+            bidphrase.push_back(tokens[i].first);
+        }
+        if (bidphrase.size() > (std::size_t)MAX_BIDPHRASE_LEN)
+            break;
+    }
 }
 
 void AdSponsoredMgr::generateBidPhrase(const std::string& ad_title, BidPhraseT& bidphrase)
 {
     bidphrase.clear();
+    std::string pattern = ad_title;
+    boost::to_lower(pattern);
     std::vector<std::pair<std::string, float> > tokens, subtokens;
     std::string brand;
     std::string model;
     BidKeywordId kid;
 
-    // TODO: tokenize the str using the bid phrase dictionary.
-    TitlePCAWrapper::get()->pca(ad_title, tokens, brand, model, subtokens, false);
+    TitlePCAWrapper::get()->pca(pattern, tokens, brand, model, subtokens, false);
     if (!brand.empty())
     {
         getBidKeywordId(brand, true, kid);
@@ -718,14 +734,15 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     ad_searcher_->search(actionOperation.actionItem_, searchResult);
 
     std::vector<std::string> query_keyword_list;
+    const std::string& query = actionOperation.actionItem_.env_.queryString_;
     // filter by broad match.
-    std::string query = actionOperation.actionItem_.env_.queryString_;
-    boost::to_lower(query);
     // tokenize the query to the bid keywords.
-    tokenize(query, query_keyword_list);
+    generateBidPhrase(query, query_keyword_list);
+    LOG(INFO) << "query for bid phrase: " << query_keyword_list.size();
     BidPhraseT query_kid_list;
     for(std::size_t i = 0; i < query_keyword_list.size(); ++i)
     {
+        LOG(INFO) << query_keyword_list[i];
         BidKeywordId id;
         if(getBidKeywordId(query_keyword_list[i], false, id))
         {
