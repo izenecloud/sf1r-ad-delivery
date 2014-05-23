@@ -25,7 +25,6 @@ namespace sf1r
 static const int MAX_SEARCH_AD_COUNT = 20000;
 static const int MAX_SELECT_AD_COUNT = 20;
 static const int MAX_RECOMMEND_ITEM_NUM = 10;
-static const std::string adlog_topic = "log_b5t_sf1";
 
 using namespace sponsored;
 
@@ -35,10 +34,7 @@ AdIndexManager::AdIndexManager(
         bool enable_ad_selector,
         bool enable_ad_rec,
         bool enable_ad_sponsored_search,
-        const std::string& dmp_ip,
-        uint16_t dmp_port,
-        const std::string& stream_log_ip,
-        uint16_t stream_log_port,
+        const std::string& adlog_topic,
         boost::shared_ptr<DocumentManager>& dm,
         izenelib::ir::idmanager::IDManager* id_manager,
         NumericPropertyTableBuilder* ntb,
@@ -51,29 +47,26 @@ AdIndexManager::AdIndexManager(
       enable_ad_selector_(enable_ad_selector),
       enable_ad_rec_(enable_ad_rec),
       enable_ad_sponsored_search_(enable_ad_sponsored_search),
+      adlog_topic_(adlog_topic),
       documentManager_(dm),
       id_manager_(id_manager),
       numericTableBuilder_(ntb),
       ad_searcher_(searcher),
       groupManager_(grp_mgr)
 {
-    AdFeedbackMgr::get()->init(dmp_ip, dmp_port, ad_resource_path + "/feedback-schema.json");
-    AdStreamSubscriber::get()->init(stream_log_ip, stream_log_port);
 }
 
 AdIndexManager::~AdIndexManager()
 {
     // unsubscribe should make sure all callback finished and 
     // no any callback will be send later.
-    AdStreamSubscriber::get()->unsubscribe(adlog_topic);
+    AdStreamSubscriber::get()->unsubscribe(adlog_topic_);
 
     if(adMiningTask_)
         delete adMiningTask_;
 
     if (ad_click_predictor_)
         ad_click_predictor_->stop();
-
-    AdStreamSubscriber::get()->stop();
 }
 
 bool AdIndexManager::buildMiningTask()
@@ -109,14 +102,14 @@ bool AdIndexManager::buildMiningTask()
     if (enable_ad_sponsored_search_)
     {
         ad_sponsored_mgr_.reset(new AdSponsoredMgr());
-        ad_sponsored_mgr_->init(ad_res_path_ + "/ad_sponsored", ad_data_path_ + "ad_sponsored",
+        ad_sponsored_mgr_->init(ad_res_path_ + "/ad_sponsored", ad_data_path_ + "/ad_sponsored",
             groupManager_, documentManager_.get(), id_manager_, ad_searcher_);
     }
 
     adMiningTask_ = new AdMiningTask(indexPath_, documentManager_, ad_dnf_index_, ad_selector_, rwMutex_);
     adMiningTask_->setPostProcessFunc(boost::bind(&AdIndexManager::postMining, this, _1, _2));
 
-    bool ret = AdStreamSubscriber::get()->subscribe(adlog_topic, boost::bind(&AdIndexManager::onAdStreamMessage, this, _1));
+    bool ret = AdStreamSubscriber::get()->subscribe(adlog_topic_, boost::bind(&AdIndexManager::onAdStreamMessage, this, _1));
     if (!ret)
     {
         LOG(ERROR) << "subscribe the click log failed !!!!!!";

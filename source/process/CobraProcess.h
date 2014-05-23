@@ -35,7 +35,11 @@ private:
 
     bool initNodeManager();
 
+    void initAdServer();
+
     void stopDriver();
+
+    void stopAdServer();
 
     bool startDistributedServer();
 

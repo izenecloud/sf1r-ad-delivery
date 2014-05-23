@@ -48,10 +48,7 @@ public:
             bool enable_ad_selector,
             bool enable_ad_rec,
             bool enable_ad_sponsored_search,
-            const std::string& dmp_ip,
-            uint16_t dmp_port,
-            const std::string& stream_log_ip,
-            uint16_t stream_log_port,
+            const std::string& adlog_topic,
             boost::shared_ptr<DocumentManager>& dm,
             izenelib::ir::idmanager::IDManager* id_manager,
             NumericPropertyTableBuilder* ntb,
@@ -102,6 +99,7 @@ private:
     bool enable_ad_selector_;
     bool enable_ad_rec_;
     bool enable_ad_sponsored_search_;
+    std::string adlog_topic_;
 
     boost::shared_ptr<DocumentManager>& documentManager_;
     izenelib::ir::idmanager::IDManager* id_manager_;

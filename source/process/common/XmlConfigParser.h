@@ -19,6 +19,7 @@
 #include <configuration-manager/CollectionParameterConfig.h>
 #include <configuration-manager/LogServerConnectionConfig.h>
 #include <configuration-manager/GroupConfig.h>
+#include <configuration-manager/AdIndexConfig.h>
 #include <mining-manager/group-manager/ontology_rep_item.h>
 #include <core/common/TermTypeDetector.h>
 #include <core/common/ByteSizeParser.h>
@@ -631,6 +632,11 @@ public:
     void addServiceWorker(const std::string& service, const std::string& coll);
     void removeServiceWorker(const std::string& service, const std::string& coll);
 
+    const AdCommonConfig& getAdCommonConfig()
+    {
+        return adconfig_;
+    }
+
 private:
     /// @brief                  Parse <System> settings
     /// @param system           Pointer to the Element
@@ -673,6 +679,8 @@ private:
     /// @brief                  Parse <Broker> settings
     /// @param system           Pointer to the Element
     void parseDistributedUtil(const ticpp::Element * distributedUtil);
+
+    void parseAdCommonConfig(const ticpp::Element * adconfig);
 
 public:
     //----------------------------  PRIVATE MEMBER VARIABLES  ----------------------------
@@ -722,6 +730,8 @@ public:
 
     /// @brief  Configuraitons for LAManager
     LAManagerConfig laManagerConfig_;
+
+    AdCommonConfig adconfig_;
 
     std::string laDictionaryPath_;
 

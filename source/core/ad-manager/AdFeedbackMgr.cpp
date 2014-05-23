@@ -182,18 +182,29 @@ AdFeedbackMgr::~AdFeedbackMgr()
     dmp_conn_pool_.clear();
 }
 
-void AdFeedbackMgr::init(const std::string& dmp_server_ip, uint16_t port, const std::string& schema_path)
+void AdFeedbackMgr::init(const std::string& dmp_server_ip, uint16_t port)
 {
     dmp_server_ip_ = dmp_server_ip;
     dmp_server_port_ = port;
 
-    std::ifstream ifs(schema_path.c_str());
-    std::string errinfo;
-    if (!avro::compileJsonSchema(ifs, log_schema, errinfo))
-    {
-        LOG(WARNING) << "schema error." << errinfo << ", file :" << schema_path;
-    }
+    //std::ifstream ifs(schema_path.c_str());
+    //std::string errinfo;
+    //if (!avro::compileJsonSchema(ifs, log_schema, errinfo))
+    //{
+    //    LOG(WARNING) << "schema error." << errinfo << ", file :" << schema_path;
+    //}
     failed_user_cnt = 0;
+}
+
+void AdFeedbackMgr::stop()
+{
+    boost::unique_lock<boost::mutex> dmp_pool_lock_;
+    while (!dmp_conn_pool_.empty())
+    {
+        lcb_t ret = dmp_conn_pool_.front();
+        dmp_conn_pool_.pop_front();
+        lcb_destroy(ret);
+    }
 }
 
 void AdFeedbackMgr::setDMPRsp(const std::string& cookie, const std::string& data)

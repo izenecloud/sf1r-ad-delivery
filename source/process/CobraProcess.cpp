@@ -30,6 +30,8 @@
 #include <util/singleton.h>
 
 #include <question-answering/QuestionAnalysis.h>
+#include <ad-manager/AdFeedbackMgr.h>
+#include <ad-manager/AdStreamSubscriber.h>
 
 #include <laser-manager/LaserManager.h>
 
@@ -85,6 +87,8 @@ bool CobraProcess::initialize(const std::string& configFileDir)
     initDriverServer();
 
     initNodeManager();
+
+    initAdServer();
 
     return true;
 }
@@ -246,6 +250,27 @@ bool CobraProcess::initNodeManager()
     return true;
 }
 
+void CobraProcess::initAdServer()
+{
+    const AdCommonConfig& adconfig = SF1Config::get()->getAdCommonConfig();
+    if (adconfig.is_enabled)
+    {
+        LOG(INFO) << "ad server enabled";
+        AdFeedbackMgr::get()->init(adconfig.dmp_ip, adconfig.dmp_port);
+        AdStreamSubscriber::get()->init(adconfig.stream_log_ip, adconfig.stream_log_port);
+    }
+}
+
+void CobraProcess::stopAdServer()
+{
+    const AdCommonConfig& adconfig = SF1Config::get()->getAdCommonConfig();
+    if (adconfig.is_enabled)
+    {
+        AdStreamSubscriber::get()->stop();
+        AdFeedbackMgr::get()->stop();
+    }
+}
+
 void CobraProcess::stopDriver()
 {
     if (SF1Config::get()->isDistributedNode())
@@ -256,6 +281,7 @@ void CobraProcess::stopDriver()
     {
         driverServer_->stop();
     }
+    stopAdServer();
 }
 
 bool CobraProcess::startDistributedServer()

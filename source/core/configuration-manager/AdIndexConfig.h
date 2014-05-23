@@ -7,6 +7,32 @@
 namespace sf1r
 {
 
+class AdCommonConfig
+{
+public:
+    bool is_enabled;
+    std::string dmp_ip;
+    uint16_t dmp_port;
+    std::string stream_log_ip;
+    uint16_t stream_log_port;
+
+    AdCommonConfig()
+        : is_enabled(false)
+    {
+    }
+private:
+    friend class boost::serialization::access;
+    template <typename Archive>
+    void serialize(Archive & ar, const unsigned int version)
+    {
+        ar & is_enabled;
+        ar & dmp_ip;
+        ar & dmp_port;
+        ar & stream_log_ip;
+        ar & stream_log_port;
+    }
+};
+
 /**
  * @brief The configuration for <Ad Index>.
  */
@@ -19,10 +45,7 @@ public:
     bool enable_selector;
     bool enable_rec;
     bool enable_sponsored_search;
-    std::string dmp_ip;
-    uint16_t dmp_port;
-    std::string stream_log_ip;
-    uint16_t stream_log_port;
+    std::string adlog_topic;
 
     AdIndexConfig() : isEnable(false)
                       , enable_selector(false)
@@ -42,10 +65,7 @@ private:
         ar & enable_selector;
         ar & enable_rec;
         ar & enable_sponsored_search;
-        ar & dmp_ip;
-        ar & dmp_port;
-        ar & stream_log_ip;
-        ar & stream_log_port;
+        ar & adlog_topic;
     }
 };
 

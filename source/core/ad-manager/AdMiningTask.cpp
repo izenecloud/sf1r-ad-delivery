@@ -27,8 +27,13 @@ AdMiningTask::~AdMiningTask()
 
 bool AdMiningTask::buildDocument(docid_t docID, const Document& doc)
 {
+    if (ad_selector_)
+        ad_selector_->buildDocument(docID, doc);
+
     std::string sDnf;
     doc.getProperty("DNF", sDnf);
+    if (sDnf.empty())
+        return true;
     DNF dnf;
     if (!sf1r::DNFParser::parseDNF(sDnf, dnf))
         return false;
@@ -50,8 +55,6 @@ bool AdMiningTask::buildDocument(docid_t docID, const Document& doc)
     dnf.conjunctions[0].assignments.push_back(a2);
     dnf.conjunctions[0].assignments.push_back(a3);
     incrementalAdIndex_->addDNF(docID, dnf);
-    if (ad_selector_)
-        ad_selector_->buildDocument(docID, doc);
     return true;
 }
 

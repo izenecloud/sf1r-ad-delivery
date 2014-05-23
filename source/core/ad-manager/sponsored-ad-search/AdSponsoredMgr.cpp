@@ -369,6 +369,7 @@ void AdSponsoredMgr::miningAdCreatives(ad_docid_t start_id, ad_docid_t end_id)
             LOG(INFO) << "mining ad creative for sponsored search : " << i;
         }
     }
+    save();
 }
 
 void AdSponsoredMgr::updateAdCampaign(ad_docid_t adid, const std::string& campaign_name)
@@ -750,7 +751,13 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
         }
     }
     if (query_kid_list.empty())
+    {
+        LOG(INFO) << "no hit keyword.";
+        searchResult.totalCount_ = 0;
+        searchResult.topKDocs_.resize(0);
+        searchResult.topKRankScoreList_.resize(0);
         return false;
+    }
     std::sort(query_kid_list.begin(), query_kid_list.end());
     uint32_t first_kid = query_kid_list[0];
     uint32_t last_kid = query_kid_list[query_kid_list.size() - 1];

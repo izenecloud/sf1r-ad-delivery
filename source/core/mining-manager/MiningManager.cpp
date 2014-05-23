@@ -1646,8 +1646,7 @@ bool MiningManager::initAdIndexManager_(AdIndexConfig& adIndexConfig)
         adIndexConfig.enable_selector,
         adIndexConfig.enable_rec,
         adIndexConfig.enable_sponsored_search,
-        adIndexConfig.dmp_ip, adIndexConfig.dmp_port,
-        adIndexConfig.stream_log_ip, adIndexConfig.stream_log_port,
+        adIndexConfig.adlog_topic,
         document_manager_, idManager_.get(), numericTableBuilder_,
         adSearchService_.get(), groupManager_);
     adIndexManager_->buildMiningTask();

@@ -189,6 +189,7 @@
                 <xs:element ref="DistributedCommon" minOccurs="1" maxOccurs="1"/>
                 <xs:element ref="DistributedTopology" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="DistributedUtil" minOccurs="1" maxOccurs="1"/>
+                <xs:element ref="AdConfig" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -315,6 +316,14 @@
             </xs:sequence>
         </xs:complexType>
     </xs:element>
+    <xs:element name="AdConfig">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="AdDMPServer" minOccurs="1" maxOccurs="1"/>
+                <xs:element ref="AdStreamServer" minOccurs="1" maxOccurs="1"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
     <xs:element name="ZooKeeper">
         <xs:complexType>
             <xs:attribute name="disable" type="YesNoType" use="required"/>
@@ -329,6 +338,18 @@
             <xs:attribute name="mountdir" type="xs:string" use="optional"/>
             <xs:attribute name="server" type="xs:string" use="optional"/>
             <xs:attribute name="port" type="PortType" use="optional"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="AdDMPServer">
+        <xs:complexType>
+            <xs:attribute name="ip" type="xs:string" use="required"/>
+            <xs:attribute name="port" type="xs:string" use="required"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="AdStreamServer">
+        <xs:complexType>
+            <xs:attribute name="ip" type="xs:string" use="required"/>
+            <xs:attribute name="port" type="xs:string" use="required"/>
         </xs:complexType>
     </xs:element>
 </xs:schema>

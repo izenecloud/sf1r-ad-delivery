@@ -635,6 +635,7 @@ void SF1Config::parseDeploymentSettings(const ticpp::Element * deploy)
     parseDistributedCommon(getUniqChildElement(deploy, "DistributedCommon"));
     parseDistributedTopology(getUniqChildElement(deploy, "DistributedTopology")); // Make sure "DistributedCommon" parsed first.
     parseDistributedUtil(getUniqChildElement(deploy, "DistributedUtil"));
+    parseAdCommonConfig(getUniqChildElement(deploy, "AdConfig", false));
 }
 
 void SF1Config::parseBrokerAgent(const ticpp::Element * brokerAgent)
@@ -792,6 +793,22 @@ void SF1Config::parseDistributedUtil(const ticpp::Element * distributedUtil)
     getAttribute(dfs, "mountdir", distributedUtilConfig_.dfsConfig_.mountDir_, false);
     getAttribute(dfs, "server", distributedUtilConfig_.dfsConfig_.server_, false);
     getAttribute(dfs, "port", distributedUtilConfig_.dfsConfig_.port_, false);
+}
+
+void SF1Config::parseAdCommonConfig(const ticpp::Element * adconfig_ele)
+{
+    if (!adconfig_ele)
+        return;
+    getAttribute(adconfig_ele, "enable", adconfig_.is_enabled);
+    if (adconfig_.is_enabled)
+    {
+        ticpp::Element* dmp_ele = getUniqChildElement(adconfig_ele, "AdDMPServer");
+        getAttribute(dmp_ele, "ip", adconfig_.dmp_ip);
+        getAttribute_IntType(dmp_ele, "port", adconfig_.dmp_port);
+        ticpp::Element* stream_ele = getUniqChildElement(adconfig_ele, "AdStreamServer");
+        getAttribute(stream_ele, "ip", adconfig_.stream_log_ip);
+        getAttribute_IntType(stream_ele, "port", adconfig_.stream_log_port);
+    }
 }
 
 // ------------------------- CollectionConfig-------------------------
@@ -1781,10 +1798,7 @@ void CollectionConfig::parseAdIndexNode(
     getAttribute(adIndexNode, "enable_selector", adIndexConfig.enable_selector);
     getAttribute(adIndexNode, "enable_rec", adIndexConfig.enable_rec);
     getAttribute(adIndexNode, "enable_sponsored_search", adIndexConfig.enable_sponsored_search);
-    getAttribute(adIndexNode, "dmp_ip", adIndexConfig.dmp_ip);
-    getAttribute_IntType(adIndexNode, "dmp_port", adIndexConfig.dmp_port);
-    getAttribute(adIndexNode, "stream_log_ip", adIndexConfig.stream_log_ip);
-    getAttribute_IntType(adIndexNode, "stream_log_port", adIndexConfig.stream_log_port);
+    getAttribute(adIndexNode, "adlog_topic", adIndexConfig.adlog_topic);
     miningSchema.ad_index_config.isEnable = true;
 }
     
