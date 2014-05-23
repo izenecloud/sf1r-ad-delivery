@@ -322,6 +322,7 @@
                 <xs:element ref="AdDMPServer" minOccurs="1" maxOccurs="1"/>
                 <xs:element ref="AdStreamServer" minOccurs="1" maxOccurs="1"/>
             </xs:sequence>
+            <xs:attribute name="enable" type="YesNoType" use="required"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="ZooKeeper">
