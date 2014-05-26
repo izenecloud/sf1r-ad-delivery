@@ -667,8 +667,6 @@ void AdSponsoredMgr::generateBidPhrase(const std::string& ad_title, std::vector<
         {
             bidphrase.push_back(tokens[i].first);
         }
-        if (bidphrase.size() > (std::size_t)MAX_BIDPHRASE_LEN)
-            break;
     }
 }
 
@@ -758,6 +756,7 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
         searchResult.topKRankScoreList_.resize(0);
         return false;
     }
+
     std::sort(query_kid_list.begin(), query_kid_list.end());
     uint32_t first_kid = query_kid_list[0];
     uint32_t last_kid = query_kid_list[query_kid_list.size() - 1];
@@ -811,6 +810,7 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     searchResult.topKDocs_.resize(count);
     searchResult.topKRankScoreList_.resize(count);
     std::set<BidKeywordId> all_keyword_list;
+    all_keyword_list.insert(query_kid_list.begin(), query_kid_list.end());
     std::vector<std::string> ranked_ad_strlist(count);
 
     try
@@ -822,6 +822,8 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
             const ScoreSponsoredAdDoc& item = ranked_queue.pop();
             searchResult.topKDocs_[i] = item.docId;
             searchResult.topKRankScoreList_[i] = item.score;
+
+            getAdStrIdFromAdId(item.docId, ranked_ad_strlist[i]);
 
             if (i == count - 1)
             {
