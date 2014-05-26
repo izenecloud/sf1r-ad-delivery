@@ -1794,12 +1794,12 @@ void CollectionConfig::parseAdIndexNode(
 
     AdIndexConfig& adIndexConfig = miningSchema.ad_index_config;
 
-    getAttribute(adIndexNode, "ctrpath", adIndexConfig.clickPredictorWorkingPath);
     getAttribute(adIndexNode, "enable_selector", adIndexConfig.enable_selector);
     getAttribute(adIndexNode, "enable_rec", adIndexConfig.enable_rec);
     getAttribute(adIndexNode, "enable_sponsored_search", adIndexConfig.enable_sponsored_search);
     getAttribute(adIndexNode, "adlog_topic", adIndexConfig.adlog_topic);
     miningSchema.ad_index_config.isEnable = true;
+    adIndexConfig.ad_common_data_path = collectionMeta.getCollectionPath().getBasePath() + "/ad_common_data";
 }
     
 void CollectionConfig::parseLaserIndexNode(

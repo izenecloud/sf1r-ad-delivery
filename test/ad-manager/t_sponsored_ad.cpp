@@ -39,23 +39,24 @@ int main()
     using sp::AdAuctionLogMgr;
     AdAuctionLogMgr ad_auctionlog_mgr_;
 
-    std::vector<sp::BidKeywordId>  heavy_searched_keyword;
-    std::vector<sp::BidKeywordId>  normal_searched_keyword;
-    std::vector<sp::BidKeywordId>  less_searched_keyword;
-    for(sp::BidKeywordId kid = 1; kid < MAX_TEST_KID; ++kid)
+    std::vector<sp::AdAuctionLogMgr::LogBidKeywordId>  heavy_searched_keyword;
+    std::vector<sp::AdAuctionLogMgr::LogBidKeywordId>  normal_searched_keyword;
+    std::vector<sp::AdAuctionLogMgr::LogBidKeywordId>  less_searched_keyword;
+    for(std::size_t kid = 1; kid < MAX_TEST_KID; ++kid)
     {
         if (kid % 7 <= 2)
         {
-            heavy_searched_keyword.push_back(kid);
+            heavy_searched_keyword.push_back(gen_rand_str());
         }
         else if (kid % 7 <=5)
         {
-            normal_searched_keyword.push_back(kid);
+            normal_searched_keyword.push_back(gen_rand_str());
         }
         else
-            less_searched_keyword.push_back(kid);
+            less_searched_keyword.push_back(gen_rand_str());
     }
-    std::map<std::string, sp::BidPhraseT>  test_ad_bid_list;
+    typedef std::vector<sp::AdAuctionLogMgr::LogBidKeywordId> LogBidPhraseListT;
+    std::map<std::string, LogBidPhraseListT>  test_ad_bid_list;
     std::vector<std::string>  slot1_adstr_list;
     std::vector<std::string>  slot2_adstr_list;
     std::vector<std::string>  slot3_adstr_list;
@@ -85,26 +86,26 @@ int main()
 
     std::size_t MAX_SEARCH_NUM = 10000000;
     std::vector<std::string> searched_list;
-    std::set<sp::BidKeywordId> keyword_list;
+    std::set<sp::AdAuctionLogMgr::LogBidKeywordId> keyword_list;
     std::vector<std::string>  searched_clicked_list;
-    std::vector<sp::BidPhraseT> clicked_bid_phrase_list;
+    std::vector<LogBidPhraseListT> clicked_bid_phrase_list;
     for(std::size_t i = 0; i < MAX_SEARCH_NUM; ++i)
     {
         searched_list.clear();
         keyword_list.clear();
         int k = rand();
         std::string adstr = slot1_adstr_list[k % slot1_adstr_list.size()];
-        const sp::BidPhraseT& bidphrase = test_ad_bid_list[adstr];
+        const LogBidPhraseListT& bidphrase = test_ad_bid_list[adstr];
         keyword_list.insert(bidphrase.begin(), bidphrase.end());
         searched_list.push_back(adstr);
 
         adstr = slot2_adstr_list[k % slot2_adstr_list.size()];
-        const sp::BidPhraseT& bidphrase2 = test_ad_bid_list[adstr];
+        const LogBidPhraseListT& bidphrase2 = test_ad_bid_list[adstr];
         keyword_list.insert(bidphrase2.begin(), bidphrase2.end());
         searched_list.push_back(adstr);
 
         adstr = slot3_adstr_list[k % slot3_adstr_list.size()];
-        const sp::BidPhraseT& bidphrase3 = test_ad_bid_list[adstr];
+        const LogBidPhraseListT& bidphrase3 = test_ad_bid_list[adstr];
         keyword_list.insert(bidphrase3.begin(), bidphrase3.end());
         searched_list.push_back(adstr);
 
@@ -114,7 +115,7 @@ int main()
         {
             int click_slot_rand = rand() % 10000;
             std::string clicked_adstr;
-            sp::BidPhraseT clicked_keyword;
+            LogBidPhraseListT clicked_keyword;
             int click_cost = 10;
             uint32_t click_slot = 0;
             if (click_slot_rand < 7000)
@@ -160,7 +161,7 @@ int main()
     {
         for(std::size_t j = 0; j < clicked_bid_phrase_list[i].size(); ++j)
         {
-            sp::BidKeywordId bid = clicked_bid_phrase_list[i][j];
+            sp::AdAuctionLogMgr::LogBidKeywordId bid = clicked_bid_phrase_list[i][j];
             ofs << bid << ":" << ad_auctionlog_mgr_.getAvgKeywordClickedNum(bid) << ", cost: "
                 << ad_auctionlog_mgr_.getKeywordAvgCost(bid, 0) << "-"
                 << ad_auctionlog_mgr_.getKeywordAvgCost(bid, 1) << "-"
@@ -171,7 +172,7 @@ int main()
 
 
     std::vector<std::vector<std::pair<int, double> > > cost_click_list;
-    std::vector<sp::BidKeywordId> all_keys;
+    std::vector<sp::AdAuctionLogMgr::LogBidKeywordId> all_keys;
     ad_auctionlog_mgr_.getKeywordBidLandscape(all_keys, cost_click_list);
     ofs << "keyword landscape: " << std::endl;
     for(std::size_t i = 0; i < all_keys.size(); ++i)

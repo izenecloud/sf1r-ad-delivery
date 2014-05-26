@@ -45,6 +45,7 @@ public:
     AdIndexManager(
             const std::string& ad_resource_path,
             const std::string& ad_data_path,
+            const std::string& ad_common_data_path,
             bool enable_ad_selector,
             bool enable_ad_rec,
             bool enable_ad_sponsored_search,
@@ -92,9 +93,9 @@ private:
     typedef izenelib::ir::be_index::DNFInvIndex AdDNFIndexType;
     std::string indexPath_;
 
-    std::string clickPredictorWorkingPath_;
     std::string ad_res_path_;
     std::string ad_data_path_;
+    std::string ad_common_data_path_;
 
     bool enable_ad_selector_;
     bool enable_ad_rec_;

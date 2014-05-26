@@ -40,8 +40,7 @@ class AdIndexConfig
 {
 public:
     bool isEnable;
-    std::string indexFilePath;
-    std::string clickPredictorWorkingPath;
+    std::string ad_common_data_path;
     bool enable_selector;
     bool enable_rec;
     bool enable_sponsored_search;
@@ -60,8 +59,7 @@ private:
     void serialize(Archive & ar, const unsigned int version)
     {
         ar & isEnable;
-        ar & indexFilePath;
-        ar & clickPredictorWorkingPath;
+        ar & ad_common_data_path;
         ar & enable_selector;
         ar & enable_rec;
         ar & enable_sponsored_search;

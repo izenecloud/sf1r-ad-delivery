@@ -120,25 +120,27 @@ AdSponsoredMgr::~AdSponsoredMgr()
 
 void AdSponsoredMgr::init(const std::string& res_path,
     const std::string& data_path,
+    const std::string& logdata_path,
     faceted::GroupManager* grp_mgr,
     DocumentManager* doc_mgr,
     izenelib::ir::idmanager::IDManager* id_manager,
     AdSearchService* searcher)
 {
     data_path_ = data_path;
+
+    if (!bfs::exists(data_path_))
+    {
+        bfs::create_directories(data_path_);
+    }
     grp_mgr_ = grp_mgr;
     doc_mgr_ = doc_mgr;
     id_manager_ = id_manager;
     ad_searcher_ = searcher;
     keyword_value_id_list_.rehash(MAX_DIFF_BID_KEYWORD_NUM);
     ad_log_mgr_.reset(new AdAuctionLogMgr());
-    ad_log_mgr_->init(data_path_);
+    ad_log_mgr_->init(logdata_path);
     ad_bid_strategy_.reset(new AdBidStrategy());
 
-    if (!bfs::exists(data_path_))
-    {
-        bfs::create_directories(data_path_);
-    }
     load();
 }
 
@@ -146,8 +148,9 @@ void AdSponsoredMgr::updateAuctionLogData(const std::string& ad_strid,
     int click_cost_in_fen, uint32_t click_slot)
 {
     BidPhraseT bidphrase;
-    getBidPhrase(ad_strid, bidphrase);
-    ad_log_mgr_->updateAuctionLogData(ad_strid, bidphrase, click_cost_in_fen, click_slot);
+    std::vector<LogBidKeywordId> logbid_list;
+    getBidPhrase(ad_strid, bidphrase, logbid_list);
+    ad_log_mgr_->updateAuctionLogData(ad_strid, logbid_list, click_cost_in_fen, click_slot);
     ad_docid_t adid;
     if (!getAdIdFromAdStrId(ad_strid, adid))
     {
@@ -255,6 +258,7 @@ void AdSponsoredMgr::load()
             izd.read_image(ad_bidphrase_list_);
         }
 
+        LOG(INFO) << "ad bidphrase loaded : " << ad_bidphrase_list_.size();
         {
             len = 0;
             ifs.read((char*)&len, sizeof(len));
@@ -273,6 +277,7 @@ void AdSponsoredMgr::load()
             izd.read_image(keyword_value_id_list_);
         }
 
+        LOG(INFO) << "keyword info loaded: " << keyword_id_value_list_.size();
         {
             len = 0;
             ifs.read((char*)&len, sizeof(len));
@@ -290,6 +295,8 @@ void AdSponsoredMgr::load()
             izenelib::util::izene_deserialization<std::vector<int> > izd(data.data(), data.size());
             izd.read_image(ad_budget_left_list_);
         }
+
+        LOG(INFO) << "campaign budget info loaded: " << ad_budget_list_.size();
 
         {
             len = 0;
@@ -317,6 +324,7 @@ void AdSponsoredMgr::load()
             izenelib::util::izene_deserialization<std::vector<uint32_t> > izd(data.data(), data.size());
             izd.read_image(ad_campaign_belong_list_);
         }
+        LOG(INFO) << "campaign name info loaded: " << ad_campaign_name_list_.size();
     }
     ifs.close();
 
@@ -364,7 +372,7 @@ void AdSponsoredMgr::miningAdCreatives(ad_docid_t start_id, ad_docid_t end_id)
             campaign = propstr_to_str(prop_value);
         }
         updateAdCampaign(i, campaign);
-        if (i % 10000 == 0)
+        if (i % 100000 == 0)
         {
             LOG(INFO) << "mining ad creative for sponsored search : " << i;
         }
@@ -408,7 +416,7 @@ void AdSponsoredMgr::updateAdCampaign(ad_docid_t adid, const std::string& campai
 }
 
 void AdSponsoredMgr::getBidStatisticalData(const std::set<BidKeywordId>& bidkey_list,
-    const std::map<BidKeywordId, BidAuctionLandscapeT>& bidkey_cpc_map,
+    const std::map<LogBidKeywordId, BidAuctionLandscapeT>& bidkey_cpc_map,
     std::list<AdQueryStatisticInfo>& ad_statistical_data)
 {
     std::set<BidKeywordId>::const_iterator bid_it = bidkey_list.begin();
@@ -416,9 +424,11 @@ void AdSponsoredMgr::getBidStatisticalData(const std::set<BidKeywordId>& bidkey_
     {
         const BidKeywordId& bid = *bid_it;
         ad_statistical_data.push_back(AdQueryStatisticInfo());
-        ad_statistical_data.back().impression_ = ad_log_mgr_->getKeywordAvgDailyImpression(bid);
+        LogBidKeywordId logbid;
+        getLogBidKeywordId(bid, logbid);
+        ad_statistical_data.back().impression_ = ad_log_mgr_->getKeywordAvgDailyImpression(logbid);
         ad_statistical_data.back().minBid_ = LOWEST_CLICK_COST;
-        std::map<BidKeywordId, BidAuctionLandscapeT>::const_iterator it = bidkey_cpc_map.find(bid);
+        std::map<LogBidKeywordId, BidAuctionLandscapeT>::const_iterator it = bidkey_cpc_map.find(logbid);
         if (it == bidkey_cpc_map.end())
             continue;
         for (std::size_t j = 0; j < it->second.size(); ++j)
@@ -435,10 +445,10 @@ void AdSponsoredMgr::resetDailyLeftBudget()
     ad_budget_left_list_ = ad_budget_list_;
 
     std::list<AdQueryStatisticInfo> ad_statistical_data;
-    std::vector<BidKeywordId> keyword_list;
+    std::vector<LogBidKeywordId> keyword_list;
     std::vector<AdAuctionLogMgr::BidAuctionLandscapeT> cost_click_list;
     ad_log_mgr_->getKeywordBidLandscape(keyword_list, cost_click_list);
-    std::map<BidKeywordId, BidAuctionLandscapeT> bidkey_cpc_map;
+    std::map<LogBidKeywordId, BidAuctionLandscapeT> bidkey_cpc_map;
     for(std::size_t i = 0; i < keyword_list.size(); ++i)
     {
         bidkey_cpc_map[keyword_list[i]] = cost_click_list[i];
@@ -539,13 +549,16 @@ void AdSponsoredMgr::getAdBidPrice(ad_docid_t adid, const std::string& query,
         int left_budget = ad_budget_left_list_[campaign_id];
         int used_bugget = ad_budget_list_[campaign_id] - left_budget;
         AdQueryStatisticInfo info;
+        LogBidKeywordId logkid;
         for (std::size_t i = 0; i < bidphrase.size(); ++i)
         {
             BidKeywordId bid = bidphrase[i];
-            info.impression_ = ad_log_mgr_->getKeywordAvgDailyImpression(bid) - ad_log_mgr_->getKeywordCurrentImpression(bid);
+            getLogBidKeywordId(bid, logkid);
+            int current_impression = 0;
+            ad_log_mgr_->getKeywordStatData(logkid, current_impression, info.impression_,
+                info.cpc_, info.ctr_);
+            info.impression_ -= current_impression;
             info.minBid_ = LOWEST_CLICK_COST;
-            ad_log_mgr_->getKeywordCTR(bid, info.ctr_);
-            ad_log_mgr_->getKeywordAvgCost(bid, info.cpc_);
             //info.cpc_.clear();
             //for (std::size_t j = 0; j < cpc_list.size(); ++j)
             //{
@@ -630,7 +643,19 @@ bool AdSponsoredMgr::getBidKeywordId(const std::string& keyword, bool insert, Bi
     return true;
 }
 
-void AdSponsoredMgr::getBidPhrase(const std::string& adid, BidPhraseT& bidphrase)
+void AdSponsoredMgr::getLogBidKeywordId(const BidKeywordId& id, LogBidKeywordId& keyword)
+{
+    if (id >= keyword_id_value_list_.size())
+    {
+        keyword.clear();
+        return;
+    }
+    keyword = keyword_id_value_list_[id];
+}
+
+
+void AdSponsoredMgr::getBidPhrase(const std::string& adid,
+    BidPhraseT& bidphrase)
 {
     bidphrase.clear();
     ad_docid_t adid_int = 0;
@@ -639,6 +664,19 @@ void AdSponsoredMgr::getBidPhrase(const std::string& adid, BidPhraseT& bidphrase
     if (adid_int > ad_bidphrase_list_.size())
         return;
     bidphrase = ad_bidphrase_list_[adid_int];
+}
+
+void AdSponsoredMgr::getBidPhrase(const std::string& adid,
+    BidPhraseT& bidphrase,
+    std::vector<LogBidKeywordId>& logbid_list)
+{
+    logbid_list.clear();
+    getBidPhrase(adid, bidphrase);
+    logbid_list.resize(bidphrase.size());
+    for (std::size_t i = 0; i < bidphrase.size(); ++i)
+    {
+        getLogBidKeywordId(bidphrase[i], logbid_list[i]);
+    }
 }
 
 void AdSponsoredMgr::generateBidPhrase(const std::string& ad_title, std::vector<std::string>& bidphrase)
@@ -809,8 +847,8 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     int count = (int)ranked_queue.size();
     searchResult.topKDocs_.resize(count);
     searchResult.topKRankScoreList_.resize(count);
-    std::set<BidKeywordId> all_keyword_list;
-    all_keyword_list.insert(query_kid_list.begin(), query_kid_list.end());
+    std::set<LogBidKeywordId> all_keyword_list;
+    all_keyword_list.insert(query_keyword_list.begin(), query_keyword_list.end());
     std::vector<std::string> ranked_ad_strlist(count);
 
     try
@@ -872,8 +910,6 @@ bool AdSponsoredMgr::getAdStrIdFromAdId(ad_docid_t adid, std::string& ad_strid)
     }
     return false;
 }
-
-
 } // namespace of sponsored
 
 }

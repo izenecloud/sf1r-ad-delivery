@@ -268,7 +268,7 @@ bool AdStreamSubscriber::subscribe(const std::string& topic, MessageCBFuncT cb)
     {
         LOG(INFO) << "topic already subscribed." << topic;
         retry_sub_list_.erase(topic);
-        return true;
+        return false;
     }
     // send subscribe rpc request to server.
     SubscribeAdStreamRequest req;
@@ -286,13 +286,13 @@ bool AdStreamSubscriber::subscribe(const std::string& topic, MessageCBFuncT cb)
     {
         LOG(WARNING) << "send request failed: " << e.what();
         retry_sub_list_[topic] = cb;
-        return false;
+        return true;
     }
     if (!rsp)
     {
         LOG(WARNING) << "server return subscribe failed.";
         retry_sub_list_[topic] = cb;
-        return false;
+        return true;
     }
     LOG(INFO) << "subscribe topic success: " << topic;
 

@@ -31,6 +31,7 @@ using namespace sponsored;
 AdIndexManager::AdIndexManager(
         const std::string& ad_resource_path,
         const std::string& ad_data_path,
+        const std::string& ad_common_data_path,
         bool enable_ad_selector,
         bool enable_ad_rec,
         bool enable_ad_sponsored_search,
@@ -41,9 +42,9 @@ AdIndexManager::AdIndexManager(
         AdSearchService* searcher,
         faceted::GroupManager* grp_mgr)
     : indexPath_(ad_data_path + "/index.bin"),
-      clickPredictorWorkingPath_(ad_data_path + "/ctr_predictor"),
       ad_res_path_(ad_resource_path),
       ad_data_path_(ad_data_path),
+      ad_common_data_path_(ad_common_data_path),
       enable_ad_selector_(enable_ad_selector),
       enable_ad_rec_(enable_ad_rec),
       enable_ad_sponsored_search_(enable_ad_sponsored_search),
@@ -60,7 +61,8 @@ AdIndexManager::~AdIndexManager()
 {
     // unsubscribe should make sure all callback finished and 
     // no any callback will be send later.
-    AdStreamSubscriber::get()->unsubscribe(adlog_topic_);
+    if (!adlog_topic_.empty())
+        AdStreamSubscriber::get()->unsubscribe(adlog_topic_);
 
     if(adMiningTask_)
         delete adMiningTask_;
@@ -74,7 +76,7 @@ bool AdIndexManager::buildMiningTask()
     ad_dnf_index_.reset(new AdDNFIndexType());
 
     ad_click_predictor_ = AdClickPredictor::get();
-    ad_click_predictor_->init(clickPredictorWorkingPath_);
+    ad_click_predictor_->init(ad_common_data_path_ + "/ctr_predictor");
 
     std::ifstream ifs(indexPath_.c_str(), std::ios_base::binary);
     if(ifs.good())
@@ -95,7 +97,7 @@ bool AdIndexManager::buildMiningTask()
     {
         ad_selector_.reset(new AdSelector());
         ad_selector_->init(ad_res_path_ + "/ad_selector", ad_data_path_ + "/ad_selector",
-            ad_data_path_ + "/ad_rec", enable_ad_rec_, ad_click_predictor_, groupManager_,
+            ad_common_data_path_ + "/ad_rec", enable_ad_rec_, ad_click_predictor_, groupManager_,
             documentManager_.get());
     }
 
@@ -103,6 +105,7 @@ bool AdIndexManager::buildMiningTask()
     {
         ad_sponsored_mgr_.reset(new AdSponsoredMgr());
         ad_sponsored_mgr_->init(ad_res_path_ + "/ad_sponsored", ad_data_path_ + "/ad_sponsored",
+            ad_common_data_path_ + "/ad_sponsored",
             groupManager_, documentManager_.get(), id_manager_, ad_searcher_);
     }
 
@@ -113,6 +116,7 @@ bool AdIndexManager::buildMiningTask()
     if (!ret)
     {
         LOG(ERROR) << "subscribe the click log failed !!!!!!";
+        adlog_topic_ = "";
     }
 
     return true;

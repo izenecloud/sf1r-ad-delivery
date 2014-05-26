@@ -146,10 +146,10 @@ void RebuildTask::doTask()
         NodeManagerBase::get()->setWorkerBusyState(collectionName_, true);
     }
     // replace collection data with rebuilded data
-    LOG(INFO) << "## stopCollection: " << collectionName_;
-    CollectionManager::get()->stopCollection(collectionName_);
     LOG(INFO) << "## stopCollection: " << rebuildCollectionName_;
     CollectionManager::get()->stopCollection(rebuildCollectionName_);
+    LOG(INFO) << "## stopCollection: " << collectionName_;
+    CollectionManager::get()->stopCollection(collectionName_);
 
     LOG(INFO) << "## update collection data for " << collectionName_;
     try
@@ -425,10 +425,10 @@ bool RebuildTask::rebuildFromSCD(const std::string& scd_path)
         NodeManagerBase::get()->setWorkerBusyState(collectionName_, true);
     }
     // replace collection data with rebuilded data
-    LOG(INFO) << "## stopCollection: " << collectionName_;
-    CollectionManager::get()->stopCollection(collectionName_);
     LOG(INFO) << "## stopCollection: " << rebuildCollectionName_;
     CollectionManager::get()->stopCollection(rebuildCollectionName_);
+    LOG(INFO) << "## stopCollection: " << collectionName_;
+    CollectionManager::get()->stopCollection(collectionName_);
 
     LOG(INFO) << "## update collection data for " << collectionName_;
     try

@@ -83,7 +83,7 @@ private:
         }
 };
 typedef std::map<std::string, KeywordViewInfo> KeywordViewInfoDayListT;
-typedef std::vector<KeywordViewInfoDayListT> KeywordStatContainerT;
+typedef boost::unordered_map<std::string, KeywordViewInfoDayListT> KeywordStatContainerT;
 
 struct GlobalInfo
 {
@@ -110,12 +110,13 @@ public:
 
     // the (cost, ctr) pair list for all slots for each bid keyword or aditem
     typedef std::vector<std::pair<int, double> > BidAuctionLandscapeT;
+    typedef std::string LogBidKeywordId;
 
     AdAuctionLogMgr();
     void init(const std::string& datapath);
-    void updateAdSearchStat(const std::set<BidKeywordId>& keyword_list,
+    void updateAdSearchStat(const std::set<LogBidKeywordId>& keyword_list,
         const std::vector<std::string>& ranked_ad_list);
-    void updateAuctionLogData(const std::string& ad_id, const BidPhraseT& keyword_list,
+    void updateAuctionLogData(const std::string& ad_id, const std::vector<LogBidKeywordId>& keyword_list,
         int click_cost_in_fen, uint32_t click_slot);
 
     double getAdCTR(const std::string& adid);
@@ -124,18 +125,21 @@ public:
         std::vector<BidAuctionLandscapeT>& cost_click_list);
 
     // clicked number for a day on the keyword.
-    std::size_t getAvgKeywordClickedNum(BidKeywordId keyid);
+    std::size_t getAvgKeywordClickedNum(LogBidKeywordId keyid);
     // total clicked number for a day.
     std::size_t getAvgTotalClickedNum();
 
 
-    int getKeywordCurrentImpression(BidKeywordId keyid);
-    int getKeywordAvgDailyImpression(BidKeywordId keyid);
-    void getKeywordAvgCost(BidKeywordId keyid, std::vector<int>& cost_list);
-    int getKeywordAvgCost(BidKeywordId keyid, uint32_t slot);
-    void getKeywordCTR(BidKeywordId kid, std::vector<double>& ctr_list);
-    double getKeywordCTR(BidKeywordId kid, uint32_t slot);
-    void getKeywordBidLandscape(std::vector<BidKeywordId>& keyword_list,
+    int getKeywordCurrentImpression(LogBidKeywordId keyid);
+    int getKeywordAvgDailyImpression(LogBidKeywordId keyid);
+    void getKeywordAvgCost(LogBidKeywordId keyid, std::vector<int>& cost_list);
+    int getKeywordAvgCost(LogBidKeywordId keyid, uint32_t slot);
+    void getKeywordCTR(LogBidKeywordId kid, std::vector<double>& ctr_list);
+    double getKeywordCTR(LogBidKeywordId kid, uint32_t slot);
+    void getKeywordStatData(LogBidKeywordId kid, int& current_impression, int& avg_impression,
+        std::vector<int>& cost_list,
+        std::vector<double>& ctr_list);
+    void getKeywordBidLandscape(std::vector<LogBidKeywordId>& keyword_list,
         std::vector<BidAuctionLandscapeT>& cost_click_list);
 
     void load();

@@ -7,6 +7,10 @@
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/set.hpp>
 #include <boost/serialization/unordered_map.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string/split.hpp>
+
+namespace bfs = boost::filesystem;
 
 namespace sf1r { namespace sponsored {
 
@@ -58,6 +62,12 @@ AdAuctionLogMgr::AdAuctionLogMgr()
 void AdAuctionLogMgr::init(const std::string& datapath)
 {
     data_path_ = datapath;
+
+    if (!bfs::exists(data_path_))
+    {
+        bfs::create_directories(data_path_);
+    }
+
     load();
 }
 
@@ -129,7 +139,7 @@ void AdAuctionLogMgr::save()
 }
 
 // update the impression info after search request.
-void AdAuctionLogMgr::updateAdSearchStat(const std::set<BidKeywordId>& keyword_list,
+void AdAuctionLogMgr::updateAdSearchStat(const std::set<LogBidKeywordId>& keyword_list,
     const std::vector<std::string>& ranked_ad_list)
 {
     std::string todaystr = getdaystr(0);
@@ -149,17 +159,13 @@ void AdAuctionLogMgr::updateAdSearchStat(const std::set<BidKeywordId>& keyword_l
         }
         ad_view_info[slot].impression_num++;
     }
-    for (std::set<BidKeywordId>::const_iterator it = keyword_list.begin(); it != keyword_list.end(); ++it)
+    for (std::set<LogBidKeywordId>::const_iterator it = keyword_list.begin(); it != keyword_list.end(); ++it)
     {
-        if (*it >= keyword_stat_data_.size())
-        {
-            keyword_stat_data_.resize(*it + 1);
-        }
         keyword_stat_data_[*it][todaystr].searched_num++;
     }
 }
 
-void AdAuctionLogMgr::updateAuctionLogData(const std::string& ad_id, const BidPhraseT& keyword_list,
+void AdAuctionLogMgr::updateAuctionLogData(const std::string& ad_id, const std::vector<LogBidKeywordId>& keyword_list,
     int click_cost_in_fen, uint32_t click_slot)
 {
     std::string todaystr = getdaystr(0);
@@ -188,10 +194,6 @@ void AdAuctionLogMgr::updateAuctionLogData(const std::string& ad_id, const BidPh
 
     for (std::size_t i = 0; i < keyword_list.size(); ++i)
     {
-        if (keyword_list[i] >= keyword_stat_data_.size())
-        {
-            keyword_stat_data_.resize(keyword_list[i] + 1);
-        }
         KeywordViewInfo& key_view_info = keyword_stat_data_[keyword_list[i]][todaystr];
         key_view_info.view_info.resize(click_slot + 1);
         key_view_info.view_info[click_slot].click_num++;
@@ -236,9 +238,9 @@ double AdAuctionLogMgr::getAdCTR(const std::string& adid)
     return (double)total_click/total_impression;
 }
 
-std::size_t AdAuctionLogMgr::getAvgKeywordClickedNum(BidKeywordId keyid)
+std::size_t AdAuctionLogMgr::getAvgKeywordClickedNum(LogBidKeywordId keyid)
 {
-    if (keyid >= keyword_stat_data_.size())
+    if (keyword_stat_data_.find(keyid) == keyword_stat_data_.end())
         return 0;
     std::size_t clicked = 0;
     const KeywordViewInfo& keyinfo1 = keyword_stat_data_[keyid][getdaystr(YESTODAY)];
@@ -266,17 +268,17 @@ std::size_t AdAuctionLogMgr::getAvgTotalClickedNum()
     return total_click;
 }
 
-int AdAuctionLogMgr::getKeywordCurrentImpression(BidKeywordId keyid)
+int AdAuctionLogMgr::getKeywordCurrentImpression(LogBidKeywordId keyid)
 {
-    if (keyid >= keyword_stat_data_.size())
+    if (keyword_stat_data_.find(keyid) == keyword_stat_data_.end())
         return 0;
     const KeywordViewInfo& keyinfo = keyword_stat_data_[keyid][getdaystr(0)];
     return keyinfo.searched_num;
 }
 
-int AdAuctionLogMgr::getKeywordAvgDailyImpression(BidKeywordId keyid)
+int AdAuctionLogMgr::getKeywordAvgDailyImpression(LogBidKeywordId keyid)
 {
-    if (keyid >= keyword_stat_data_.size())
+    if (keyword_stat_data_.find(keyid) == keyword_stat_data_.end())
         return 0;
     int impression = 0;
     for(int i = -1; i >= -3; --i)
@@ -287,10 +289,10 @@ int AdAuctionLogMgr::getKeywordAvgDailyImpression(BidKeywordId keyid)
     return impression / 3;
 }
 
-void AdAuctionLogMgr::getKeywordAvgCost(BidKeywordId keyid, std::vector<int>& cost_list)
+void AdAuctionLogMgr::getKeywordAvgCost(LogBidKeywordId keyid, std::vector<int>& cost_list)
 {
     cost_list.clear();
-    if (keyid >= keyword_stat_data_.size())
+    if (keyword_stat_data_.find(keyid) == keyword_stat_data_.end())
         return;
     const KeywordViewInfo& keyinfo = keyword_stat_data_[keyid][getdaystr(YESTODAY)];
     cost_list.resize(keyinfo.view_info.size());
@@ -314,9 +316,9 @@ void AdAuctionLogMgr::getKeywordAvgCost(BidKeywordId keyid, std::vector<int>& co
     }
 }
 
-int AdAuctionLogMgr::getKeywordAvgCost(BidKeywordId keyid, uint32_t slot)
+int AdAuctionLogMgr::getKeywordAvgCost(LogBidKeywordId keyid, uint32_t slot)
 {
-    if (keyid >= keyword_stat_data_.size())
+    if (keyword_stat_data_.find(keyid) == keyword_stat_data_.end())
         return getDefaultCostForSlot(slot);
 
     const KeywordViewInfo& keyinfo = keyword_stat_data_[keyid][getdaystr(YESTODAY)];
@@ -357,10 +359,10 @@ int AdAuctionLogMgr::getAdAvgCost(const std::string& adid)
     return total_cost / total_click;
 }
 
-void AdAuctionLogMgr::getKeywordCTR(BidKeywordId kid, std::vector<double>& ctr_list)
+void AdAuctionLogMgr::getKeywordCTR(LogBidKeywordId kid, std::vector<double>& ctr_list)
 {
     ctr_list.clear();
-    if (kid >= keyword_stat_data_.size())
+    if (keyword_stat_data_.find(kid) == keyword_stat_data_.end())
         return;
     const KeywordViewInfo& keyinfo = keyword_stat_data_[kid][getdaystr(YESTODAY)];
     if (keyinfo.searched_num < MIN_SEARCH_NUM)
@@ -372,9 +374,9 @@ void AdAuctionLogMgr::getKeywordCTR(BidKeywordId kid, std::vector<double>& ctr_l
     }
 }
 
-double AdAuctionLogMgr::getKeywordCTR(BidKeywordId kid, uint32_t slot)
+double AdAuctionLogMgr::getKeywordCTR(LogBidKeywordId kid, uint32_t slot)
 {
-    if (kid >= keyword_stat_data_.size())
+    if (keyword_stat_data_.find(kid) == keyword_stat_data_.end())
         return DEFAULT_AD_CTR;
     std::size_t clicked = 0;
     const KeywordViewInfo& keyinfo = keyword_stat_data_[kid][getdaystr(YESTODAY)];
@@ -386,6 +388,12 @@ double AdAuctionLogMgr::getKeywordCTR(BidKeywordId kid, uint32_t slot)
     if (clicked < 1 || (keyinfo.searched_num < MIN_SEARCH_NUM))
         return DEFAULT_AD_CTR;
     return (double)clicked/(keyinfo.searched_num);
+}
+
+void AdAuctionLogMgr::getKeywordStatData(LogBidKeywordId kid, int& current_impression, int& avg_impression,
+    std::vector<int>& cost_list,
+    std::vector<double>& ctr_list)
+{
 }
 
 void AdAuctionLogMgr::getAdLandscape(std::vector<std::string>& ad_list,
@@ -442,7 +450,7 @@ void AdAuctionLogMgr::getAdLandscape(std::vector<std::string>& ad_list,
 
 }
 
-void AdAuctionLogMgr::getKeywordBidLandscape(std::vector<BidKeywordId>& keyword_list,
+void AdAuctionLogMgr::getKeywordBidLandscape(std::vector<LogBidKeywordId>& keyword_list,
     std::vector<BidAuctionLandscapeT>& cost_click_list)
 {
     // key -> slot -> (cost per click, click ratio)
@@ -451,16 +459,20 @@ void AdAuctionLogMgr::getKeywordBidLandscape(std::vector<BidKeywordId>& keyword_
     cost_click_list.clear();
 
     std::string yestodaystr = getdaystr(YESTODAY);
-    for(std::size_t kid = 0; kid < keyword_stat_data_.size(); ++kid)
+    for(KeywordStatContainerT::const_iterator kit = keyword_stat_data_.begin();
+        kit != keyword_stat_data_.end(); ++kit)
     {
-        if (keyword_stat_data_[kid].empty())
+        if (kit->second.empty())
             continue;
-        const KeywordViewInfo& keyview = keyword_stat_data_[kid][yestodaystr];
+        KeywordViewInfoDayListT::const_iterator day_it = kit->second.find(yestodaystr);
+        if (day_it == kit->second.end())
+            continue;
+        const KeywordViewInfo& keyview = day_it->second;
         std::size_t slot_num = keyview.view_info.size();
         if (keyview.searched_num < MIN_SEARCH_NUM || slot_num == 0)
             continue;
 
-        keyword_list.push_back(kid);
+        keyword_list.push_back(kit->first);
         cost_click_list.push_back(BidAuctionLandscapeT(slot_num));
 
         int all_slot_clicked = 0;

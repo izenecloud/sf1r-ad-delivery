@@ -47,6 +47,7 @@ public:
     ~AdSponsoredMgr();
     void init(const std::string& dict_path,
         const std::string& data_path,
+        const std::string& logdata_path,
         faceted::GroupManager* grp_mgr,
         DocumentManager* doc_mgr,
         izenelib::ir::idmanager::IDManager* id_manager,
@@ -77,6 +78,7 @@ public:
 private:
     typedef boost::unordered_map<std::string, uint32_t>  StrIdMapT;
     typedef std::vector<std::pair<int, double> > BidAuctionLandscapeT;
+    typedef std::string LogBidKeywordId;
 
     void generateBidPhrase(const std::string& ad_title, std::vector<std::string>& bidphrase);
     double getAdRelevantScore(const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list);
@@ -85,8 +87,11 @@ private:
     void load();
     void resetDailyLeftBudget();
     bool getBidKeywordId(const std::string& keyword, bool insert, BidKeywordId& id);
+    void getLogBidKeywordId(const BidKeywordId& id, LogBidKeywordId& keyword);
+    void getBidPhrase(const std::string& adid, BidPhraseT& bidphrase, std::vector<LogBidKeywordId>& logbid_list);
+
     void getBidStatisticalData(const std::set<BidKeywordId>& bidkey_list,
-        const std::map<BidKeywordId, BidAuctionLandscapeT>& bidkey_cpc_map,
+        const std::map<LogBidKeywordId, BidAuctionLandscapeT>& bidkey_cpc_map,
         std::list<AdQueryStatisticInfo>& ad_statistical_data);
 
     std::string data_path_;
