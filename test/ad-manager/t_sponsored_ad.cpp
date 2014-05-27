@@ -162,7 +162,7 @@ int main()
         for(std::size_t j = 0; j < clicked_bid_phrase_list[i].size(); ++j)
         {
             sp::AdAuctionLogMgr::LogBidKeywordId bid = clicked_bid_phrase_list[i][j];
-            ofs << bid << ":" << ad_auctionlog_mgr_.getAvgKeywordClickedNum(bid) << ", cost: "
+            ofs << bid << ":" << ad_auctionlog_mgr_.getKeywordAvgDailyClickedNum(bid) << ", cost: "
                 << ad_auctionlog_mgr_.getKeywordAvgCost(bid, 0) << "-"
                 << ad_auctionlog_mgr_.getKeywordAvgCost(bid, 1) << "-"
                 << ad_auctionlog_mgr_.getKeywordAvgCost(bid, 2) << ", ctr: "

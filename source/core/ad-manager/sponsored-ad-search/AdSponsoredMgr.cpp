@@ -554,8 +554,8 @@ void AdSponsoredMgr::getAdBidPrice(ad_docid_t adid, const std::string& query,
         {
             BidKeywordId bid = bidphrase[i];
             getLogBidKeywordId(bid, logkid);
-            int current_impression = 0;
-            ad_log_mgr_->getKeywordStatData(logkid, current_impression, info.impression_,
+            int current_impression = ad_log_mgr_->getKeywordCurrentImpression(logkid);
+            ad_log_mgr_->getKeywordStatData(logkid, info.impression_,
                 info.cpc_, info.ctr_);
             info.impression_ -= current_impression;
             info.minBid_ = LOWEST_CLICK_COST;
