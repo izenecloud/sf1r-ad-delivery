@@ -1661,7 +1661,7 @@ bool MiningManager::initLaserManager_(LaserIndexConfig& laserIndexConfig)
     if (!laserIndexConfig.isEnable)
         return true;
     LOG(INFO)<<"init LaserManager..";
-    laserManager_=new LaserManager(adSearchService_, document_manager_, collectionName_);
+    laserManager_=new LaserManager(adSearchService_, document_manager_, collectionName_, laserIndexConfig);
     multiThreadMiningTaskBuilder_->addTask(laserManager_->getLaserIndexTask());
 
     return true;

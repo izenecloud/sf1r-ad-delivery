@@ -1,9 +1,9 @@
-#include "LaserOnlineModelDB.h"
+#include "LaserModelDB.h"
 #include <boost/filesystem.hpp>
 
 namespace sf1r { namespace laser {
 
-    LaserOnlineModelDB::LaserOnlineModelDB(const std::string& dbpath)
+    LaserModelDB::LaserModelDB(const std::string& dbpath)
         : dbpath_(dbpath)
     {
         if (!boost::filesystem::exists(dbpath_))
@@ -11,7 +11,7 @@ namespace sf1r { namespace laser {
             boost::filesystem::create_directory(dbpath_);
         }
         
-        db_ = new LaserOnlineModelDBType(dbpath_);
+        db_ = new LaserModelDBType(dbpath_);
         if(db_->open())
         {
         }
@@ -23,19 +23,19 @@ namespace sf1r { namespace laser {
         }
     }
 
-LaserOnlineModelDB::~LaserOnlineModelDB()
+LaserModelDB::~LaserModelDB()
 {
     db_->close();
     delete db_;
     db_ = NULL;
 }
 
-bool LaserOnlineModelDB::update(const std::string& user, const std::vector<float>& model)
+bool LaserModelDB::update(const std::string& user, const std::vector<float>& model)
 {
     return db_->insert(user, model);
 }
 
-bool LaserOnlineModelDB::get(const std::string& user, std::vector<float>& model) const
+bool LaserModelDB::get(const std::string& user, std::vector<float>& model) const
 {
     //for (int i = 0; i <= 1000; i++)
     //{

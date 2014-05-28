@@ -14,8 +14,11 @@ class LaserIndexConfig
 {
 public:
     bool isEnable;
+    bool isClusteringEnable;
 
-    LaserIndexConfig() : isEnable(false)
+    LaserIndexConfig() 
+        : isEnable(false)
+        , isClusteringEnable(true)
     {}
 
 private:

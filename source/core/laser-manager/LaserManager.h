@@ -27,7 +27,8 @@ class LaserManager
 public:
     LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService, 
         const boost::shared_ptr<DocumentManager>& documentManager,
-        const std::string& collection);
+        const std::string& collection,
+        const LaserIndexConfig& config);
     ~LaserManager();
 public:
     bool recommend(const laser::LaserRecommendParam& param, 
@@ -52,20 +53,23 @@ private:
     friend class laser::LaserRpcServer;
 private:
     const std::string collection_;
+    const std::string workdir_;
+    const std::string resdir_;
+    const LaserIndexConfig& config_;
     boost::shared_ptr<AdSearchService> adSearchService_;
     const boost::shared_ptr<DocumentManager>& documentManager_;
     laser::LaserRecommend* recommend_;
     laser::AdIndexManager* indexManager_;
     laser::LaserIndexTask* indexTask_;
-
     
-    static std::string workdir_;
-    static std::vector<TokenVector>* clusteringContainer_;
-    static std::vector<std::vector<int> >* similarClustering_;
-    static laser::Tokenizer* tokenizer_;
+    laser::Tokenizer* tokenizer_;
+    laser::LaserModelDB* laserOnlineModel_;
+    laser::LaserModelDB* laserOfflineModel_;
+    laser::TopNClusteringDB* topnClustering_;
+    std::vector<TokenVector>* clusteringContainer_;
+    std::vector<std::vector<int> >* similarClustering_;
+    
     static laser::LaserRpcServer* rpcServer_;
-    static laser::TopNClusteringDB* topnClustering_;
-    static laser::LaserOnlineModelDB* laserOnlineModel_;
     static boost::shared_mutex mutex_;
 };
 

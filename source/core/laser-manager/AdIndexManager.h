@@ -16,20 +16,23 @@ class AdIndexManager
     typedef std::pair<docid_t, std::vector<std::pair<int, float> > > AD;
     typedef std::vector<AD> ADVector;
 
-    typedef std::vector<ADVector> Cache;
-
     friend class LaserRecommend;
 public:
     AdIndexManager(const std::string& workdir, 
-        const std::size_t clusteringNum,
         const boost::shared_ptr<DocumentManager>& documentManager);
     ~AdIndexManager();
 
 public:
+    // for clustering system
     void index(const std::size_t& clusteringId, 
         const docid_t& docid, 
         const std::vector<std::pair<int, float> >& vec);
     bool get(const std::size_t& clusteringId, ADVector& advec) const;
+    // for 
+    void index(const docid_t& docid, 
+        const std::vector<std::pair<int, float> >& vec);
+    bool get(const docid_t& docid, std::vector<std::pair<int, float> >& advec) const;
+    
     
     docid_t getLastDocId() const
     {
@@ -48,12 +51,10 @@ private:
     void serializeLastDocid_();
 private:
     const std::string workdir_;
-    const std::size_t clusteringNum_;
     ContainerType* containerPtr_;
     docid_t lastDocId_;
 
     const boost::shared_ptr<DocumentManager>& documentManager_;
-    //Cache* cache_;
 };
 
 } }

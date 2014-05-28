@@ -7,10 +7,8 @@
 namespace sf1r { namespace laser {
 
 AdIndexManager::AdIndexManager(const std::string& workdir, 
-        const std::size_t clusteringNum,
         const boost::shared_ptr<DocumentManager>& documentManager)
-    : workdir_(workdir + "/LASER/")
-    , clusteringNum_(clusteringNum)
+    : workdir_(workdir + "/index/")
     , containerPtr_(NULL)
     , lastDocId_(0)
     , documentManager_(documentManager)
@@ -24,15 +22,6 @@ AdIndexManager::AdIndexManager(const std::string& workdir,
     containerPtr_->set_noncluster_params(Lux::IO::Linked);
     containerPtr_->set_lock_type(Lux::IO::LOCK_THREAD);
     open_();
-//    cache_ = new Cache(clusteringNum_);
-    for (std::size_t i = 0; i < clusteringNum_; i++)
-    {
-        ADVector advec;
-        if (get(i, advec))
-        {
-            LOG(INFO)<<"clustering  = "<<i<<" ad num = "<<advec.size();
-        }
-    }
 }
 
 AdIndexManager::~AdIndexManager()
@@ -44,17 +33,47 @@ AdIndexManager::~AdIndexManager()
     }
     serializeLastDocid_();
 }
+
+void AdIndexManager::index(const docid_t& docid, 
+    const std::vector<std::pair<int, float> >& vec)
+{
+    izenelib::util::izene_serialization<std::vector<std::pair<int, float> > > izs(vec);
+    char* src;
+    size_t srcLen;
+    izs.write_image(src, srcLen);
+    containerPtr_->put(docid, src, srcLen, Lux::IO::OVERWRITE);
+}
+
+bool AdIndexManager::get(const docid_t& docid, 
+    std::vector<std::pair<int, float> >& vec) const
+{
+    {
+        return false;
+    }
+
+    Lux::IO::data_t *val_p = NULL;
+    if (!containerPtr_->get(docid, &val_p, Lux::IO::SYSTEM))
+    {
+        containerPtr_->clean_data(val_p);
+        return false;
+    }
+    else if (documentManager_->isDeleted(docid))
+    {
+        return false;
+    }
+    else
+    {
+        izenelib::util::izene_deserialization<std::vector<std::pair<int, float> > > izd((char*)val_p->data, val_p->size);
+        izd.read_image(vec);
+        containerPtr_->clean_data(val_p);
+    }
+    return true;
+}
     
 void AdIndexManager::index(const std::size_t& clusteringId, 
         const docid_t& docid, 
         const std::vector<std::pair<int, float> >& vec)
 {
-    /*ADVector& advec = (*cache_)[clusteringId];
-    AD ad;
-    ad.first = docid;
-    ad.second = vec;
-    advec.push_back(ad);*/
-
     ADVector advec;
     get(clusteringId, advec);
 
@@ -127,15 +146,6 @@ void AdIndexManager::open_()
     
 void AdIndexManager::preIndex()
 {
-    //LOG(INFO)<<"load LUX IO to cache...";
-    /*for (std::size_t i = 0; i < clusteringNum_; i++)
-    {
-        ADVector advec;
-        if (get(i, advec))
-        {
-            (*cache_)[i] = advec;
-        }
-    }*/
 }
 
 void AdIndexManager::postIndex()

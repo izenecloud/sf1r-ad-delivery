@@ -4,7 +4,7 @@
 #include <vector>
 #include "AdIndexManager.h"
 #include "TopNClusteringDB.h"
-#include "LaserOnlineModelDB.h"
+#include "LaserModelDB.h"
 #include <util/functional.h>
 #include <common/inttypes.h>
 #include <queue>
@@ -18,7 +18,7 @@ typedef std::priority_queue<std::pair<docid_t, float>, std::vector<std::pair<doc
 public:
     LaserRecommend(const AdIndexManager* index,
         const TopNClusteringDB* topnClustering,
-        const LaserOnlineModelDB* laserOnlineModel,
+        const LaserModelDB* laserOnlineModel,
         const std::vector<std::vector<int> >* similarClustering)
         : indexManager_(index)
         , topnClustering_(topnClustering)
@@ -45,7 +45,7 @@ private:
 private:
     const AdIndexManager* indexManager_;
     const TopNClusteringDB* topnClustering_;
-    const LaserOnlineModelDB* laserOnlineModel_;
+    const LaserModelDB* laserOnlineModel_;
     const std::vector<std::vector<int> >* similarClustering_;
 };
 
