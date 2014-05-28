@@ -9,7 +9,6 @@ sub_modules:
     - stress_resource
     - laser_resource
 push_sub_modules:
-    - dict
     - ad_resource
     - stress_resource
     - laser_resource
