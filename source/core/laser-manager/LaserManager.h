@@ -54,7 +54,7 @@ private:
 private:
     const std::string collection_;
     const std::string workdir_;
-    const std::string resdir_;
+    std::string resdir_;
     const LaserIndexConfig& config_;
     boost::shared_ptr<AdSearchService> adSearchService_;
     const boost::shared_ptr<DocumentManager>& documentManager_;

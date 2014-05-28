@@ -23,7 +23,6 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
         const LaserIndexConfig& config)
     : collection_(collection)
     , workdir_(MiningManager::system_working_path_ + "/collection/" + collection_ + "/collection-data/LASER/")
-    , resdir_(MiningManager::system_resource_path_ + "/laser_resource/" + collection_ + "/")
     , config_(config)
     , adSearchService_(adSearchService)
     , documentManager_(documentManager)
@@ -36,6 +35,15 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
     , clusteringContainer_(NULL)
     , similarClustering_(NULL)
 {
+    std::size_t pos = collection_.find("-rebuild");
+    if (std::string::npos == pos)
+    {
+        resdir_ = MiningManager::system_resource_path_ + "/laser_resource/" + collection_ + "/";
+    }
+    else
+    {
+        resdir_ = MiningManager::system_resource_path_ + "/laser_resource/" + collection_.substr(0, pos) + "/";
+    }
     loadLaserDependency(); 
     
     if (!boost::filesystem::exists(workdir_))
