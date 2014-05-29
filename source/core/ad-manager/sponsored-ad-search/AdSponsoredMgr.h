@@ -2,8 +2,9 @@
 #define AD_SPONSORED_MGR_H
 
 #include "AdCommonDataType.h"
-#include "AdManualBidInfoMgr.h"
 #include <ir/id_manager/IDManager.h>
+
+#include "AdManualBidInfoMgr.h"
 #include <vector>
 #include <map>
 #include <deque>
