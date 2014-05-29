@@ -1,9 +1,11 @@
 #include "AdAuctionLogMgr.h"
-#include <time.h>
-#include <boost/lexical_cast.hpp>
 #include <glog/logging.h>
-#include <fstream>
+#include <util/hashFunction.h>
 #include <util/izene_serialization.h>
+
+#include <time.h>
+#include <fstream>
+#include <boost/lexical_cast.hpp>
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/set.hpp>
 #include <boost/serialization/unordered_map.hpp>
@@ -24,12 +26,27 @@ static const int HISTORY_HOURS = 48;
 static const int RECENT_HOURS = 1;
 static const int HOURS_OF_DAY = 24;
 
+static const int DEFAULT_AD_BUCKET = 1000000;
+static const int DEFAULT_KEYWORD_BUCKET = 1000000;
+static const int DEFAULT_LOCK_NUM = 10000;
+
 static std::string gettimestr(int hours)
 {
     struct tm time_s;
-    time_t today = time(NULL);
-    gmtime_r(&today, &time_s);
-    time_s.tm_hour += hours;
+    time_t current = time(NULL);
+    gmtime_r(&current, &time_s);
+    time_s.tm_min += hours;
+    if (time_s.tm_min < 0)
+    {
+        time_s.tm_min += 60;
+        time_s.tm_hour -= 1;
+    }
+    else if (time_s.tm_min >= 60)
+    {
+        time_s.tm_min -= 60;
+        time_s.tm_hour += 1;
+    }
+    //time_s.tm_hour += hours;
     if (time_s.tm_hour < 0)
     {
         time_s.tm_hour += HOURS_OF_DAY;
@@ -52,7 +69,8 @@ static std::string gettimestr(int hours)
     }
     return boost::lexical_cast<std::string>(time_s.tm_year) +
         boost::lexical_cast<std::string>(time_s.tm_yday) +
-        boost::lexical_cast<std::string>(time_s.tm_hour);
+        boost::lexical_cast<std::string>(time_s.tm_hour) +
+        boost::lexical_cast<std::string>(time_s.tm_min);
 }
 
 // get the time when the bid began. relative to the current time.
@@ -83,6 +101,12 @@ static bool isRecent(const std::string& timestr)
     return true;
 }
 
+inline uint32_t getHashIndex(const std::string& key)
+{
+    static izenelib::util::HashIDTraits<std::string, uint32_t> hash_func;
+    return hash_func(key);
+}
+
 inline int getDefaultCostForSlot(int slot)
 {
     return DEFAULT_CLICK_COST * (MAX_AD_SLOT - slot)/MAX_AD_SLOT;
@@ -95,7 +119,11 @@ inline double getDefaultCTRForSlot(int slot)
 
 AdAuctionLogMgr::AdAuctionLogMgr()
 {
-
+    lock_list_ = new boost::mutex[DEFAULT_LOCK_NUM];
+}
+AdAuctionLogMgr::~AdAuctionLogMgr()
+{
+    delete[] lock_list_;
 }
 
 void AdAuctionLogMgr::init(const std::string& datapath)
@@ -147,6 +175,25 @@ void AdAuctionLogMgr::load()
            << ", keyword stat: " << keyword_stat_data_.size();
     } 
     ifs.close();
+    if (ad_stat_data_.load_factor() > 0.7)
+    {
+        int num = ad_stat_data_.load_factor() * ad_stat_data_.bucket_count();
+        ad_stat_data_.rehash(std::max(num*2, DEFAULT_AD_BUCKET));
+    }
+    else if (ad_stat_data_.bucket_count() < DEFAULT_AD_BUCKET)
+    {
+        ad_stat_data_.rehash(DEFAULT_AD_BUCKET);
+    }
+
+    if (keyword_stat_data_.load_factor() > 0.7)
+    {
+        int num = keyword_stat_data_.load_factor() * keyword_stat_data_.bucket_count();
+        keyword_stat_data_.rehash(std::max(num*2, DEFAULT_KEYWORD_BUCKET));
+    }
+    else if (keyword_stat_data_.bucket_count() < DEFAULT_KEYWORD_BUCKET)
+    {
+        keyword_stat_data_.rehash(DEFAULT_KEYWORD_BUCKET);
+    }
 }
 
 void AdAuctionLogMgr::save()
@@ -187,7 +234,16 @@ void AdAuctionLogMgr::updateAdSearchStat(const std::set<LogBidKeywordId>& keywor
     for(std::size_t slot = 0; slot < ranked_ad_list.size(); ++slot)
     {
         const std::string& ad_id = ranked_ad_list[slot];
-        AdViewInfoT& ad_view_info = ad_stat_data_[ad_id][timestr];
+        boost::mutex& m = lock_list_[getHashIndex(ad_id) % DEFAULT_LOCK_NUM];
+        boost::unique_lock<boost::mutex> guard(m);
+        AdViewInfoPeriodListT& ad_stat = ad_stat_data_[ad_id];
+        if (ad_stat.find(timestr) == ad_stat.end())
+        {
+            // a new time interval coming, merge the old time data.
+            updateHistoryAdLogData(ad_id, ad_stat);
+        }
+
+        AdViewInfoT& ad_view_info = ad_stat[timestr];
         if (slot > (std::size_t)MAX_AD_SLOT)
         {
             LOG(WARNING) << "the click slot is invalid : " << slot;
@@ -202,7 +258,15 @@ void AdAuctionLogMgr::updateAdSearchStat(const std::set<LogBidKeywordId>& keywor
     }
     for (std::set<LogBidKeywordId>::const_iterator it = keyword_list.begin(); it != keyword_list.end(); ++it)
     {
-        keyword_stat_data_[*it][timestr].searched_num++;
+        boost::mutex& m = lock_list_[getHashIndex(*it) % DEFAULT_LOCK_NUM];
+        boost::unique_lock<boost::mutex> guard(m);
+        KeywordViewInfoPeriodListT& key_stat = keyword_stat_data_[*it];
+        if (key_stat.find(timestr) == key_stat.end())
+        {
+            updateHistoryKeywordLogData(*it, key_stat);
+        }
+
+        key_stat[timestr].searched_num++;
     }
 }
 
@@ -210,41 +274,47 @@ void AdAuctionLogMgr::updateAuctionLogData(const std::string& ad_id, const std::
     int click_cost_in_fen, uint32_t click_slot)
 {
     std::string timestr = gettimestr(0);
-    if (ad_stat_data_[ad_id].find(timestr) == ad_stat_data_[ad_id].end())
     {
-        // a new time interval coming, merge the old time data.
-        updateHistoryAdLogData(ad_id);
-    }
+        boost::mutex& m = lock_list_[getHashIndex(ad_id) % DEFAULT_LOCK_NUM];
+        boost::unique_lock<boost::mutex> guard(m);
+        AdViewInfoPeriodListT& ad_stat = ad_stat_data_[ad_id];
+        if (ad_stat.find(timestr) == ad_stat.end())
+        {
+            // a new time interval coming, merge the old time data.
+            updateHistoryAdLogData(ad_id, ad_stat);
+        }
 
-    AdViewInfoT& ad_view_info = ad_stat_data_[ad_id][timestr];
-    if (click_slot > (uint32_t)MAX_AD_SLOT)
-    {
-        LOG(WARNING) << "the click slot is invalid : " << click_slot;
-        return;
-    }
+        AdViewInfoT& ad_view_info = ad_stat[timestr];
+        if (click_slot > (uint32_t)MAX_AD_SLOT)
+        {
+            LOG(WARNING) << "the click slot is invalid : " << click_slot;
+            return;
+        }
 
-    if (click_slot >= ad_view_info.size())
-    {
-        ad_view_info.resize(click_slot + 1);
-    }
-    ad_view_info[click_slot].click_num++;
+        if (click_slot >= ad_view_info.size())
+        {
+            ad_view_info.resize(click_slot + 1);
+        }
+        ad_view_info[click_slot].click_num++;
 
-    std::pair<std::map<int, int>::iterator, bool> insert_it = ad_view_info[click_slot].keyword_cpc.insert(std::make_pair(click_cost_in_fen, 1));
-    if (insert_it.second)
-    {
-        // first click on this cost.
+        std::pair<std::map<int, int>::iterator, bool> insert_it = ad_view_info[click_slot].keyword_cpc.insert(std::make_pair(click_cost_in_fen, 1));
+        if (insert_it.second)
+        {
+            // first click on this cost.
+        }
+        else
+        {
+            insert_it.first->second++;
+        }
     }
-    else
-    {
-        insert_it.first->second++;
-    }
-
     for (std::size_t i = 0; i < keyword_list.size(); ++i)
     {
+        boost::mutex& m = lock_list_[getHashIndex(keyword_list[i]) % DEFAULT_LOCK_NUM];
+        boost::unique_lock<boost::mutex> guard(m);
         KeywordViewInfoPeriodListT& key_stat = keyword_stat_data_[keyword_list[i]];
         if (key_stat.find(timestr) == key_stat.end())
         {
-            updateHistoryKeywordLogData(keyword_list[i]);
+            updateHistoryKeywordLogData(keyword_list[i], key_stat);
         }
 
         KeywordViewInfo& key_view_info = key_stat[timestr];
@@ -261,20 +331,43 @@ void AdAuctionLogMgr::updateAuctionLogData(const std::string& ad_id, const std::
         }
     }
 
-    GlobalInfo& ginfo = global_stat_data_[timestr];
+    GlobalInfoPeriodListT::iterator git = global_stat_data_.find(timestr);
+    if (git == global_stat_data_.end())
+    {
+        updateHistoryGlobalLogData();
+    }
+    GlobalInfo& ginfo = git->second;
     ginfo.click_num_list.resize(click_slot + 1, 0);
     ginfo.click_num_list[click_slot]++;
 }
 
-void AdAuctionLogMgr::updateHistoryAdLogData(const std::string& adid)
+void AdAuctionLogMgr::updateHistoryGlobalLogData()
 {
-    AdStatContainerT::const_iterator cur_it = ad_stat_data_.find(adid);
-    if (cur_it == ad_stat_data_.end())
+    GlobalInfo history_ginfo;
+    for (std::size_t i = 1; i <= HISTORY_HOURS; ++i)
     {
-        return;
+        std::string timestr = gettimestr(0 - i);
+        GlobalInfoPeriodListT::const_iterator period_it = global_stat_data_.find(timestr);
+        if (period_it == global_stat_data_.end())
+            continue;
+        const GlobalInfo& gview = period_it->second;
+        if (gview.click_num_list.size() > history_ginfo.click_num_list.size())
+        {
+            history_ginfo.click_num_list.resize(gview.click_num_list.size(), 0);
+        }
+        for(std::size_t slot = 0; slot < gview.click_num_list.size(); ++slot)
+        {
+            history_ginfo.click_num_list[slot] += gview.click_num_list[slot];
+        }
     }
-    LOG(INFO) << "begin update history stat for ad: " << adid;
-    const AdViewInfoPeriodListT& ad_period_info = cur_it->second;
+    {
+        HistoryRWLock::WriteHolder guard(history_rw_lock_);
+        global_history_stat_data_.swap(history_ginfo);
+    }
+}
+
+void AdAuctionLogMgr::updateHistoryAdLogData(const std::string& adid, const AdViewInfoPeriodListT& ad_period_info)
+{
     AdViewInfoT history_adview;
     for (std::size_t i = 1; i <= HISTORY_HOURS; ++i)
     {
@@ -305,17 +398,14 @@ void AdAuctionLogMgr::updateHistoryAdLogData(const std::string& adid)
             }
         }
     }
-    ad_history_stat_data_[adid].swap(history_adview);
-    LOG(INFO) << "end update history stat for ad.";
+    {
+        HistoryRWLock::WriteHolder guard(history_rw_lock_);
+        ad_history_stat_data_[adid].swap(history_adview);
+    }
 }
 
-void AdAuctionLogMgr::updateHistoryKeywordLogData(const std::string& kid)
+void AdAuctionLogMgr::updateHistoryKeywordLogData(const std::string& kid, const KeywordViewInfoPeriodListT& keyword_period_info)
 {
-    KeywordStatContainerT::const_iterator cur_it = keyword_stat_data_.find(kid);
-    if (cur_it == keyword_stat_data_.end())
-        return;
-    LOG(INFO) << "begin update history stat for keyword: " << kid;
-    const KeywordViewInfoPeriodListT& keyword_period_info = cur_it->second;
     KeywordViewInfo history_keyview;
     for (std::size_t i = 1; i <= HISTORY_HOURS; ++i)
     {
@@ -343,14 +433,21 @@ void AdAuctionLogMgr::updateHistoryKeywordLogData(const std::string& kid)
             }
         }
     }
-    keyword_history_stat_data_[kid].swap(history_keyview);
+    {
+        HistoryRWLock::WriteHolder guard(history_rw_lock_);
+        keyword_history_stat_data_[kid].swap(history_keyview);
+    }
 
     LOG(INFO) << "end update history stat for keyword.";
 }
 
 double AdAuctionLogMgr::getAdCTR(const std::string& adid)
 {
-    const AdViewInfoT& tmp1 = ad_history_stat_data_[adid];
+    HistoryRWLock::ReadHolder guard(history_rw_lock_);
+    AdHistoryStatContainerT::const_iterator it = ad_history_stat_data_.find(adid);
+    if (it == ad_history_stat_data_.end())
+        return DEFAULT_AD_CTR;
+    const AdViewInfoT& tmp1 = it->second;
     int total_impression = 0;
     int total_click = 0;
     for (std::size_t i = 0; i < tmp1.size(); ++i)
@@ -366,6 +463,7 @@ double AdAuctionLogMgr::getAdCTR(const std::string& adid)
 
 std::size_t AdAuctionLogMgr::getKeywordAvgDailyClickedNum(LogBidKeywordId kid)
 {
+    HistoryRWLock::ReadHolder guard(history_rw_lock_);
     KeywordHistoryStatContainerT::const_iterator it = keyword_history_stat_data_.find(kid);
     if (it == keyword_history_stat_data_.end())
         return 0;
@@ -381,6 +479,7 @@ std::size_t AdAuctionLogMgr::getKeywordAvgDailyClickedNum(LogBidKeywordId kid)
 
 std::size_t AdAuctionLogMgr::getAvgTotalClickedNum()
 {
+    HistoryRWLock::ReadHolder guard(history_rw_lock_);
     std::size_t total_click = 0;
     const GlobalInfo& ginfo = global_history_stat_data_;
     for(std::size_t i = 0; i < ginfo.click_num_list.size(); ++i)
@@ -392,6 +491,8 @@ std::size_t AdAuctionLogMgr::getAvgTotalClickedNum()
 
 int AdAuctionLogMgr::getKeywordCurrentImpression(LogBidKeywordId keyid)
 {
+    boost::mutex& m = lock_list_[getHashIndex(keyid) % DEFAULT_LOCK_NUM];
+    boost::unique_lock<boost::mutex> guard(m);
     KeywordStatContainerT::const_iterator it = keyword_stat_data_.find(keyid);
     if (it == keyword_stat_data_.end())
         return 0;
@@ -409,6 +510,7 @@ int AdAuctionLogMgr::getKeywordCurrentImpression(LogBidKeywordId keyid)
 
 int AdAuctionLogMgr::getKeywordAvgDailyImpression(LogBidKeywordId kid)
 {
+    HistoryRWLock::ReadHolder guard(history_rw_lock_);
     KeywordHistoryStatContainerT::const_iterator it = keyword_history_stat_data_.find(kid);
     if (it == keyword_history_stat_data_.end())
         return 0;
@@ -418,6 +520,7 @@ int AdAuctionLogMgr::getKeywordAvgDailyImpression(LogBidKeywordId kid)
 void AdAuctionLogMgr::getKeywordAvgCost(LogBidKeywordId kid, std::vector<int>& cost_list)
 {
     cost_list.clear();
+    HistoryRWLock::ReadHolder guard(history_rw_lock_);
     KeywordHistoryStatContainerT::const_iterator it = keyword_history_stat_data_.find(kid);
     if (it == keyword_history_stat_data_.end())
         return;
@@ -445,6 +548,7 @@ void AdAuctionLogMgr::getKeywordAvgCost(LogBidKeywordId kid, std::vector<int>& c
 
 int AdAuctionLogMgr::getKeywordAvgCost(LogBidKeywordId kid, uint32_t slot)
 {
+    HistoryRWLock::ReadHolder guard(history_rw_lock_);
     KeywordHistoryStatContainerT::const_iterator it = keyword_history_stat_data_.find(kid);
     if (it == keyword_history_stat_data_.end())
         return getDefaultCostForSlot(slot);
@@ -469,6 +573,7 @@ int AdAuctionLogMgr::getKeywordAvgCost(LogBidKeywordId kid, uint32_t slot)
 
 int AdAuctionLogMgr::getAdAvgCost(const std::string& adid)
 {
+    HistoryRWLock::ReadHolder guard(history_rw_lock_);
     AdHistoryStatContainerT::const_iterator stat_it = ad_history_stat_data_.find(adid);
     if (stat_it == ad_history_stat_data_.end())
         return DEFAULT_CLICK_COST;
@@ -492,6 +597,7 @@ int AdAuctionLogMgr::getAdAvgCost(const std::string& adid)
 
 void AdAuctionLogMgr::getKeywordCTR(LogBidKeywordId kid, std::vector<double>& ctr_list)
 {
+    HistoryRWLock::ReadHolder guard(history_rw_lock_);
     ctr_list.clear();
     KeywordHistoryStatContainerT::const_iterator it = keyword_history_stat_data_.find(kid);
     if (it == keyword_history_stat_data_.end())
@@ -508,6 +614,7 @@ void AdAuctionLogMgr::getKeywordCTR(LogBidKeywordId kid, std::vector<double>& ct
 
 double AdAuctionLogMgr::getKeywordCTR(LogBidKeywordId kid, uint32_t slot)
 {
+    HistoryRWLock::ReadHolder guard(history_rw_lock_);
     KeywordHistoryStatContainerT::const_iterator it = keyword_history_stat_data_.find(kid);
     if (it == keyword_history_stat_data_.end())
         return getDefaultCTRForSlot(slot);
@@ -530,6 +637,7 @@ void AdAuctionLogMgr::getKeywordStatData(LogBidKeywordId kid, int& avg_impressio
     cost_list.clear();
     ctr_list.clear();
     avg_impression = 0;
+    HistoryRWLock::ReadHolder guard(history_rw_lock_);
     KeywordHistoryStatContainerT::const_iterator stat_it = keyword_history_stat_data_.find(kid);
     if (stat_it == keyword_history_stat_data_.end())
         return;
@@ -570,6 +678,7 @@ void AdAuctionLogMgr::getAdLandscape(std::vector<std::string>& ad_list,
     ad_list.clear();
     cost_click_list.clear();
 
+    HistoryRWLock::ReadHolder guard(history_rw_lock_);
     AdHistoryStatContainerT::const_iterator cit = ad_history_stat_data_.begin();
 
     for(; cit != ad_history_stat_data_.end(); ++cit)
@@ -619,6 +728,7 @@ void AdAuctionLogMgr::getKeywordBidLandscape(std::vector<LogBidKeywordId>& keywo
     keyword_list.clear();
     cost_click_list.clear();
 
+    HistoryRWLock::ReadHolder guard(history_rw_lock_);
     for(KeywordHistoryStatContainerT::const_iterator kit = keyword_history_stat_data_.begin();
         kit != keyword_history_stat_data_.end(); ++kit)
     {

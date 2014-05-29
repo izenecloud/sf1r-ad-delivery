@@ -7,8 +7,10 @@
 #include <vector>
 #include <map>
 #include <boost/unordered_map.hpp>
+#include <boost/thread/thread.hpp>
 #include <string>
 #include <set>
+#include <3rdparty/folly/RWSpinLock.h>
 
 namespace sf1r
 {
@@ -105,6 +107,10 @@ typedef boost::unordered_map<std::string, KeywordViewInfo> KeywordHistoryStatCon
 
 struct GlobalInfo
 {
+    void swap(GlobalInfo& other)
+    {
+        click_num_list.swap(other.click_num_list);
+    }
     std::vector<int> click_num_list;
     DATA_IO_LOAD_SAVE(GlobalInfo, & click_num_list);
 private:
@@ -131,6 +137,7 @@ public:
     typedef std::string LogBidKeywordId;
 
     AdAuctionLogMgr();
+    ~AdAuctionLogMgr();
     void init(const std::string& datapath);
     void updateAdSearchStat(const std::set<LogBidKeywordId>& keyword_list,
         const std::vector<std::string>& ranked_ad_list);
@@ -163,8 +170,9 @@ public:
     void load();
     void save();
     // merge the history data used for getting the statistical data.
-    void updateHistoryAdLogData(const std::string& adid);
-    void updateHistoryKeywordLogData(const std::string& kid);
+    void updateHistoryAdLogData(const std::string& adid, const AdViewInfoPeriodListT& ad_period_info);
+    void updateHistoryKeywordLogData(const std::string& kid, const KeywordViewInfoPeriodListT& keyword_period_info);
+    void updateHistoryGlobalLogData();
 
 private:
     AdStatContainerT  ad_stat_data_;
@@ -175,6 +183,9 @@ private:
     KeywordHistoryStatContainerT keyword_history_stat_data_;
     GlobalInfo global_history_stat_data_;
     std::string data_path_;
+    boost::mutex* lock_list_;
+    typedef folly::RWTicketSpinLockT<32, true> HistoryRWLock;
+    HistoryRWLock history_rw_lock_;
 };
 
 }
