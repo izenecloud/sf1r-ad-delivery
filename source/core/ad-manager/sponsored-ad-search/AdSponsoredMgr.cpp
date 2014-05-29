@@ -120,7 +120,7 @@ AdSponsoredMgr::~AdSponsoredMgr()
 
 void AdSponsoredMgr::init(const std::string& res_path,
     const std::string& data_path,
-    const std::string& logdata_path,
+    const std::string& commondata_path,
     faceted::GroupManager* grp_mgr,
     DocumentManager* doc_mgr,
     izenelib::ir::idmanager::IDManager* id_manager,
@@ -138,8 +138,10 @@ void AdSponsoredMgr::init(const std::string& res_path,
     ad_searcher_ = searcher;
     keyword_value_id_list_.rehash(MAX_DIFF_BID_KEYWORD_NUM);
     ad_log_mgr_.reset(new AdAuctionLogMgr());
-    ad_log_mgr_->init(logdata_path);
+    ad_log_mgr_->init(commondata_path);
     ad_bid_strategy_.reset(new AdBidStrategy());
+
+    manual_bidinfo_mgr_.init(commondata_path);
 
     load();
 }
@@ -186,15 +188,6 @@ void AdSponsoredMgr::save()
     {
         len = 0;
         izenelib::util::izene_serialization<StrIdMapT> izs(keyword_value_id_list_);
-        izs.write_image(buf, len);
-        ofs.write((const char*)&len, sizeof(len));
-        ofs.write(buf, len);
-        ofs.flush();
-    }
-
-    {
-        len = 0;
-        izenelib::util::izene_serialization<std::vector<int> > izs(ad_budget_list_);
         izs.write_image(buf, len);
         ofs.write((const char*)&len, sizeof(len));
         ofs.write(buf, len);
@@ -284,19 +277,10 @@ void AdSponsoredMgr::load()
             data.resize(len);
             ifs.read((char*)&data[0], len);
             izenelib::util::izene_deserialization<std::vector<int> > izd(data.data(), data.size());
-            izd.read_image(ad_budget_list_);
-        }
-
-        {
-            len = 0;
-            ifs.read((char*)&len, sizeof(len));
-            data.resize(len);
-            ifs.read((char*)&data[0], len);
-            izenelib::util::izene_deserialization<std::vector<int> > izd(data.data(), data.size());
             izd.read_image(ad_budget_left_list_);
         }
 
-        LOG(INFO) << "campaign budget info loaded: " << ad_budget_list_.size();
+        LOG(INFO) << "campaign budget info loaded: " << ad_budget_left_list_.size();
 
         {
             len = 0;
@@ -399,10 +383,6 @@ void AdSponsoredMgr::updateAdCampaign(ad_docid_t adid, const std::string& campai
         ad_campaign_belong_list_.resize(adid + 1);
     }
     ad_campaign_belong_list_[adid] = campaign_id;
-    if (campaign_id >= ad_budget_list_.size())
-    {
-        ad_budget_list_.resize(campaign_id + 1, DEFAULT_AD_BUDGET);
-    }
     if (campaign_id >= ad_campaign_bid_keyword_list_.size())
     {
         ad_campaign_bid_keyword_list_.resize(campaign_id + 1);
@@ -417,6 +397,7 @@ void AdSponsoredMgr::updateAdCampaign(ad_docid_t adid, const std::string& campai
 
 void AdSponsoredMgr::getBidStatisticalData(const std::set<BidKeywordId>& bidkey_list,
     const std::map<LogBidKeywordId, BidAuctionLandscapeT>& bidkey_cpc_map,
+    const std::map<std::string, int>& manual_bidprice_list,
     std::list<AdQueryStatisticInfo>& ad_statistical_data)
 {
     std::set<BidKeywordId>::const_iterator bid_it = bidkey_list.begin();
@@ -428,6 +409,11 @@ void AdSponsoredMgr::getBidStatisticalData(const std::set<BidKeywordId>& bidkey_
         getLogBidKeywordId(bid, logbid);
         ad_statistical_data.back().impression_ = ad_log_mgr_->getKeywordAvgDailyImpression(logbid);
         ad_statistical_data.back().minBid_ = LOWEST_CLICK_COST;
+        std::map<std::string, int>::const_iterator manual_it = manual_bidprice_list.find(logbid);
+        if (manual_it != manual_bidprice_list.end())
+        {
+            ad_statistical_data.back().bid_ = manual_it->second;
+        }
         std::map<LogBidKeywordId, BidAuctionLandscapeT>::const_iterator it = bidkey_cpc_map.find(logbid);
         if (it == bidkey_cpc_map.end())
             continue;
@@ -442,7 +428,11 @@ void AdSponsoredMgr::getBidStatisticalData(const std::set<BidKeywordId>& bidkey_
 // reset daily left budget each day.
 void AdSponsoredMgr::resetDailyLeftBudget()
 {
-    ad_budget_left_list_ = ad_budget_list_;
+    ad_budget_left_list_.resize(ad_campaign_name_list_.size());
+    for(std::size_t i = 0; i < ad_campaign_name_list_.size(); ++i)
+    {
+        ad_budget_left_list_[i] = manual_bidinfo_mgr_.getBidBudget(ad_campaign_name_list_[i]);
+    }
 
     std::list<AdQueryStatisticInfo> ad_statistical_data;
     std::vector<LogBidKeywordId> keyword_list;
@@ -464,7 +454,9 @@ void AdSponsoredMgr::resetDailyLeftBudget()
             if (i >= ad_campaign_bid_keyword_list_.size())
                 break;
             const std::set<BidKeywordId>& bidkey_list = ad_campaign_bid_keyword_list_[i];
-            getBidStatisticalData(bidkey_list, bidkey_cpc_map, ad_statistical_data);
+            std::map<std::string, int> manual_bidprice_list;
+            manual_bidinfo_mgr_.getManualBidPriceList(ad_campaign_name_list_[i], manual_bidprice_list);
+            getBidStatisticalData(bidkey_list, bidkey_cpc_map, manual_bidprice_list, ad_statistical_data);
             bid_price_list = ad_bid_strategy_->convexUniformBid(ad_statistical_data, ad_budget_left_list_[i]);
             ad_uniform_bid_price_list_[i].swap(bid_price_list);
         }
@@ -477,7 +469,9 @@ void AdSponsoredMgr::resetDailyLeftBudget()
             if (i >= ad_campaign_bid_keyword_list_.size())
                 break;
             const std::set<BidKeywordId>& bidkey_list = ad_campaign_bid_keyword_list_[i];
-            getBidStatisticalData(bidkey_list, bidkey_cpc_map, ad_statistical_data);
+            std::map<std::string, int> manual_bidprice_list;
+            manual_bidinfo_mgr_.getManualBidPriceList(ad_campaign_name_list_[i], manual_bidprice_list);
+            getBidStatisticalData(bidkey_list, bidkey_cpc_map, manual_bidprice_list, ad_statistical_data);
             std::vector<int> bid_price_list = ad_bid_strategy_->geneticBid(ad_statistical_data, ad_budget_left_list_[i]);
             assert(bid_price_list.size() == bidkey_list.size());
             std::set<BidKeywordId>::const_iterator bid_it = bidkey_list.begin();
@@ -493,19 +487,22 @@ void AdSponsoredMgr::resetDailyLeftBudget()
     }
 }
 
-void AdSponsoredMgr::changeDailyBudget(const std::string& ad_campaign_name, int dailybudget)
+void AdSponsoredMgr::setManualBidPrice(const std::string& campaign_name,
+    const std::vector<std::string>& key_list,
+    const std::vector<int>& price_list)
 {
-    StrIdMapT::const_iterator it = ad_campaign_name_id_list_.find(ad_campaign_name);
-    if (it == ad_campaign_name_id_list_.end())
+    if (key_list.size() != price_list.size())
     {
-        LOG(INFO) << "no such campaign: " << ad_campaign_name;
+        LOG(ERROR) << "the manual bidprice list size not match.";
         return;
     }
-    if (it->second >= ad_budget_list_.size())
-    {
-        ad_budget_list_.resize(it->second + 1, 0);
-    }
-    ad_budget_list_[it->second] = dailybudget;
+    manual_bidinfo_mgr_.setManualBidPrice(campaign_name, key_list, price_list);
+}
+
+void AdSponsoredMgr::changeDailyBudget(const std::string& ad_campaign_name, int dailybudget)
+{
+    manual_bidinfo_mgr_.setBidBudget(ad_campaign_name, dailybudget);
+    manual_bidinfo_mgr_.save();
 }
 
 void AdSponsoredMgr::consumeBudget(ad_docid_t adid, int cost)
@@ -543,11 +540,11 @@ void AdSponsoredMgr::getAdBidPrice(ad_docid_t adid, const std::string& query,
     {
         if (adid >= ad_bidphrase_list_.size())
             return;
-        if (campaign_id >= ad_budget_left_list_.size())
+        if (campaign_id >= ad_budget_left_list_.size() || campaign_id >= ad_campaign_name_list_.size())
             return;
         const BidPhraseT& bidphrase = ad_bidphrase_list_[adid];
         int left_budget = ad_budget_left_list_[campaign_id];
-        int used_bugget = ad_budget_list_[campaign_id] - left_budget;
+        int used_bugget = manual_bidinfo_mgr_.getBidBudget(ad_campaign_name_list_[campaign_id]) - left_budget;
         AdQueryStatisticInfo info;
         LogBidKeywordId logkid;
         for (std::size_t i = 0; i < bidphrase.size(); ++i)

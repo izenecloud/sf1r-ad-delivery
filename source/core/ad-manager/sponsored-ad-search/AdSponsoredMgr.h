@@ -2,6 +2,7 @@
 #define AD_SPONSORED_MGR_H
 
 #include "AdCommonDataType.h"
+#include "AdManualBidInfoMgr.h"
 #include <ir/id_manager/IDManager.h>
 #include <vector>
 #include <map>
@@ -47,7 +48,7 @@ public:
     ~AdSponsoredMgr();
     void init(const std::string& dict_path,
         const std::string& data_path,
-        const std::string& logdata_path,
+        const std::string& commondata_path,
         faceted::GroupManager* grp_mgr,
         DocumentManager* doc_mgr,
         izenelib::ir::idmanager::IDManager* id_manager,
@@ -73,6 +74,11 @@ public:
 
     void save();
     void changeDailyBudget(const std::string& ad_campaign_name, int dailybudget);
+
+    void setManualBidPrice(const std::string& campaign_name,
+        const std::vector<std::string>& key_list,
+        const std::vector<int>& price_list);
+
     void updateAdCampaign(ad_docid_t adid, const std::string& campaign_name);
 
 private:
@@ -92,6 +98,7 @@ private:
 
     void getBidStatisticalData(const std::set<BidKeywordId>& bidkey_list,
         const std::map<LogBidKeywordId, BidAuctionLandscapeT>& bidkey_cpc_map,
+        const std::map<std::string, int>& manual_bidprice_list,
         std::list<AdQueryStatisticInfo>& ad_statistical_data);
 
     std::string data_path_;
@@ -100,8 +107,6 @@ private:
     std::vector<std::string> keyword_id_value_list_;
     StrIdMapT keyword_value_id_list_;
 
-    // the total budget for specific ad campaign. update each day.
-    std::vector<int> ad_budget_list_;
     // the left budget for specific ad campaign. update realtime.
     std::vector<int> ad_budget_left_list_;
     std::vector<std::string>  ad_campaign_name_list_;
@@ -120,6 +125,8 @@ private:
     // bid price for different campaign.
     std::vector<std::map<BidKeywordId, int> > ad_bid_price_list_;
     std::vector<std::vector<std::pair<int, double> > > ad_uniform_bid_price_list_;
+
+    AdManualBidInfoMgr manual_bidinfo_mgr_;
 };
 
 }
