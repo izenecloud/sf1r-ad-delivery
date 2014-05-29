@@ -35,18 +35,20 @@ static std::string gettimestr(int hours)
     struct tm time_s;
     time_t current = time(NULL);
     gmtime_r(&current, &time_s);
-    time_s.tm_min += hours;
-    if (time_s.tm_min < 0)
-    {
-        time_s.tm_min += 60;
-        time_s.tm_hour -= 1;
-    }
-    else if (time_s.tm_min >= 60)
-    {
-        time_s.tm_min -= 60;
-        time_s.tm_hour += 1;
-    }
-    //time_s.tm_hour += hours;
+    // for test
+    //time_s.tm_min += hours;
+    //if (time_s.tm_min < 0)
+    //{
+    //    time_s.tm_min += 60;
+    //    time_s.tm_hour -= 1;
+    //}
+    //else if (time_s.tm_min >= 60)
+    //{
+    //    time_s.tm_min -= 60;
+    //    time_s.tm_hour += 1;
+    //}
+    //
+    time_s.tm_hour += hours;
     if (time_s.tm_hour < 0)
     {
         time_s.tm_hour += HOURS_OF_DAY;
@@ -69,8 +71,8 @@ static std::string gettimestr(int hours)
     }
     return boost::lexical_cast<std::string>(time_s.tm_year) +
         boost::lexical_cast<std::string>(time_s.tm_yday) +
-        boost::lexical_cast<std::string>(time_s.tm_hour) +
-        boost::lexical_cast<std::string>(time_s.tm_min);
+        boost::lexical_cast<std::string>(time_s.tm_hour) /* +
+        boost::lexical_cast<std::string>(time_s.tm_min)*/;
 }
 
 // get the time when the bid began. relative to the current time.
@@ -336,7 +338,7 @@ void AdAuctionLogMgr::updateAuctionLogData(const std::string& ad_id, const std::
     {
         updateHistoryGlobalLogData();
     }
-    GlobalInfo& ginfo = git->second;
+    GlobalInfo& ginfo = global_stat_data_[timestr];
     ginfo.click_num_list.resize(click_slot + 1, 0);
     ginfo.click_num_list[click_slot]++;
 }
