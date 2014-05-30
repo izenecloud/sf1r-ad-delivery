@@ -80,6 +80,7 @@ public:
         const std::vector<std::string>& key_list,
         const std::vector<int>& price_list);
 
+    void resetDailyLeftBudget(bool reset_used);
 
 private:
     typedef boost::unordered_map<std::string, uint32_t>  StrIdMapT;
@@ -95,7 +96,6 @@ private:
     double getAdQualityScore(ad_docid_t adid, const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list);
     void consumeBudget(ad_docid_t adid, int cost);
     void load();
-    void resetDailyLeftBudget();
     bool getBidKeywordId(const std::string& keyword, bool insert, BidKeywordId& id);
     void getLogBidKeywordId(const BidKeywordId& id, LogBidKeywordId& keyword);
     void getBidPhrase(const std::string& adid, BidPhraseT& bidphrase, std::vector<LogBidKeywordId>& logbid_list);
@@ -111,8 +111,8 @@ private:
     std::vector<std::string> keyword_id_value_list_;
     StrIdMapT keyword_value_id_list_;
 
-    // the left budget for specific ad campaign. update realtime.
-    std::vector<int> ad_budget_left_list_;
+    // the used budget for specific ad campaign. update realtime.
+    std::vector<int> ad_budget_used_list_;
     std::vector<std::string>  ad_campaign_name_list_;
     StrIdMapT ad_campaign_name_id_list_;
     std::vector<uint32_t>  ad_campaign_belong_list_; 

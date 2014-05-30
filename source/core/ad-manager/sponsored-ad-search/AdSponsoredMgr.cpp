@@ -196,7 +196,7 @@ void AdSponsoredMgr::save()
 
     {
         len = 0;
-        izenelib::util::izene_serialization<std::vector<int> > izs(ad_budget_left_list_);
+        izenelib::util::izene_serialization<std::vector<int> > izs(ad_budget_used_list_);
         izs.write_image(buf, len);
         ofs.write((const char*)&len, sizeof(len));
         ofs.write(buf, len);
@@ -277,10 +277,10 @@ void AdSponsoredMgr::load()
             data.resize(len);
             ifs.read((char*)&data[0], len);
             izenelib::util::izene_deserialization<std::vector<int> > izd(data.data(), data.size());
-            izd.read_image(ad_budget_left_list_);
+            izd.read_image(ad_budget_used_list_);
         }
 
-        LOG(INFO) << "campaign budget info loaded: " << ad_budget_left_list_.size();
+        LOG(INFO) << "campaign budget info loaded: " << ad_budget_used_list_.size();
 
         {
             len = 0;
@@ -439,14 +439,23 @@ void AdSponsoredMgr::getBidStatisticalData(const std::set<BidKeywordId>& bidkey_
     }
 }
 
-// reset daily left budget each day.
-void AdSponsoredMgr::resetDailyLeftBudget()
+// refresh daily left budget periodically since the bid price and budget can be changed hourly.
+void AdSponsoredMgr::resetDailyLeftBudget(bool reset_used)
 {
-    ad_budget_left_list_.resize(ad_campaign_name_list_.size());
-    for(std::size_t i = 0; i < ad_campaign_name_list_.size(); ++i)
+    LOG(INFO) << "begin compute auto bid strategy.";
+    if (reset_used)
     {
-        ad_budget_left_list_[i] = manual_bidinfo_mgr_.getBidBudget(ad_campaign_name_list_[i]);
+        LOG(INFO) << "budget used reset.";
+        ad_budget_used_list_.clear();
     }
+    ad_budget_used_list_.resize(ad_campaign_name_list_.size(), 0);
+
+    struct tm time_now;
+    time_t current = time(NULL);
+    gmtime_r(&current, &time_now);
+
+    double left_ratio = (24 - time_now.tm_hour)/(double)24;
+    int ad_daily_budget = 0;
 
     std::list<AdQueryStatisticInfo> ad_statistical_data;
     std::vector<LogBidKeywordId> keyword_list;
@@ -462,23 +471,28 @@ void AdSponsoredMgr::resetDailyLeftBudget()
     if (bid_strategy_type_ == UniformBid)
     {
         std::vector<std::pair<int, double> > bid_price_list;
-        ad_uniform_bid_price_list_.resize(ad_budget_left_list_.size());
-        for(std::size_t i = 0; i < ad_budget_left_list_.size(); ++i)
+        ad_uniform_bid_price_list_.resize(ad_campaign_name_list_.size());
+        for(std::size_t i = 0; i < ad_campaign_name_list_.size(); ++i)
         {
             if (i >= ad_campaign_bid_keyword_list_.size())
                 break;
+
+            // because the budget may change every hour, 
+            // the daily budget should be computed to reflect the change.
+            ad_daily_budget = (manual_bidinfo_mgr_.getBidBudget(ad_campaign_name_list_[i]) - ad_budget_used_list_[i])/left_ratio;
+
             const std::set<BidKeywordId>& bidkey_list = ad_campaign_bid_keyword_list_[i];
             std::map<std::string, int> manual_bidprice_list;
             manual_bidinfo_mgr_.getManualBidPriceList(ad_campaign_name_list_[i], manual_bidprice_list);
             getBidStatisticalData(bidkey_list, bidkey_cpc_map, manual_bidprice_list, ad_statistical_data);
-            bid_price_list = ad_bid_strategy_->convexUniformBid(ad_statistical_data, ad_budget_left_list_[i]);
+            bid_price_list = ad_bid_strategy_->convexUniformBid(ad_statistical_data, ad_daily_budget);
             ad_uniform_bid_price_list_[i].swap(bid_price_list);
         }
     }
     else if (bid_strategy_type_ == GeneticBid)
     {
-        ad_bid_price_list_.resize(ad_budget_left_list_.size());
-        for (std::size_t i = 0; i < ad_budget_left_list_.size(); ++i)
+        ad_bid_price_list_.resize(ad_campaign_name_list_.size());
+        for (std::size_t i = 0; i < ad_campaign_name_list_.size(); ++i)
         {
             if (i >= ad_campaign_bid_keyword_list_.size())
                 break;
@@ -486,7 +500,10 @@ void AdSponsoredMgr::resetDailyLeftBudget()
             std::map<std::string, int> manual_bidprice_list;
             manual_bidinfo_mgr_.getManualBidPriceList(ad_campaign_name_list_[i], manual_bidprice_list);
             getBidStatisticalData(bidkey_list, bidkey_cpc_map, manual_bidprice_list, ad_statistical_data);
-            std::vector<int> bid_price_list = ad_bid_strategy_->geneticBid(ad_statistical_data, ad_budget_left_list_[i]);
+
+            ad_daily_budget = (manual_bidinfo_mgr_.getBidBudget(ad_campaign_name_list_[i]) - ad_budget_used_list_[i])/left_ratio;
+
+            std::vector<int> bid_price_list = ad_bid_strategy_->geneticBid(ad_statistical_data, ad_daily_budget);
             assert(bid_price_list.size() == bidkey_list.size());
             std::set<BidKeywordId>::const_iterator bid_it = bidkey_list.begin();
             for(std::size_t j = 0; j < bid_price_list.size(); ++j)
@@ -499,6 +516,7 @@ void AdSponsoredMgr::resetDailyLeftBudget()
     {
         // realtime bid.
     }
+    LOG(INFO) << "end compute auto bid strategy.";
 }
 
 void AdSponsoredMgr::setManualBidPrice(const std::string& campaign_name,
@@ -527,12 +545,12 @@ void AdSponsoredMgr::consumeBudget(ad_docid_t adid, int cost)
         return;
     }
     uint32_t campaign_id = ad_campaign_belong_list_[adid];
-    if (campaign_id >= ad_budget_left_list_.size())
+    if (campaign_id >= ad_budget_used_list_.size())
     {
         LOG(WARNING) << "no budget was set for this campaign :" << campaign_id;
         return;
     }
-    ad_budget_left_list_[campaign_id] -= cost;
+    ad_budget_used_list_[campaign_id] += cost;
 }
 
 void AdSponsoredMgr::generateBidPrice(ad_docid_t adid, std::vector<int>& price_list)
@@ -554,11 +572,11 @@ void AdSponsoredMgr::getAdBidPrice(ad_docid_t adid, const std::string& query,
     {
         if (adid >= ad_bidphrase_list_.size())
             return;
-        if (campaign_id >= ad_budget_left_list_.size() || campaign_id >= ad_campaign_name_list_.size())
+        if (campaign_id >= ad_budget_used_list_.size() || campaign_id >= ad_campaign_name_list_.size())
             return;
         const BidPhraseT& bidphrase = ad_bidphrase_list_[adid];
-        int left_budget = ad_budget_left_list_[campaign_id];
-        int used_bugget = manual_bidinfo_mgr_.getBidBudget(ad_campaign_name_list_[campaign_id]) - left_budget;
+        int used_budget = ad_budget_used_list_[campaign_id];
+        int left_budget = manual_bidinfo_mgr_.getBidBudget(ad_campaign_name_list_[campaign_id]) - used_budget;
         AdQueryStatisticInfo info;
         LogBidKeywordId logkid;
         for (std::size_t i = 0; i < bidphrase.size(); ++i)
@@ -575,7 +593,7 @@ void AdSponsoredMgr::getAdBidPrice(ad_docid_t adid, const std::string& query,
             //{
             //    info.cpc_.push_back(cpc_list[j]);
             //}
-            int tmp_price = ad_bid_strategy_->realtimeBidWithRevenueMax(info, used_bugget, left_budget);
+            int tmp_price = ad_bid_strategy_->realtimeBidWithRevenueMax(info, used_budget, left_budget);
             if (tmp_price > price)
             {
                 price = tmp_price;
@@ -633,9 +651,10 @@ int AdSponsoredMgr::getBudgetLeft(ad_docid_t adid)
     if (adid >= ad_campaign_belong_list_.size())
         return 0;
     std::size_t campaign_id = ad_campaign_belong_list_[adid];
-    if (campaign_id >= ad_budget_left_list_.size())
+    if (campaign_id >= ad_budget_used_list_.size())
         return 0;
-    return ad_budget_left_list_[campaign_id];
+    int left_budget = manual_bidinfo_mgr_.getBidBudget(ad_campaign_name_list_[campaign_id]) - ad_budget_used_list_[campaign_id];
+    return left_budget;
 }
 
 bool AdSponsoredMgr::getBidKeywordId(const std::string& keyword, bool insert, BidKeywordId& id)

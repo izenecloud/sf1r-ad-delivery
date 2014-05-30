@@ -16,6 +16,8 @@
 #include <search-manager/SearchBase.h>
 #include <search-manager/HitQueue.h>
 #include <util/ustring/UString.h>
+#include <util/scheduler.h>
+
 #include <algorithm>
 
 
@@ -25,6 +27,7 @@ namespace sf1r
 static const int MAX_SEARCH_AD_COUNT = 20000;
 static const int MAX_SELECT_AD_COUNT = 20;
 static const int MAX_RECOMMEND_ITEM_NUM = 10;
+static const std::string RefreshBidStrategyJobName("RefreshBidStrategyJobName");
 
 using namespace sponsored;
 
@@ -69,6 +72,11 @@ AdIndexManager::~AdIndexManager()
 
     if (ad_click_predictor_)
         ad_click_predictor_->stop();
+
+    if (ad_sponsored_mgr_)
+    {
+        izenelib::util::Scheduler::removeJob(RefreshBidStrategyJobName);
+    }
 }
 
 bool AdIndexManager::buildMiningTask()
@@ -107,6 +115,10 @@ bool AdIndexManager::buildMiningTask()
         ad_sponsored_mgr_->init(ad_res_path_ + "/ad_sponsored", ad_data_path_ + "/ad_sponsored",
             ad_common_data_path_ + "/ad_sponsored",
             groupManager_, documentManager_.get(), id_manager_, ad_searcher_);
+        // 
+        refresh_schedule_exp_.setExpression("0 * * * *");
+        boost::function<void (int)> task = boost::bind(&AdIndexManager::refreshBidStrategy, this, 0);
+        izenelib::util::Scheduler::addJob(RefreshBidStrategyJobName, 60*1000, 0, task);
     }
 
     adMiningTask_ = new AdMiningTask(indexPath_, documentManager_, ad_dnf_index_, ad_selector_, rwMutex_);
@@ -120,6 +132,19 @@ bool AdIndexManager::buildMiningTask()
     }
 
     return true;
+}
+
+void AdIndexManager::refreshBidStrategy(int calltype)
+{
+    if (refresh_schedule_exp_.matches_now())
+    {
+        if (ad_sponsored_mgr_)
+        {
+            bool is_start_over = false;
+
+            ad_sponsored_mgr_->resetDailyLeftBudget(is_start_over);
+        }
+    }
 }
 
 void AdIndexManager::onAdStreamMessage(const std::vector<AdMessage>& msg_list)
