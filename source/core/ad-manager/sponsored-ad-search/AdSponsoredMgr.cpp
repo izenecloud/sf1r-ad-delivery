@@ -233,6 +233,7 @@ void AdSponsoredMgr::save()
     ofs.close();
     if (ad_log_mgr_)
         ad_log_mgr_->save();
+    manual_bidinfo_mgr_.save();
 }
 
 void AdSponsoredMgr::load()

@@ -141,6 +141,14 @@ void AdIndexManager::refreshBidStrategy(int calltype)
         if (ad_sponsored_mgr_)
         {
             bool is_start_over = false;
+            struct tm time_now;
+            time_t current = time(NULL);
+            gmtime_r(&current, &time_now);
+            if (time_now.tm_hour == 0 && time_now.tm_min < 30)
+            {
+                is_start_over = true;
+                LOG(INFO) << "start over the budget at time: " << time_now.tm_min;
+            }
 
             ad_sponsored_mgr_->resetDailyLeftBudget(is_start_over);
         }
