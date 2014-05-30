@@ -3,6 +3,7 @@
 #include <node-manager/DistributeRequestHooker.h>
 #include <node-manager/MasterManagerBase.h>
 #include <node-manager/sharding/ShardingStrategy.h>
+#include <ad-manager/AdIndexManager.h>
 
 #include <util/driver/Request.h>
 #include <aggregator-manager/SearchWorker.h>
@@ -171,16 +172,27 @@ bool MiningSearchService::GetProductScore(
     return miningManager_->getProductScore(docIdStr, scoreType, scoreValue);
 }
 
-bool MiningSearchService::setKeywordBidPrice(const std::string& keyword, double bidprice)
+bool MiningSearchService::setKeywordBidPrice(const std::string& keyword, const std::string& campaign_name, double bidprice)
 {
-    LOG(INFO) << "keyword bid price setting: " << keyword << ":" << bidprice;
-    return true;
+    LOG(INFO) << "keyword bid price setting: " << keyword << ":" << bidprice << " for campaign: " << campaign_name;
+    if (!miningManager_->getAdIndexManager())
+    {
+        LOG(WARNING) << "ad manager not enabled.";
+        return false;
+    }
+    return miningManager_->getAdIndexManager()->setKeywordBidPrice(keyword, campaign_name, bidprice * 100);
 }
 
-bool MiningSearchService::setAdCampaignBudget(const std::string& ad_campaign_name, double budget)
+bool MiningSearchService::setAdCampaignBudget(const std::string& campaign_name, double budget)
 {
-    LOG(INFO) << "ad campaign budget setting: " << ad_campaign_name << ":" << budget;
-    return true;
+    LOG(INFO) << "ad campaign budget setting: " << campaign_name << ":" << budget;
+    if (!miningManager_->getAdIndexManager())
+    {
+        LOG(WARNING) << "ad manager not enabled.";
+        return false;
+    }
+
+    return miningManager_->getAdIndexManager()->setAdCampaignBudget(campaign_name, budget * 100);
 }
 
 bool MiningSearchService::setAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list)
@@ -190,7 +202,13 @@ bool MiningSearchService::setAdBidPhrase(const std::string& ad_strid, const std:
     {
         LOG(INFO) << bid_phrase_list[i];
     }
-    return true;
+    if (!miningManager_->getAdIndexManager())
+    {
+        LOG(WARNING) << "ad manager not enabled.";
+        return false;
+    }
+
+    return miningManager_->getAdIndexManager()->setAdBidPhrase(ad_strid, bid_phrase_list);
 }
 
 }

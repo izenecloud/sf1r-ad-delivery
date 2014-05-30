@@ -80,12 +80,15 @@ public:
         const std::vector<std::string>& key_list,
         const std::vector<int>& price_list);
 
-    void updateAdCampaign(ad_docid_t adid, const std::string& campaign_name);
 
 private:
     typedef boost::unordered_map<std::string, uint32_t>  StrIdMapT;
     typedef std::vector<std::pair<int, double> > BidAuctionLandscapeT;
     typedef std::string LogBidKeywordId;
+
+    void updateAdBidPhrase(ad_docid_t adid, const std::vector<std::string>& bid_phrase_list,
+        BidPhraseT& bidid_list);
+    void updateAdCampaign(ad_docid_t adid, const std::string& campaign_name);
 
     void generateBidPhrase(const std::string& ad_title, std::vector<std::string>& bidphrase);
     double getAdRelevantScore(const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list);

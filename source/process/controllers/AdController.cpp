@@ -29,7 +29,8 @@ bool AdController::checkCollectionService(std::string& error)
 void AdController::set_keyword_bidprice()
 {
     Value& input = request()[Keys::resource];
-    bool ret = miningSearchService_->setKeywordBidPrice(asString(input[Keys::ad_keyword]), asDouble(input[Keys::bidprice]));
+    bool ret = miningSearchService_->setKeywordBidPrice(asString(input[Keys::ad_keyword]),
+        asString(input[Keys::ad_campaign]), asDouble(input[Keys::bidprice]));
     if (!ret)
     {
         response().addError("Request failed.");

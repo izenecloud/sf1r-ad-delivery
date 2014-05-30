@@ -383,5 +383,32 @@ bool AdIndexManager::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     return ad_sponsored_mgr_->sponsoredAdSearch(actionOperation, searchResult);
 }
 
+bool AdIndexManager::setKeywordBidPrice(const std::string& keyword, const std::string& campaign_name, int bidprice)
+{
+    if (!ad_sponsored_mgr_)
+        return false;
+    std::vector<std::string> keylist;
+    keylist.push_back(keyword);
+    std::vector<int> pricelist;
+    pricelist.push_back(bidprice);
+    ad_sponsored_mgr_->setManualBidPrice(campaign_name, keylist, pricelist);
+    return true;
+}
+
+bool AdIndexManager::setAdCampaignBudget(const std::string& campaign_name, int budget)
+{
+    if (!ad_sponsored_mgr_)
+        return false;
+    ad_sponsored_mgr_->changeDailyBudget(campaign_name, budget);
+    return true;
+}
+
+bool AdIndexManager::setAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list)
+{
+    if (!ad_sponsored_mgr_)
+        return false;
+    LOG(INFO) << "Not supported.";
+    return false;
+}
 
 } //namespace sf1r

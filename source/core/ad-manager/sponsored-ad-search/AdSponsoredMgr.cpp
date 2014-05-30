@@ -364,6 +364,20 @@ void AdSponsoredMgr::miningAdCreatives(ad_docid_t start_id, ad_docid_t end_id)
     save();
 }
 
+void AdSponsoredMgr::updateAdBidPhrase(ad_docid_t adid, const std::vector<std::string>& bid_phrase_list,
+    BidPhraseT& bidid_list)
+{
+    bidid_list.clear();
+    BidKeywordId kid = 0;
+    for(std::size_t j = 0; j < bid_phrase_list.size(); ++j)
+    {
+        getBidKeywordId(bid_phrase_list[j], true, kid);
+        bidid_list.push_back(kid);
+    }
+
+    ad_bidphrase_list_[adid].swap(bidid_list);
+}
+
 void AdSponsoredMgr::updateAdCampaign(ad_docid_t adid, const std::string& campaign_name)
 {
     uint32_t campaign_id = 0;
