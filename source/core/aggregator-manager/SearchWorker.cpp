@@ -548,6 +548,7 @@ bool SearchWorker::getSearchResult_(
         {
             return true;
         }
+        break;
     default:
         unsigned int QueryPruneTimes = 2;
         bool isUsePrune = false;

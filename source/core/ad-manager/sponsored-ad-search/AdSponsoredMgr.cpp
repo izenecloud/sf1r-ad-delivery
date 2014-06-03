@@ -194,6 +194,23 @@ void AdSponsoredMgr::save()
         ofs.flush();
     }
 
+    std::ofstream txt_data(std::string(data_path_ + "/sponsored_ad.txt").c_str());
+    for(std::size_t i = 0; i < ad_bidphrase_list_.size(); ++i)
+    {
+        txt_data << i << ":";
+        for(std::size_t j = 0; j < ad_bidphrase_list_[i].size(); ++j)
+        {
+            txt_data << ad_bidphrase_list_[i][j] << ",";
+        }
+        txt_data << std::endl;
+    }
+    for(std::size_t i = 0; i < keyword_id_value_list_.size(); ++i)
+    {
+        txt_data << i << ":" << keyword_id_value_list_[i] << std::endl;
+    }
+
+    txt_data.close();
+
     {
         len = 0;
         izenelib::util::izene_serialization<std::vector<int> > izs(ad_budget_used_list_);
@@ -823,7 +840,7 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
         searchResult.totalCount_ = 0;
         searchResult.topKDocs_.resize(0);
         searchResult.topKRankScoreList_.resize(0);
-        return false;
+        return true;
     }
 
     std::sort(query_kid_list.begin(), query_kid_list.end());
