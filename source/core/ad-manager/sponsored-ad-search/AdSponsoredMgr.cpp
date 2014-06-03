@@ -246,6 +246,22 @@ void AdSponsoredMgr::save()
         ofs.write(buf, len);
         ofs.flush();
     }
+    {
+        len = 0;
+        izenelib::util::izene_serialization<std::vector<std::map<BidKeywordId, int> > > izs(ad_bid_price_list_);
+        izs.write_image(buf, len);
+        ofs.write((const char*)&len, sizeof(len));
+        ofs.write(buf, len);
+        ofs.flush();
+    }
+    {
+        len = 0;
+        izenelib::util::izene_serialization<std::vector<std::vector<std::pair<int, double> > > > izs(ad_uniform_bid_price_list_);
+        izs.write_image(buf, len);
+        ofs.write((const char*)&len, sizeof(len));
+        ofs.write(buf, len);
+        ofs.flush();
+    }
 
     ofs.close();
     if (ad_log_mgr_)
@@ -327,6 +343,24 @@ void AdSponsoredMgr::load()
             izd.read_image(ad_campaign_belong_list_);
         }
         LOG(INFO) << "campaign name info loaded: " << ad_campaign_name_list_.size();
+
+        {
+            len = 0;
+            ifs.read((char*)&len, sizeof(len));
+            data.resize(len);
+            ifs.read((char*)&data[0], len);
+            izenelib::util::izene_deserialization<std::vector<std::map<BidKeywordId, int> > > izd(data.data(), data.size());
+            izd.read_image(ad_bid_price_list_);
+        }
+
+        {
+            len = 0;
+            ifs.read((char*)&len, sizeof(len));
+            data.resize(len);
+            ifs.read((char*)&data[0], len);
+            izenelib::util::izene_deserialization<std::vector<std::vector<std::pair<int, double> > > > izd(data.data(), data.size());
+            izd.read_image(ad_uniform_bid_price_list_);
+        }
     }
     ifs.close();
 
@@ -485,6 +519,8 @@ void AdSponsoredMgr::resetDailyLeftBudget(bool reset_used)
         bidkey_cpc_map[keyword_list[i]] = cost_click_list[i];
     }
 
+    std::ofstream bid_price_file(std::string(data_path_ + "/bid_price.txt").c_str());
+
     // recompute the bid strategy.
     if (bid_strategy_type_ == UniformBid)
     {
@@ -504,6 +540,12 @@ void AdSponsoredMgr::resetDailyLeftBudget(bool reset_used)
             manual_bidinfo_mgr_.getManualBidPriceList(ad_campaign_name_list_[i], manual_bidprice_list);
             getBidStatisticalData(bidkey_list, bidkey_cpc_map, manual_bidprice_list, ad_statistical_data);
             bid_price_list = ad_bid_strategy_->convexUniformBid(ad_statistical_data, ad_daily_budget);
+            bid_price_file << "campaign: " << ad_campaign_name_list_[i] << ": ";
+            for(std::size_t j = 0; j < bid_price_list.size(); ++j)
+            {
+                bid_price_file << bid_price_list[j].first << "(" << bid_price_list[j].second << "),"; 
+            }
+            bid_price_file << std::endl;
             ad_uniform_bid_price_list_[i].swap(bid_price_list);
         }
     }
@@ -524,16 +566,20 @@ void AdSponsoredMgr::resetDailyLeftBudget(bool reset_used)
             std::vector<int> bid_price_list = ad_bid_strategy_->geneticBid(ad_statistical_data, ad_daily_budget);
             assert(bid_price_list.size() == bidkey_list.size());
             std::set<BidKeywordId>::const_iterator bid_it = bidkey_list.begin();
+            bid_price_file << "campaign: " << ad_campaign_name_list_[i] << ": ";
             for(std::size_t j = 0; j < bid_price_list.size(); ++j)
             {
+                bid_price_file << *bid_it << "-" << bid_price_list[j] << ", ";
                 ad_bid_price_list_[i][*bid_it] = bid_price_list[j];
             }
+            bid_price_file << std::endl;
         }
     }
     else
     {
         // realtime bid.
     }
+    bid_price_file.close();
     LOG(INFO) << "end compute auto bid strategy.";
 }
 
@@ -758,6 +804,11 @@ void AdSponsoredMgr::generateBidPhrase(const std::string& ad_title, std::vector<
 
 void AdSponsoredMgr::generateBidPhrase(const std::string& ad_title, BidPhraseT& bidphrase)
 {
+    if (ad_title.empty())
+    {
+        LOG(INFO) << "empty ad tiltle";
+        return;
+    }
     bidphrase.clear();
     std::string pattern = ad_title;
     boost::to_lower(pattern);
@@ -776,6 +827,11 @@ void AdSponsoredMgr::generateBidPhrase(const std::string& ad_title, BidPhraseT& 
     {
         getBidKeywordId(model, true, kid);
         bidphrase.push_back(kid);
+    }
+    if (tokens.empty())
+    {
+        LOG(INFO) << "empty tokens for title: " << ad_title;
+        return;
     }
     std::sort(tokens.begin(), tokens.end(), sort_tokens_func);
     for (size_t i = 0; i < tokens.size(); ++i)
@@ -847,10 +903,13 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     uint32_t first_kid = query_kid_list[0];
     uint32_t last_kid = query_kid_list[query_kid_list.size() - 1];
     boost::dynamic_bitset<> hit_set(last_kid - first_kid + 1);
+    std::cout << "query keyword bit: " << std::endl;
     for(std::size_t i = 0; i < query_kid_list.size(); ++i)
     {
         hit_set[query_kid_list[i] - first_kid] = 1;
+        std::cout << query_kid_list[i] << ",";
     }
+    std::cout << std::endl;
 
     ScoreSortedSponsoredAdQueue ranked_queue(MAX_RANKED_AD_NUM);
 
@@ -860,34 +919,37 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     for(std::size_t i = 0; i < result_list.size(); ++i)
     {
         const BidPhraseT& bidphrase = ad_bidphrase_list_[result_list[i]];
-        bool missed = false;
+        int missed = 0;
+        std::cout << "bid for ad: " << result_list[i];
         for(std::size_t j = 0; j < bidphrase.size(); ++j)
         {
+            std::cout << bidphrase[j] << ",";
             if ((bidphrase[j] < first_kid) ||
                 !hit_set.test(bidphrase[j] - first_kid))
             {
-                missed = true;
-                break;
+                ++missed;
             }
         }
-        if (!missed)
+        std::cout << std::endl;
+        if (missed > bidphrase.size()/2)
         {
-            int leftbudget = getBudgetLeft(result_list[i]);
-            if (leftbudget > 0)
-            {
-                ScoreSponsoredAdDoc item;
-                item.docId = result_list[i];
+            continue;
+        }
+        int leftbudget = getBudgetLeft(result_list[i]);
+        if (leftbudget > 0)
+        {
+            ScoreSponsoredAdDoc item;
+            item.docId = result_list[i];
 
-                int bidprice = 0;
-                getAdBidPrice(item.docId, query, leftbudget, bidprice);
-                if (bidprice > 0)
-                {
-                    item.qscore = getAdQualityScore(item.docId, bidphrase, query_kid_list);
-                    item.score = bidprice * item.qscore;
-                    ranked_queue.insert(item);
-                }
-                filtered_result_list.push_back(result_list[i]);
+            int bidprice = 0;
+            getAdBidPrice(item.docId, query, leftbudget, bidprice);
+            if (bidprice > 0)
+            {
+                item.qscore = getAdQualityScore(item.docId, bidphrase, query_kid_list);
+                item.score = bidprice * item.qscore;
+                ranked_queue.insert(item);
             }
+            filtered_result_list.push_back(result_list[i]);
         }
     }
     LOG(INFO) << "result num: " << result_list.size() << ", after broad match and budget filter: " << filtered_result_list.size();
