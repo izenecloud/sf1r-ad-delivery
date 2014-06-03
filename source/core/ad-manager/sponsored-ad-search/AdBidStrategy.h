@@ -68,7 +68,7 @@ public:
     * @param budget total Budget in budget period.
     * @return Returning a list of two bids, <bid, probability> for each.
     */
-    static std::vector<std::pair<int, double> > convexUniformBid(const std::list<AdQueryStatisticInfo>& qsInfos, int budget);
+    static std::vector<std::pair<int, double> > convexUniformBid(const std::vector<AdQueryStatisticInfo>& qsInfos, int budget);
 
     /**
     * @brief provide one bid for each interesting keyword, to maximize revenue(clicks traffic). This strategy take the budget left in current charging period and the time remaining into consideration. So it is a real time bid method.
@@ -97,7 +97,7 @@ public:
     * @param budget total Budget in budget period.
     * @return Returning a list of bids, whose length is equal to qsInfos.
     */
-    static std::vector<int> geneticBid(const std::list<AdQueryStatisticInfo>& qsInfos, int budget);
+    static std::vector<int> geneticBid(const std::vector<AdQueryStatisticInfo>& qsInfos, int budget);
 };
 
 

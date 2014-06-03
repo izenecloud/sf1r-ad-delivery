@@ -85,7 +85,7 @@ private:
     Point base_;
 };
 
-std::vector<std::pair<int, double> > AdBidStrategy::convexUniformBid( const std::list<AdQueryStatisticInfo>& qsInfos, int budget)
+std::vector<std::pair<int, double> > AdBidStrategy::convexUniformBid( const std::vector<AdQueryStatisticInfo>& qsInfos, int budget)
 {
     static const std::vector<std::pair<int, double> > NULLBID_(2, std::make_pair(0, 0.0));
 
@@ -97,7 +97,7 @@ std::vector<std::pair<int, double> > AdBidStrategy::convexUniformBid( const std:
 
     //aggregate landscape
     boost::unordered_map<int, Point> landscape; //(cpc, <cost, clicks>)
-    for (std::list<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin(); cit != qsInfos.end(); ++cit)
+    for (std::vector<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin(); cit != qsInfos.end(); ++cit)
     {
         std::vector<int>::const_iterator cpcit = cit->cpc_.begin();
         std::vector<double>::const_iterator ctrit = cit->ctr_.begin();
@@ -201,7 +201,7 @@ std::vector<std::pair<int, double> > AdBidStrategy::convexUniformBid( const std:
 
     int singleBudget = 1000000000;
     int totalImpression = 0;
-    for (std::list<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin(); cit != qsInfos.end(); ++cit)
+    for (std::vector<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin(); cit != qsInfos.end(); ++cit)
     {
         totalImpression += cit->impression_;
         singleBudget = std::min(cit->minBid_, singleBudget);
@@ -448,9 +448,9 @@ static std::vector<int> dpKP(const std::vector<std::vector<double> >& W, const s
     return Sol;
 }
 
-static void convertIndexToBid(const std::list<AdQueryStatisticInfo>& qsInfos, const std::vector<int>& bidindex, std::vector<int>& bid)
+static void convertIndexToBid(const std::vector<AdQueryStatisticInfo>& qsInfos, const std::vector<int>& bidindex, std::vector<int>& bid)
 {
-    std::list<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin();
+    std::vector<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin();
     int i = 0;
     int bi = 0;
     for (; cit != qsInfos.end(); ++cit, ++i)
@@ -477,10 +477,10 @@ static void convertIndexToBid(const std::list<AdQueryStatisticInfo>& qsInfos, co
 }
 
 //for debug.
-static double computeValue(const std::list<AdQueryStatisticInfo>& qsInfos, const std::vector<int>& sol)
+static double computeValue(const std::vector<AdQueryStatisticInfo>& qsInfos, const std::vector<int>& sol)
 {
     double myV = 0.0;
-    std::list<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin();
+    std::vector<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin();
     std::vector<int>::const_iterator sit = sol.begin();
     for (; cit != qsInfos.end(); ++cit)
     {
@@ -497,10 +497,10 @@ static double computeValue(const std::list<AdQueryStatisticInfo>& qsInfos, const
     return myV;
 }
 
-static void checkGABid(const std::list<AdQueryStatisticInfo>& qsInfos, int budget, std::vector<int>& bid)
+static void checkGABid(const std::vector<AdQueryStatisticInfo>& qsInfos, int budget, std::vector<int>& bid)
 {
     bool allZeroFlag = true;
-    std::list<AdQueryStatisticInfo>::const_iterator qsIt = qsInfos.begin();
+    std::vector<AdQueryStatisticInfo>::const_iterator qsIt = qsInfos.begin();
     for (std::vector<int>::iterator it = bid.begin(); it != bid.end(); ++it, ++qsIt)
     {
         if (*it > 0)
@@ -508,10 +508,10 @@ static void checkGABid(const std::list<AdQueryStatisticInfo>& qsInfos, int budge
             if (*it < qsIt->minBid_)
             {
                 *it = qsIt->minBid_;
-            } 
+            }
 
             allZeroFlag = false;
-        }        
+        }
     }
     if (!allZeroFlag)
     {
@@ -528,14 +528,14 @@ static void checkGABid(const std::list<AdQueryStatisticInfo>& qsInfos, int budge
     }
 }
 
-std::vector<int> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticInfo>& qsInfos, int budget )
+std::vector<int> AdBidStrategy::geneticBid( const std::vector<AdQueryStatisticInfo>& qsInfos, int budget )
 {
     std::vector<int> bid(qsInfos.size(), 0);
 
 
     //support for predefined bidding.
     int tmpKeywordNum = 0, tmpBidIndex = 0, tmpBudget = budget;
-    for (std::list<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin(); cit != qsInfos.end(); ++cit, ++tmpBidIndex)
+    for (std::vector<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin(); cit != qsInfos.end(); ++cit, ++tmpBidIndex)
     {
         if (cit->bid_ == -1)
         {
@@ -583,7 +583,7 @@ std::vector<int> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticInfo
     TQSDataType W(KeywordNum), V(KeywordNum);
     std::vector<int> adP(KeywordNum);  //ad position num for each keyword.
     int kNum = 0;
-    for (std::list<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin(); cit != qsInfos.end(); ++cit)
+    for (std::vector<AdQueryStatisticInfo>::const_iterator cit = qsInfos.begin(); cit != qsInfos.end(); ++cit)
     {
         if (cit->bid_ != -1)
         {
@@ -941,7 +941,7 @@ std::vector<int> AdBidStrategy::geneticBid( const std::list<AdQueryStatisticInfo
     if (maxI != -1)
     {
         convertIndexToBid(qsInfos, P[maxI], bid);
-        
+
     }
 
     checkGABid(qsInfos, budget, bid);
