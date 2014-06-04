@@ -18,21 +18,28 @@ class AdIndexManager
 
     friend class LaserRecommend;
 public:
-    AdIndexManager(const std::string& workdir, 
+    AdIndexManager(const std::string& workdir,
+        const bool isEnableClustering, 
         const boost::shared_ptr<DocumentManager>& documentManager);
     ~AdIndexManager();
 
 public:
+    void index(const docid_t& docid, const std::vector<std::pair<int, float> >& vec);
+    bool get(const docid_t& docid, std::vector<std::pair<int, float> >& vec) const;
+    
     // for clustering system
     void index(const std::size_t& clusteringId, 
-        const docid_t& docid, 
+        const docid_t& docid,
         const std::vector<std::pair<int, float> >& vec);
-    bool get(const std::size_t& clusteringId, ADVector& advec) const;
-    // for 
-    void index(const docid_t& docid, 
-        const std::vector<std::pair<int, float> >& vec);
-    bool get(const docid_t& docid, std::vector<std::pair<int, float> >& advec) const;
     
+    bool get(const std::size_t& clusteringId, std::vector<docid_t>& docids) const;
+    bool get(const docid_t& docid, std::size_t& clustering) const;
+    
+    bool get(const std::size_t& clusteringId, ADVector& adList) const;
+    bool get(const std::vector<docid_t>& docidList, ADVector& adList) const;
+
+    bool get(const docid_t& docid, 
+        std::pair<std::size_t, std::vector<std::pair<int, float> > >& vec) const;
     
     docid_t getLastDocId() const
     {
@@ -48,10 +55,14 @@ public:
     void postIndex();
 private:
     void open_();
+    void close_();
     void serializeLastDocid_();
+    void deserializeLastocid_();
 private:
     const std::string workdir_;
-    ContainerType* containerPtr_;
+    const bool isEnableClustering_;
+    ContainerType* adPtr_;
+    ContainerType* clusteringPtr_;
     docid_t lastDocId_;
 
     const boost::shared_ptr<DocumentManager>& documentManager_;

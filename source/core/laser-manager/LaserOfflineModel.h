@@ -1,23 +1,13 @@
-#ifndef LASER_ONLINE_MODEL_H
-#define LASER_ONLINE_MODEL_H
-#include "LaserModel.h"
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/serialization.hpp>
-namespace sf1r { namespace laser {
+#ifndef LASER_OFFLINE_MODEL_H
+#define LASER_OFFLINE_MODEL_H
 
-class LaserOnlineModel : public LaserModel 
+#include "LaserModel.h"
+namespace sf1r { namespace laser {
+class LaserOfflineModel : public LaserModel 
 {
 public:
-    LaserOnlineModel()
-    {
-    }
-
-    LaserOnlineModel(float delta, const std::vector<float>& eta)
-        : delta_(delta)
-        , eta_(eta)
-    {
-    }
-
+    LaserOfflineModel(const std::string& filename);
+    ~LaserOfflineModel();
 public:
     virtual bool candidate(
         const std::string& text,
@@ -33,20 +23,29 @@ public:
     virtual void dispatch(const std::string& method, msgpack::rpc::request& req)
     {
     }
-        
-        friend class boost::serialization::access;
-        template<class Archive>
-        void serialize(Archive & ar, const unsigned int version)
-        {
-            ar & delta_;
-            ar & eta_;
-        }
+    
+    void setAlpha(std::vector<float>& alpha)
+    {
+        alpha_.swap(alpha);
+    }
 
+    void setBeta(std::vector<float>& beta)
+    {
+        beta_.swap(beta);
+    }
+    
+    void setQuadratic(std::vector<std::vector<float> >& quadratic)
+    {
+        quadratic_.swap(quadratic);
+    }
 private:
-    float delta_;
-    std::vector<float> eta_;
+    void save();
+    void load();
+private:
+    const std::string filename_;
+    std::vector<float> alpha_;
+    std::vector<float> beta_;
+    std::vector<std::vector<float> > quadratic_;
 };
-
 } }
-
 #endif

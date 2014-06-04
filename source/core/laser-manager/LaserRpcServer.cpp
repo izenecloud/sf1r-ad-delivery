@@ -71,6 +71,11 @@ const LaserManager* LaserRpcServer::get(const std::string& collection)
     return it->second;
 }
 
+class pair
+{
+
+};
+
 void LaserRpcServer::dispatch(msgpack::rpc::request req)
 {
     // in case of remove collecion
@@ -79,6 +84,12 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
     {
         std::string method;
         req.method().convert(&method);
+        if (method == CLUSTERINGServerRequest::method_names[CLUSTERINGServerRequest::METHOD_TEST])
+        {
+            std::pair<int, float> pp;
+            pp = std::make_pair(1, 2.0);
+            req.result(pp);
+        }
         if (method == CLUSTERINGServerRequest::method_names[CLUSTERINGServerRequest::METHOD_SPLITETITLE])
         {
             // SplitTitle params;
@@ -129,7 +140,7 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
         }
         else if (method == CLUSTERINGServerRequest::method_names[CLUSTERINGServerRequest::METHOD_UPDATETOPNCLUSTER])
         {
-            msgpack::type::tuple<std::string, std::string, std::map<int, float> > params;
+            /*msgpack::type::tuple<std::string, std::string, std::map<int, float> > params;
             req.params().convert(&params);
             const LaserManager* laserManager = get(params.get<0>());
             if (NULL == laserManager)
@@ -139,11 +150,11 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
             }
 
             bool res = laserManager->topnClustering_->update(params.get<1>(), params.get<2>());
-            req.result(res);
+            req.result(res);*/
         }
         else if (method == CLUSTERINGServerRequest::method_names[CLUSTERINGServerRequest::METHOD_UPDATEPERUSERMODEL])
         {
-            msgpack::type::tuple<std::string, std::string, std::vector<float> > params;
+            /*msgpack::type::tuple<std::string, std::string, std::vector<float> > params;
             req.params().convert(&params);
             const LaserManager* laserManager = get(params.get<0>());
             if (NULL == laserManager)
@@ -152,7 +163,7 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
                 return;
             }
             bool res = laserManager->laserOnlineModel_->update(params.get<1>(), params.get<2>());
-            req.result(res);
+            req.result(res);*/
         }
         else
         {

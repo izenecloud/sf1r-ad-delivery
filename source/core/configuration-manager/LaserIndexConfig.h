@@ -14,13 +14,20 @@ class LaserIndexConfig
 {
 public:
     bool isEnable;
-    bool isClusteringEnable;
+    bool isEnableTopnClustering;
+    bool isEnableHierarchical;
 
     LaserIndexConfig() 
         : isEnable(false)
-        , isClusteringEnable(true)
+        , isEnableTopnClustering(false)
+        , isEnableHierarchical(false)
     {}
 
+public:
+    bool isEnableClustering() const
+    {
+        return isEnableHierarchical || isEnableTopnClustering;
+    }
 private:
     friend class boost::serialization::access;
 

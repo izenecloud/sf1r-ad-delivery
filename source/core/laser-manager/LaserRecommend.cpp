@@ -1,109 +1,85 @@
 #include "LaserRecommend.h"
+#include "LaserModel.h"
+#include "LaserModelFactory.h"
+#include "LaserManager.h"
 #include <glog/logging.h>
 
 
 namespace sf1r { namespace laser {
 
-bool LaserRecommend::recommend(const std::string& uuid, 
+LaserRecommend::LaserRecommend(const LaserManager* laserManager)
+    : laserManager_(laserManager_)
+    , factory_(NULL)
+    , model_(NULL)
+{
+    factory_ = new LaserModelFactory(*laserManager_);
+    model_ = factory_->createModel(laserManager_->config_, 
+        laserManager_->workdir_ + "/model/", 1000);
+}
+
+LaserRecommend::~LaserRecommend()
+{
+    if (NULL != factory_)
+    {
+        delete factory_;
+        factory_ = NULL;
+    }
+    if (NULL != model_)
+    {
+        delete model_;
+        model_ = NULL;
+    }
+}
+
+bool LaserRecommend::recommend(const std::string& text, 
     std::vector<docid_t>& itemList, 
     std::vector<float>& itemScoreList, 
     const std::size_t num) const
 {
-    std::map<int, float> clustering;
-    std::vector<float> model;
-    if (topnClustering_->get(uuid, clustering) && laserOnlineModel_->get(uuid, model))
-    {
-        priority_queue queue;
-        LOG(INFO)<<"uuid = "<<uuid<<", top clustering num = "<<clustering.size();
-        for (std::map<int, float>::const_iterator it = clustering.begin();
-            it != clustering.end(); ++it)
-        {
-            AdIndexManager::ADVector advec;
-            if (getAD(it->first, advec))
-            {
-                LOG(INFO)<<"clusteringId = "<<it->first<<", ad num = "<<advec.size();
-                topN(model, it->second, advec, num, queue);
-            }
-            else
-            {
-                LOG(INFO)<<"no ad in clustering = "<<it->first<<", use similar clustering instead";
-                if (getSimilarAd(it->first, advec))
-                {
-                    topN(model, it->second, advec, num, queue);
-                }
-            }
-        }
+    std::vector<std::pair<int, float> > context;
+    extractContext(text, context);
 
+    std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > > ad;
+    std::vector<float> score;
+    if (!model_->candidate(text, context, ad, score))
+    {
+        return false;
+    }
+
+    priority_queue queue;
+    for (std::size_t i = 0; i < ad.size(); ++i)
+    {
+        topn(ad[i].first, model_->score(text, context,  ad[i], score[i]), num, queue);   
+    }
+    {
         while (!queue.empty())
         {
            itemList.push_back(queue.top().first);
            itemScoreList.push_back(queue.top().second);
            queue.pop();
         }
-        return true;
+    }
+    return true;
+}
+
+void LaserRecommend::extractContext(const std::string& text, std::vector<std::pair<int, float> >& context) const
+{
+}
+
+void LaserRecommend::topn(const docid_t& docid, const float score, const std::size_t n, priority_queue& queue) const
+{
+    if(queue.size() >= n)
+    {
+        if(score > queue.top().second)
+        {
+            queue.pop();
+            queue.push(std::make_pair(docid, score));
+        }
     }
     else
     {
-        LOG(INFO)<<"top clustering or online model does not exist";
-        return false;
+        queue.push(std::make_pair(docid, score));
     }
-}
-
-bool LaserRecommend::getAD(const std::size_t& clusteringId, AdIndexManager::ADVector& advec) const
-{
-    return indexManager_->get(clusteringId, advec);
 }
     
-bool LaserRecommend::getSimilarAd(const std::size_t& clusteringId, AdIndexManager::ADVector& advec) const
-{
-    bool ret = false;
-    std::vector<int> idvec;
-    getSimilarClustering(clusteringId, idvec);
-    LOG(INFO)<<"clustering = "<<clusteringId<<", similar clustering size = "<<idvec.size();
-    for (std::size_t i = 0; i < idvec.size(); ++i )
-    {
-        ret |= getAD(idvec[i], advec);
-    }
-    return ret;
-}
-
-void LaserRecommend::getSimilarClustering(const std::size_t& clusteringId, std::vector<int>& idvec) const
-{
-    idvec = (*similarClustering_)[clusteringId];
-}
-
-void LaserRecommend::topN(const std::vector<float>& model, 
-        const float offset, 
-        const AdIndexManager::ADVector& advec, 
-        const std::size_t n, 
-        priority_queue& queue) const
-{
-    for (std::size_t i = 0; i < advec.size(); ++i)
-    {
-        const AdIndexManager::AD& ad = advec[i];
-        const docid_t& docid = ad.first;
-        const std::vector<std::pair<int, float> >& vec = ad.second;
-        std::vector<std::pair<int, float> >::const_iterator it = vec.begin();
-        float weight = 0;
-        for (; it != vec.end(); ++it)
-        {
-            weight += model[it->first + 1] * it->second;
-        }
-        weight += model[0];
-        weight += offset;
-        if(queue.size() >= n)
-        {
-            if(weight > queue.top().second)
-            {
-                queue.pop();
-                queue.push(std::make_pair(docid, weight));
-            }
-        }
-        else
-        {
-            queue.push(std::make_pair(docid, weight));
-        }
-    }
-}
-
 } }

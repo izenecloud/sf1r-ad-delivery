@@ -10,11 +10,15 @@
 #include "AdIndexManager.h"
 #include "Tokenizer.h"
 #include "TopNClusteringDB.h"
+#include "LaserOnlineModel.h"
+#include "LaserOfflineModel.h"
 #include "clusteringmanager/type/TermDictionary.h"
 
 namespace sf1r { namespace laser {
 class LaserIndexTask;
 class LaserRpcServer;
+class LaserRecommend;
+class LaserModelFactory;
 } }
 namespace sf1r {
 
@@ -51,6 +55,8 @@ private:
 
     friend class laser::LaserIndexTask;
     friend class laser::LaserRpcServer;
+    friend class laser::LaserRecommend;
+    friend class laser::LaserModelFactory;
 private:
     const std::string collection_;
     const std::string workdir_;
@@ -63,9 +69,6 @@ private:
     laser::LaserIndexTask* indexTask_;
     
     laser::Tokenizer* tokenizer_;
-    laser::LaserModelDB* laserOnlineModel_;
-    laser::LaserModelDB* laserOfflineModel_;
-    laser::TopNClusteringDB* topnClustering_;
     std::vector<TokenVector>* clusteringContainer_;
     std::vector<std::vector<int> >* similarClustering_;
     

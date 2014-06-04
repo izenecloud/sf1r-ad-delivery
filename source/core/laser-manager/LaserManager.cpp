@@ -29,9 +29,6 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
     , recommend_(NULL)
     , indexManager_(NULL)
     , tokenizer_(NULL)
-    , laserOnlineModel_(NULL)
-    , laserOfflineModel_(NULL)
-    , topnClustering_(NULL)
     , clusteringContainer_(NULL)
     , similarClustering_(NULL)
 {
@@ -55,7 +52,7 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
     tokenizer_ = new Tokenizer(resdir_ + "/dict/title_pca/",
         resdir_ + "/dict/terms_dic.dat");
 
-    if (config_.isClusteringEnable) 
+    if (config_.isEnableClustering()) 
     {
         std::vector<boost::unordered_map<std::string, float> > clusteringContainer;
         laser::clustering::loadClusteringResult(clusteringContainer, resdir_ + "/clustering_result");
@@ -74,19 +71,12 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
             boost::archive::text_iarchive ia(ifs);
             ia >> *similarClustering_;
         }
-        topnClustering_ = new TopNClusteringDB(workdir_ + "/topnclustering", 
-            clusteringContainer_->size());
     }
-    else
-    {
-        laserOfflineModel_ = new LaserModelDB(workdir_ + "/laser_offline_model");
-    }
-
-    laserOnlineModel_ = new LaserModelDB(workdir_ + "/laser_online_model/"); 
     
     indexManager_ = new laser::AdIndexManager(workdir_, 
+        config_.isEnableClustering(),
         documentManager_);
-    recommend_ = new LaserRecommend(indexManager_, topnClustering_, laserOnlineModel_, similarClustering_);
+    recommend_ = new LaserRecommend(this);
     // delete by TaskBuilder
     indexTask_ = new LaserIndexTask(this);
 
@@ -111,22 +101,6 @@ LaserManager::~LaserManager()
     {
         delete tokenizer_;
         tokenizer_ = NULL;
-    }
-
-    if (NULL != laserOnlineModel_)
-    {
-        delete laserOnlineModel_;
-        laserOnlineModel_ = NULL;
-    }
-    if (NULL != laserOfflineModel_)
-    {
-        delete laserOfflineModel_;
-        laserOfflineModel_ = NULL;
-    }
-    if (NULL != topnClustering_)
-    {
-        delete topnClustering_;
-        topnClustering_ = NULL;
     }
     if (NULL != clusteringContainer_)
     {
@@ -163,7 +137,8 @@ void LaserManager::index(const docid_t& docid, const std::string& title)
 {
     TokenSparseVector vec;
     tokenizer_->tokenize(title, vec);
-    if (config_.isClusteringEnable)
+    
+    if (config_.isEnableClustering())
     {
         std::size_t clusteringId = assignClustering_(vec);
         if ( (std::size_t)-1 == clusteringId)
