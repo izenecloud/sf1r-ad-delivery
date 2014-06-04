@@ -31,6 +31,7 @@ static const int MAX_DIFF_BID_KEYWORD_NUM = 1000000;
 static const int MAX_RANKED_AD_NUM = 10;
 static const int LOWEST_CLICK_COST = 1;
 static const int DEFAULT_AD_BUDGET = 1000;
+static const double MIN_AD_SCORE = 1e-6;
 
 static bool sort_tokens_func(const std::pair<std::string, double>& left, const std::pair<std::string, double>& right)
 {
@@ -909,7 +910,7 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     uint32_t first_kid = query_kid_list[0];
     uint32_t last_kid = query_kid_list[query_kid_list.size() - 1];
     boost::dynamic_bitset<> hit_set(last_kid - first_kid + 1);
-    std::cout << "query keyword bit: " << std::endl;
+    std::cout << "query keyword id: ";
     for(std::size_t i = 0; i < query_kid_list.size(); ++i)
     {
         hit_set[query_kid_list[i] - first_kid] = 1;
@@ -922,26 +923,32 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     const std::vector<ad_docid_t>& result_list = searchResult.topKDocs_;
     std::vector<ad_docid_t> filtered_result_list;
     filtered_result_list.reserve(result_list.size());
+    LOG(INFO) << "begin filter by broad match.";
     for(std::size_t i = 0; i < result_list.size(); ++i)
     {
         const BidPhraseT& bidphrase = ad_bidphrase_list_[result_list[i]];
+        if (bidphrase.empty())
+            continue;
         int missed = 0;
-        std::cout << "bid for ad: " << result_list[i];
+        //std::cout << "bid for ad: " << result_list[i] << ": ";
         for(std::size_t j = 0; j < bidphrase.size(); ++j)
         {
-            std::cout << bidphrase[j] << ",";
+            //std::cout << bidphrase[j] << ",";
             if ((bidphrase[j] < first_kid) ||
                 !hit_set.test(bidphrase[j] - first_kid))
             {
                 ++missed;
+                if (missed > 0)
+                    break;
             }
         }
-        std::cout << std::endl;
-        if (missed > bidphrase.size()/2)
+        //std::cout << std::endl;
+        if (missed > 0)
         {
             continue;
         }
         int leftbudget = getBudgetLeft(result_list[i]);
+        LOG(INFO) << "broad matched, get the bid price.";
         if (leftbudget > 0)
         {
             ScoreSponsoredAdDoc item;
@@ -953,7 +960,10 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
             {
                 item.qscore = getAdQualityScore(item.docId, bidphrase, query_kid_list);
                 item.score = bidprice * item.qscore;
-                ranked_queue.insert(item);
+                if (item.score > MIN_AD_SCORE)
+                {
+                    ranked_queue.insert(item);
+                }
             }
             filtered_result_list.push_back(result_list[i]);
         }
@@ -985,7 +995,7 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
             }
             else
             {
-                topKAdCost[i] = LOWEST_CLICK_COST + searchResult.topKRankScoreList_[i - 1]/item.qscore;
+                topKAdCost[i] = LOWEST_CLICK_COST + searchResult.topKRankScoreList_[i + 1]/item.qscore;
             }
         }
     }
@@ -997,6 +1007,7 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     
     searchResult.totalCount_ = count;
     ad_log_mgr_->updateAdSearchStat(all_keyword_list, ranked_ad_strlist);
+    LOG(INFO) << "end of sponsored search.";
 
     return true;
 }
