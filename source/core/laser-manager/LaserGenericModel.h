@@ -36,6 +36,7 @@ protected:
     const std::string workdir_;
     LaserModelDB<docid_t, LaserOnlineModel>* pAdDb_;
     LaserOfflineModel* offlineModel_;
+    mutable boost::shared_mutex mutex_;
 };
 } }
 #endif

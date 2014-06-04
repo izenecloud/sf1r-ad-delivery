@@ -65,7 +65,11 @@ float LaserGenericModel::score(
 
     static const std::pair<docid_t, std::vector<std::pair<int, float> > > perAd;
     ret += onlineModel.score(text, user, perAd, 0);
-    ret += offlineModel_->score(text, user, ad, 0);
+    {
+        boost::shared_lock<boost::shared_mutex> sharedLock(mutex_, boost::try_to_lock);
+        if (sharedLock)
+            ret += offlineModel_->score(text, user, ad, 0);
+    }
     return ret;
 }
     
@@ -97,7 +101,8 @@ void LaserGenericModel::updateOfflineModel(msgpack::rpc::request& req)
     std::vector<float> alpha(params.get<1>());
     std::vector<float> beta(params.get<2>());
     std::vector<std::vector<float> > quadratic(params.get<3>());
-    //TODO 
+    
+    boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
     offlineModel_->setAlpha(alpha);
     offlineModel_->setBeta(beta);
     offlineModel_->setQuadratic(quadratic);
