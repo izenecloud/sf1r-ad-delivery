@@ -103,7 +103,7 @@ private:
     void getBidStatisticalData(const std::set<BidKeywordId>& bidkey_list,
         const std::map<LogBidKeywordId, BidAuctionLandscapeT>& bidkey_cpc_map,
         const std::map<std::string, int>& manual_bidprice_list,
-        std::list<AdQueryStatisticInfo>& ad_statistical_data);
+        std::vector<AdQueryStatisticInfo>& ad_statistical_data);
 
     std::string data_path_;
     // all bid phrase for all ad creatives.

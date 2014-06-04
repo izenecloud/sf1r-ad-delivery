@@ -8,6 +8,7 @@
 
 #include <boost/filesystem.hpp>
 #define MAX_CAMPAIGN_NUM 100000
+#define DEFAULT_AD_BUDGET 100
 
 namespace bfs = boost::filesystem;
 
@@ -119,7 +120,7 @@ int AdManualBidInfoMgr::getBidBudget(const std::string& campaign)
 {
     boost::unordered_map<std::string, int>::const_iterator it = ad_campaign_budget_list_.find(campaign);
     if (it == ad_campaign_budget_list_.end())
-        return 0;
+        return DEFAULT_AD_BUDGET;
     return it->second;
 }
 

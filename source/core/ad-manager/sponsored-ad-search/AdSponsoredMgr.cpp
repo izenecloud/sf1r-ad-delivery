@@ -413,6 +413,7 @@ void AdSponsoredMgr::miningAdCreatives(ad_docid_t start_id, ad_docid_t end_id)
             LOG(INFO) << "mining ad creative for sponsored search : " << i;
         }
     }
+    resetDailyLeftBudget(false);
     save();
 }
 
@@ -464,8 +465,9 @@ void AdSponsoredMgr::updateAdCampaign(ad_docid_t adid, const std::string& campai
 void AdSponsoredMgr::getBidStatisticalData(const std::set<BidKeywordId>& bidkey_list,
     const std::map<LogBidKeywordId, BidAuctionLandscapeT>& bidkey_cpc_map,
     const std::map<std::string, int>& manual_bidprice_list,
-    std::list<AdQueryStatisticInfo>& ad_statistical_data)
+    std::vector<AdQueryStatisticInfo>& ad_statistical_data)
 {
+    ad_statistical_data.clear();
     std::set<BidKeywordId>::const_iterator bid_it = bidkey_list.begin();
     for(; bid_it != bidkey_list.end(); ++bid_it)
     {
@@ -509,7 +511,7 @@ void AdSponsoredMgr::resetDailyLeftBudget(bool reset_used)
     double left_ratio = (24 - time_now.tm_hour)/(double)24;
     int ad_daily_budget = 0;
 
-    std::list<AdQueryStatisticInfo> ad_statistical_data;
+    std::vector<AdQueryStatisticInfo> ad_statistical_data;
     std::vector<LogBidKeywordId> keyword_list;
     std::vector<AdAuctionLogMgr::BidAuctionLandscapeT> cost_click_list;
     ad_log_mgr_->getKeywordBidLandscape(keyword_list, cost_click_list);
@@ -547,6 +549,8 @@ void AdSponsoredMgr::resetDailyLeftBudget(bool reset_used)
             }
             bid_price_file << std::endl;
             ad_uniform_bid_price_list_[i].swap(bid_price_list);
+            if (i % 10000 == 0)
+                LOG(INFO) << "bid strategy computed: " << i;
         }
     }
     else if (bid_strategy_type_ == GeneticBid)
@@ -573,6 +577,8 @@ void AdSponsoredMgr::resetDailyLeftBudget(bool reset_used)
                 ad_bid_price_list_[i][*bid_it] = bid_price_list[j];
             }
             bid_price_file << std::endl;
+            if (i % 10000 == 0)
+                LOG(INFO) << "bid strategy computed: " << i;
         }
     }
     else
