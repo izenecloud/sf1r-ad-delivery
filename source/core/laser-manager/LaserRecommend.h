@@ -4,6 +4,8 @@
 #include <vector>
 #include <util/functional.h>
 #include <common/inttypes.h>
+#include <3rdparty/msgpack/msgpack.hpp>
+#include <3rdparty/msgpack/rpc/server.h>
 #include <queue>
 namespace sf1r {
 class LaserManager;
@@ -26,6 +28,8 @@ public:
         std::vector<docid_t>& itemList, 
         std::vector<float>& itemScoreList, 
         const std::size_t num) const;
+    
+    void dispatch(const std::string& method, msgpack::rpc::request& req);
 private:
     void topn(const docid_t& docid, const float score, const std::size_t n, priority_queue& queue) const;
     void extractContext(const std::string& text, std::vector<std::pair<int, float> >& context) const;

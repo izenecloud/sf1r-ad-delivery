@@ -1,5 +1,5 @@
-#ifndef SF1R_LASER_INDEX_CONFIG_H_
-#define SF1R_LASER_INDEX_CONFIG_H_
+#ifndef SF1R_LASER_CONFIG_H_
+#define SF1R_LASER_CONFIG_H_
 
 #include <string>
 #include <boost/serialization/access.hpp>
@@ -10,14 +10,14 @@ namespace sf1r
 /**
  * @brief The configuration for <Ad Index>.
  */
-class LaserIndexConfig
+class LaserConfig
 {
 public:
     bool isEnable;
     bool isEnableTopnClustering;
     bool isEnableHierarchical;
 
-    LaserIndexConfig() 
+    LaserConfig() 
         : isEnable(false)
         , isEnableTopnClustering(false)
         , isEnableHierarchical(false)

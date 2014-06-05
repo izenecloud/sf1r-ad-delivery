@@ -269,7 +269,7 @@ bool MiningManager::open()
             mining_schema_.product_ranking_config.isEnable ||
             mining_schema_.zambezi_config.isEnable ||
             mining_schema_.ad_index_config.isEnable ||
-            mining_schema_.laser_index_config.isEnable)
+            mining_schema_.laser_config.isEnable)
         {
             miningTaskBuilder_ = new MiningTaskBuilder( document_manager_);
             multiThreadMiningTaskBuilder_ = new MultiThreadMiningTaskBuilder(
@@ -439,7 +439,7 @@ bool MiningManager::open()
         }
         
         /** laser */
-        if(!initLaserManager_(mining_schema_.laser_index_config))
+        if(!initLaserManager_(mining_schema_.laser_config))
         {
             LOG(ERROR) << "init LaserManager fail"<<endl;
             return false;
@@ -1656,7 +1656,7 @@ bool MiningManager::initAdIndexManager_(AdIndexConfig& adIndexConfig)
     return true;
 }
 
-bool MiningManager::initLaserManager_(LaserIndexConfig& laserIndexConfig)
+bool MiningManager::initLaserManager_(LaserConfig& laserIndexConfig)
 {
     if (!laserIndexConfig.isEnable)
         return true;

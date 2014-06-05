@@ -71,53 +71,43 @@ const LaserManager* LaserRpcServer::get(const std::string& collection)
     return it->second;
 }
 
-class pair
-{
-
-};
-
 void LaserRpcServer::dispatch(msgpack::rpc::request req)
 {
-    // in case of remove collecion
-    boost::shared_lock<boost::shared_mutex> sharedLock(mutex_);
+    // in case of remove collection
     try
     {
-        std::string method;
-        req.method().convert(&method);
-        if (method == CLUSTERINGServerRequest::method_names[CLUSTERINGServerRequest::METHOD_TEST])
+        std::string method, collection;
+        if (!parseRequest(req, method, collection))
+        {
+            req.error(msgpack::rpc::ARGUMENT_ERROR);
+            return;
+        }
+        
+        boost::shared_lock<boost::shared_mutex> sharedLock(mutex_);
+        const LaserManager* laserManager = get(collection);
+        if (NULL == laserManager)
+        {
+            req.error("no collection: " + collection);
+        }
+        
+        if (method == "test")
         {
             std::pair<int, float> pp;
             pp = std::make_pair(1, 2.0);
             req.result(pp);
         }
-        if (method == CLUSTERINGServerRequest::method_names[CLUSTERINGServerRequest::METHOD_SPLITETITLE])
+        if (method == "splitTitle")
         {
-            // SplitTitle params;
-            msgpack::type::tuple<std::string, std::string> params;
+            msgpack::type::tuple<std::string> params;
             req.params().convert(&params);
-            const LaserManager* laserManager = get(params.get<0>());
-            if (NULL == laserManager)
-            {
-                req.error("no collecion: " + params.get<0>());
-            }
-            else
             {
                 clustering::rpc::SplitTitleResult res;
-                laserManager->tokenizer_->tokenize(params.get<1>(), res.term_list_);
+                laserManager->tokenizer_->tokenize(params.get<0>(), res.term_list_);
                 req.result(res);
             }
         }
-        else if (method == CLUSTERINGServerRequest::method_names[CLUSTERINGServerRequest::METHOD_GETCLUSTERINGINFOS])
+        else if (method == "getClusteringInfos")
         {
-            msgpack::type::tuple<std::string> collection;
-            req.params().convert(&collection);
-            const LaserManager* laserManager = get(collection.get<0>());
-            if (NULL == laserManager)
-            {
-                req.error("no collecion: " + collection.get<0>());
-                return;
-            }
-
             GetClusteringInfosResult gir;
             for (std::size_t i = 0; i < laserManager->clusteringContainer_->size(); ++i)
             {
@@ -132,38 +122,13 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
                     }
                 }
                 gir.info_list_.push_back(clustering);
-                    std::cout<<i<<"\n";
             }
-            LOG(INFO)<<"send...";
             req.result(gir);
-            LOG(INFO)<<"done";
         }
-        else if (method == CLUSTERINGServerRequest::method_names[CLUSTERINGServerRequest::METHOD_UPDATETOPNCLUSTER])
+        else if ("updateTopnClustering" == method ||
+                 "updatePerUserModel" == method)
         {
-            /*msgpack::type::tuple<std::string, std::string, std::map<int, float> > params;
-            req.params().convert(&params);
-            const LaserManager* laserManager = get(params.get<0>());
-            if (NULL == laserManager)
-            {
-                req.error("no collecion: " + params.get<0>());
-                return;
-            }
-
-            bool res = laserManager->topnClustering_->update(params.get<1>(), params.get<2>());
-            req.result(res);*/
-        }
-        else if (method == CLUSTERINGServerRequest::method_names[CLUSTERINGServerRequest::METHOD_UPDATEPERUSERMODEL])
-        {
-            /*msgpack::type::tuple<std::string, std::string, std::vector<float> > params;
-            req.params().convert(&params);
-            const LaserManager* laserManager = get(params.get<0>());
-            if (NULL == laserManager)
-            {
-                req.error("no collecion: " + params.get<0>());
-                return;
-            }
-            bool res = laserManager->laserOnlineModel_->update(params.get<1>(), params.get<2>());
-            req.result(res);*/
+            laserManager->recommend_->dispatch(method, req);
         }
         else
         {
@@ -185,5 +150,18 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
     }
 }
 
+bool LaserRpcServer::parseRequest(msgpack::rpc::request& req, std::string& method, std::string& collection) const
+{
+    std::string str;
+    req.method().convert(&str);
+    std::size_t pos = str.find("|");
+    if (std::string::npos == pos)
+    {
+        return false;
+    }
+    method = str.substr(0, pos);
+    collection = str.substr(pos + 1);
+    return true;
 }
-}
+
+} }

@@ -13,7 +13,7 @@ LaserModelFactory::LaserModelFactory(const LaserManager& laserManager)
 {
 }
 
-LaserModel* LaserModelFactory::createModel(const LaserIndexConfig& config,
+LaserModel* LaserModelFactory::createModel(const LaserConfig& config,
     const std::string& workdir,
     const std::size_t ncandidate) const
 {

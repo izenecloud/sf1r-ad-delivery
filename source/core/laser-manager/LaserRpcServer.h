@@ -2,7 +2,6 @@
 #define SF1R_LASER_RPC_SERVER_H
 
 #include <3rdparty/msgpack/rpc/server.h>
-#include "service/CLUSTERINGServerRequest.h"
 #include "LaserManager.h"
 #include <boost/thread/mutex.hpp>
 #include <boost/shared_ptr.hpp>
@@ -28,6 +27,9 @@ public:
     const LaserManager* get(const std::string& collection); 
 
     virtual void dispatch(msgpack::rpc::request req);
+
+private:
+    bool parseRequest(msgpack::rpc::request& req, std::string& method, std::string& collection) const;
 
 private:
     boost::unordered_map<std::string, const LaserManager*> laserManagers_;

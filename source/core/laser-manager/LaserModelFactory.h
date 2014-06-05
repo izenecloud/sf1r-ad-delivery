@@ -5,7 +5,7 @@
 
 namespace sf1r {
 class LaserManager;
-class LaserIndexConfig;
+class LaserConfig;
 }
 
 namespace sf1r { namespace laser {
@@ -17,7 +17,7 @@ class LaserModelFactory
 public:
     LaserModelFactory(const LaserManager& laserManager);
 public:
-    LaserModel* createModel(const LaserIndexConfig& config,
+    LaserModel* createModel(const LaserConfig& config,
         const std::string& workdir,
         const std::size_t ncandidate) const;
  

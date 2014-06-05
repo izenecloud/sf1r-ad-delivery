@@ -8,7 +8,7 @@
 namespace sf1r { namespace laser {
 
 LaserRecommend::LaserRecommend(const LaserManager* laserManager)
-    : laserManager_(laserManager_)
+    : laserManager_(laserManager)
     , factory_(NULL)
     , model_(NULL)
 {
@@ -80,6 +80,11 @@ void LaserRecommend::topn(const docid_t& docid, const float score, const std::si
     {
         queue.push(std::make_pair(docid, score));
     }
+}
+
+void LaserRecommend::dispatch(const std::string& method, msgpack::rpc::request& req)
+{
+    model_->dispatch(method, req);
 }
     
 } }

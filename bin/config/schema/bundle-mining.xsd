@@ -39,7 +39,7 @@
                             <xs:element ref="ProductRanking" minOccurs="0"/>
                             <xs:element ref="SuffixMatch" minOccurs="0"/>
                             <xs:element ref="AdIndex" minOccurs="0"/>
-                            <xs:element ref="LaserIndex" minOccurs="0"/>
+                            <xs:element ref="Laser" minOccurs="0"/>
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
@@ -84,14 +84,22 @@
         </xs:complexType>
     </xs:element>
     
-    <xs:element name="LaserIndex">
+    <xs:element name="Laser">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="Property" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="ModelPara" type="LaserModelParaType" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
-
+    
+    <xs:complexType name="LaserModelParaType">
+        <xs:sequence>
+            <xs:element name="ModelPara" type="LaserModelParaType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="topnClustering" type="YesNoType" use="optional"/>
+        <xs:attribute name="hierarchical" type="YesNoType" use="optional"/>
+    </xs:complexType>
+    
     <xs:element name="Normalizer">
         <xs:complexType>
             <xs:attribute name="padding" type="xs:string" use="required"/>

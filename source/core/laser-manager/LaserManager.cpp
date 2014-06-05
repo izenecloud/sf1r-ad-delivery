@@ -20,7 +20,7 @@ boost::shared_mutex LaserManager::mutex_;
 LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService, 
         const boost::shared_ptr<DocumentManager>& documentManager,
         const std::string& collection,
-        const LaserIndexConfig& config)
+        const LaserConfig& config)
     : collection_(collection)
     , workdir_(MiningManager::system_working_path_ + "/collection/" + collection_ + "/collection-data/LASER/")
     , config_(config)
