@@ -12,12 +12,11 @@
 #include <ifaddrs.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include "service/DataType.h"
-
+#include "AdInfo.h"
+#include "AdClusteringInfo.h"
 #include <glog/logging.h>
 
 using namespace msgpack::type;
-using namespace sf1r::laser::clustering::rpc;
 using namespace boost;
 namespace sf1r { namespace laser {
 
@@ -101,32 +100,43 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
             msgpack::type::tuple<std::string> params;
             req.params().convert(&params);
             {
-                clustering::rpc::SplitTitleResult res;
-                laserManager->tokenizer_->tokenize(params.get<0>(), res.term_list_);
-                req.result(res);
+                SparseVector sv;
+                laserManager->tokenize(params.get<0>(), sv.index(), sv.value());
+                req.result(sv);
             }
         }
         else if (method == "getClusteringInfos")
         {
-            GetClusteringInfosResult gir;
-            for (std::size_t i = 0; i < laserManager->clusteringContainer_->size(); ++i)
+            AdClusteringsInfo clusterings;
+            const std::vector<std::vector<float> >& container = laserManager->getClustering();
+            std::vector<SparseVector>& infos = clusterings.get();
+            infos.resize(container.size());
+            for (std::size_t i = 0; i < container.size(); ++i)
             {
-                ClusteringInfo clustering;
-                clustering.clusteringIndex = i;
-                const LaserManager::TokenVector& vec = (*laserManager->clusteringContainer_)[i];
+                std::vector<int> index = infos[i].index();
+                std::vector<float> value = infos[i].value();
+                const std::vector<float>& vec = container[i];
                 for (std::size_t k = 0; k < vec.size(); ++k)
                 {
                     if (vec[k] > 1e-7)
                     {
-                        clustering.pow[k] = vec[k];
+                        index.push_back(k);
+                        value.push_back(vec[k]);
                     }
                 }
-                gir.info_list_.push_back(clustering);
             }
-            req.result(gir);
+            req.result(clusterings);
+        }
+        else if ("getAdInfoById" == method )
+        {
+            msgpack::type::tuple<std::string> params;
+            req.params().convert(&params);
+            AdInfo adinfo;
+            laserManager->getAdInfoById(params.get<0>(), 
+                adinfo.adId(), adinfo.clusteringId(), adinfo.index(), adinfo.value());
         }
         else if ("updateTopnClustering" == method ||
-                 "updatePerUserModel" == method)
+                 "updatePerUserModel" == method) 
         {
             laserManager->recommend_->dispatch(method, req);
         }

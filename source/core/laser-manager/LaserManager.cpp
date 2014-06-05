@@ -1,3 +1,6 @@
+#include <common/Utilities.h>
+#include <sstream>      // std::stringstream, std::stringbuf
+
 #include "LaserManager.h"
 #include "clusteringmanager/clustering/PCARunner.h"
 #include "LaserIndexTask.h"
@@ -19,6 +22,7 @@ boost::shared_mutex LaserManager::mutex_;
 
 LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService, 
         const boost::shared_ptr<DocumentManager>& documentManager,
+        izenelib::ir::idmanager::IDManager& idManager,
         const std::string& collection,
         const LaserConfig& config)
     : collection_(collection)
@@ -26,6 +30,7 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
     , config_(config)
     , adSearchService_(adSearchService)
     , documentManager_(documentManager)
+    , idManager_(idManager)
     , recommend_(NULL)
     , indexManager_(NULL)
     , tokenizer_(NULL)
@@ -113,6 +118,22 @@ LaserManager::~LaserManager()
         similarClustering_ = NULL;
     }
 }
+
+bool LaserManager::convertDocId(
+    const std::string& docStr,
+    docid_t& docId) const
+{
+    uint128_t convertId = Utilities::md5ToUint128(docStr);
+
+    if (!idManager_.getDocIdByDocName(convertId, docId, false))
+    {
+        LOG(WARNING) << "in convertDocId(), DOCID " << docStr
+                     << " does not exist";
+        return false;
+    }
+
+    return true;
+}
     
 bool LaserManager::recommend(const LaserRecommendParam& param, 
     GetDocumentsByIdsActionItem& actionItem,
@@ -198,6 +219,49 @@ float LaserManager::similarity_(const TokenSparseVector& lv, const TokenVector& 
     return sim;
 }
 
+void LaserManager::getAdInfoById(const std::string& text, 
+    std::string& adId,
+    std::string& clusteringId,
+    std::vector<int>& index, 
+    std::vector<float>& value) const
+{
+    docid_t docid = 0;
+    if (!convertDocId(text, docid))
+    {
+        std::pair<std::size_t, std::vector<std::pair<int, float> > > vec;
+        if (!indexManager_->get(docid, vec))
+        {
+            std::stringstream ss;
+            ss<<docid;
+            adId = ss.str();
+
+            ss.clear();
+            ss <<vec.first;
+            clusteringId = ss.str() + "|clustering";
+
+            std::vector<std::pair<int, float> >::const_iterator it = vec.second.begin();
+            for (; it != vec.second.end(); ++it)
+            {
+                index.push_back(it->first);
+                value.push_back(it->second);
+            }
+        }
+    }
+}
+    
+void LaserManager::tokenize(const std::string& text, 
+   std::vector<int>& index, 
+   std::vector<float>& value) const
+{
+    std::vector<std::pair<int, float> > vec;
+    tokenizer_->tokenize(text, vec);
+    std::vector<std::pair<int, float> >::const_iterator it = vec.begin();
+    for (; it != vec.end(); ++it)
+    {
+        index.push_back(it->first);
+        value.push_back(it->second);
+    }
+}
     
 void loadLaserDependency()
 {
@@ -226,5 +290,6 @@ void closeLaserDependency()
         LaserManager::rpcServer_ = NULL;
     }
 }
+
 
 }

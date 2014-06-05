@@ -4,6 +4,7 @@
 #include <mining-manager/MiningManager.h>
 #include <mining-manager/MiningTask.h>
 #include <common/ResultType.h>
+#include <ir/id_manager/IDManager.h>
 
 #include "LaserRecommend.h"
 #include "LaserRecommendParam.h"
@@ -31,6 +32,7 @@ class LaserManager
 public:
     LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService, 
         const boost::shared_ptr<DocumentManager>& documentManager,
+        izenelib::ir::idmanager::IDManager& idManager,
         const std::string& collection,
         const LaserConfig& config);
     ~LaserManager();
@@ -44,7 +46,22 @@ public:
 
     const std::size_t getClustering(const std::string& title) const;
 
-    void deleteDocuments(const std::vector<docid_t>& lastDeletedDocIdList);
+    bool convertDocId(const std::string& docStr, docid_t& docId) const;
+
+    void getAdInfoById(const std::string& DOCID, 
+        std::string& adId,
+        std::string& clusteringId,
+        std::vector<int>& index, 
+        std::vector<float>& value) const;
+    
+    void tokenize(const std::string& text, 
+        std::vector<int>& index, 
+        std::vector<float>& value) const;
+
+    const std::vector<std::vector<float> >& getClustering() const
+    {
+        return *clusteringContainer_;
+    }
 
     friend void loadLaserDependency();
     friend void closeLaserDependency();
@@ -62,8 +79,9 @@ private:
     const std::string workdir_;
     std::string resdir_;
     const LaserConfig& config_;
-    boost::shared_ptr<AdSearchService> adSearchService_;
+    const boost::shared_ptr<AdSearchService>& adSearchService_;
     const boost::shared_ptr<DocumentManager>& documentManager_;
+    mutable izenelib::ir::idmanager::IDManager& idManager_;
     laser::LaserRecommend* recommend_;
     laser::AdIndexManager* indexManager_;
     laser::LaserIndexTask* indexTask_;
