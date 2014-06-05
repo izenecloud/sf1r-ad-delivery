@@ -22,7 +22,13 @@ public:
         const std::vector<int>& price_list);
     void getManualBidPriceList(const std::string& campaign_name, std::map<std::string, int>& price_list);
     void setBidBudget(const std::string& campaign_name, int budget);
-    int getBidBudget(const std::string& campaign);
+    inline int getBidBudget(const std::string& campaign)
+    {
+        boost::unordered_map<std::string, int>::const_iterator it = ad_campaign_budget_list_.find(campaign);
+        if (it == ad_campaign_budget_list_.end())
+            return DEFAULT_AD_BUDGET;
+        return it->second;
+    }
 
     void load();
     void save();
@@ -34,6 +40,7 @@ private:
     // the list of all manual bid price for each campaign.
     ManualBidInfoT  manual_bidprice_list_; 
     std::string data_path_;
+    static const int DEFAULT_AD_BUDGET = 100;
 };
 
 }

@@ -10,6 +10,7 @@
 #include <query-manager/ActionItem.h>
 #include <search-manager/HitQueue.h>
 #include <common/Utilities.h>
+#include <util/ClockTimer.h>
 
 #include <fstream>
 #include <util/izene_serialization.h>
@@ -20,6 +21,7 @@
 #include <boost/algorithm/string/split.hpp>
 
 namespace bfs = boost::filesystem;
+using namespace izenelib::util;
 namespace sf1r
 {
 
@@ -145,6 +147,7 @@ void AdSponsoredMgr::init(const std::string& res_path,
     manual_bidinfo_mgr_.init(commondata_path);
 
     load();
+    resetDailyLogStatisticalData(false);
 }
 
 void AdSponsoredMgr::updateAuctionLogData(const std::string& ad_strid,
@@ -414,7 +417,7 @@ void AdSponsoredMgr::miningAdCreatives(ad_docid_t start_id, ad_docid_t end_id)
             LOG(INFO) << "mining ad creative for sponsored search : " << i;
         }
     }
-    resetDailyLeftBudget(false);
+    resetDailyLogStatisticalData(false);
     save();
 }
 
@@ -495,7 +498,7 @@ void AdSponsoredMgr::getBidStatisticalData(const std::set<BidKeywordId>& bidkey_
 }
 
 // refresh daily left budget periodically since the bid price and budget can be changed hourly.
-void AdSponsoredMgr::resetDailyLeftBudget(bool reset_used)
+void AdSponsoredMgr::resetDailyLogStatisticalData(bool reset_used)
 {
     LOG(INFO) << "begin compute auto bid strategy.";
     if (reset_used)
@@ -522,6 +525,12 @@ void AdSponsoredMgr::resetDailyLeftBudget(bool reset_used)
         bidkey_cpc_map[keyword_list[i]] = cost_click_list[i];
     }
 
+    ad_ctr_list_.resize(ad_bidphrase_list_.size());
+    for(std::size_t i = 0; i < ad_bidphrase_list_.size(); ++i)
+    {
+        ad_ctr_list_[i] = computeAdCTR(i);
+    }
+    LOG(INFO) << "compute ad ctr finished.";
     std::ofstream bid_price_file(std::string(data_path_ + "/bid_price.txt").c_str());
 
     // recompute the bid strategy.
@@ -855,21 +864,12 @@ void AdSponsoredMgr::generateBidPhrase(const std::string& ad_title, BidPhraseT& 
     // give more weight to the keyword with more revenue and low cost
 }
 
-double AdSponsoredMgr::getAdCTR(ad_docid_t adid)
+double AdSponsoredMgr::computeAdCTR(ad_docid_t adid)
 {
     std::string ad_strid;
-    getAdStrIdFromAdId(adid, ad_strid);
+    if (!getAdStrIdFromAdId(adid, ad_strid))
+        return 0;
     return ad_log_mgr_->getAdCTR(ad_strid);
-}
-
-double AdSponsoredMgr::getAdRelevantScore(const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list)
-{
-    return bidphrase.size() / query_kid_list.size();
-}
-
-double AdSponsoredMgr::getAdQualityScore(ad_docid_t adid, const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list)
-{
-    return getAdCTR(adid) * getAdRelevantScore(bidphrase, query_kid_list);
 }
 
 bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOperation,
@@ -924,11 +924,16 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     std::vector<ad_docid_t> filtered_result_list;
     filtered_result_list.reserve(result_list.size());
     LOG(INFO) << "begin filter by broad match.";
+    ClockTimer t1, t2, t3;
+    double t1_total = 0;
+    double t2_total = 0;
+    double t3_total = 0;
     for(std::size_t i = 0; i < result_list.size(); ++i)
     {
         const BidPhraseT& bidphrase = ad_bidphrase_list_[result_list[i]];
         if (bidphrase.empty())
             continue;
+        t1.restart();
         int missed = 0;
         //std::cout << "bid for ad: " << result_list[i] << ": ";
         for(std::size_t j = 0; j < bidphrase.size(); ++j)
@@ -942,15 +947,18 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
                     break;
             }
         }
+        t1_total += t1.elapsed();
         //std::cout << std::endl;
         if (missed > 0)
         {
             continue;
         }
+        t2.restart();
         int leftbudget = getBudgetLeft(result_list[i]);
-        LOG(INFO) << "broad matched, get the bid price.";
+        t2_total += t2.elapsed();
         if (leftbudget > 0)
         {
+            t3.restart();
             ScoreSponsoredAdDoc item;
             item.docId = result_list[i];
 
@@ -966,10 +974,12 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
                 }
             }
             filtered_result_list.push_back(result_list[i]);
+            t3_total += t3.elapsed();
         }
     }
     LOG(INFO) << "result num: " << result_list.size() << ", after broad match and budget filter: " << filtered_result_list.size();
-
+    LOG(INFO) << "time cost: " << t1_total << ", " << t2_total << ", " << t3_total;
+ 
     int count = (int)ranked_queue.size();
     searchResult.topKDocs_.resize(count);
     searchResult.topKRankScoreList_.resize(count);

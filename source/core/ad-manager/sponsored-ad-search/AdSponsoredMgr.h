@@ -65,7 +65,6 @@ public:
 
     void getAdBidPrice(ad_docid_t adid, const std::string& query, int leftbudget, int& price);
     int getBudgetLeft(ad_docid_t adid);
-    double getAdCTR(ad_docid_t adid);
     void getBidPhrase(const std::string& adid, BidPhraseT& bidphrase);
     bool getAdIdFromAdStrId(const std::string& strid, ad_docid_t& adid);
     bool getAdStrIdFromAdId(ad_docid_t adid, std::string& ad_strid);
@@ -80,20 +79,34 @@ public:
         const std::vector<std::string>& key_list,
         const std::vector<int>& price_list);
 
-    void resetDailyLeftBudget(bool reset_used);
+    void resetDailyLogStatisticalData(bool reset_used);
+    inline double getAdCTR(ad_docid_t adid)
+    {
+        if (adid >= ad_ctr_list_.size())
+            return 0;
+        return ad_ctr_list_[adid];
+    }
+
 
 private:
     typedef boost::unordered_map<std::string, uint32_t>  StrIdMapT;
     typedef std::vector<std::pair<int, double> > BidAuctionLandscapeT;
     typedef std::string LogBidKeywordId;
 
+    double computeAdCTR(ad_docid_t adid);
     void updateAdBidPhrase(ad_docid_t adid, const std::vector<std::string>& bid_phrase_list,
         BidPhraseT& bidid_list);
     void updateAdCampaign(ad_docid_t adid, const std::string& campaign_name);
 
     void generateBidPhrase(const std::string& ad_title, std::vector<std::string>& bidphrase);
-    double getAdRelevantScore(const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list);
-    double getAdQualityScore(ad_docid_t adid, const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list);
+    inline double getAdRelevantScore(const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list)
+    {
+        return bidphrase.size(); 
+    }
+    inline double getAdQualityScore(ad_docid_t adid, const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list)
+    {
+        return getAdCTR(adid) * getAdRelevantScore(bidphrase, query_kid_list);
+    }
     void consumeBudget(ad_docid_t adid, int cost);
     void load();
     bool getBidKeywordId(const std::string& keyword, bool insert, BidKeywordId& id);
@@ -108,6 +121,7 @@ private:
     std::string data_path_;
     // all bid phrase for all ad creatives.
     std::vector<BidPhraseT>  ad_bidphrase_list_;
+    std::vector<double>  ad_ctr_list_;
     std::vector<std::string> keyword_id_value_list_;
     StrIdMapT keyword_value_id_list_;
 

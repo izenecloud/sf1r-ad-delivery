@@ -7,8 +7,7 @@
 #include <boost/serialization/unordered_map.hpp>
 
 #include <boost/filesystem.hpp>
-#define MAX_CAMPAIGN_NUM 100000
-#define DEFAULT_AD_BUDGET 100
+#define MAX_CAMPAIGN_NUM 1000000
 
 namespace bfs = boost::filesystem;
 
@@ -65,6 +64,7 @@ void AdManualBidInfoMgr::load()
             izd.read_image(ad_campaign_budget_list_);
         }
         LOG(INFO) << "manual bidinfo loaded: " << manual_bidprice_list_.size() << ", " << ad_campaign_budget_list_.size();
+        LOG(INFO) << "manual bucket info : " << manual_bidprice_list_.bucket_count() << ", " << ad_campaign_budget_list_.bucket_count();
     }
 
     ifs.close();
@@ -114,14 +114,6 @@ void AdManualBidInfoMgr::getManualBidPriceList(const std::string& campaign_name,
 void AdManualBidInfoMgr::setBidBudget(const std::string& campaign_name, int budget)
 {
     ad_campaign_budget_list_[campaign_name] = budget;
-}
-
-int AdManualBidInfoMgr::getBidBudget(const std::string& campaign)
-{
-    boost::unordered_map<std::string, int>::const_iterator it = ad_campaign_budget_list_.find(campaign);
-    if (it == ad_campaign_budget_list_.end())
-        return DEFAULT_AD_BUDGET;
-    return it->second;
 }
 
 }

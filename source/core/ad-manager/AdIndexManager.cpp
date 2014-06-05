@@ -150,7 +150,7 @@ void AdIndexManager::refreshBidStrategy(int calltype)
                 LOG(INFO) << "start over the budget at time: " << time_now.tm_min;
             }
 
-            ad_sponsored_mgr_->resetDailyLeftBudget(is_start_over);
+            ad_sponsored_mgr_->resetDailyLogStatisticalData(is_start_over);
         }
     }
 }
