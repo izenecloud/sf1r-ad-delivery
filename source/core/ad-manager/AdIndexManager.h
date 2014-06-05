@@ -11,6 +11,7 @@
 #include <search-manager/NumericPropertyTableBuilder.h>
 #include <ir/be_index/InvIndex.hpp>
 #include <ir/id_manager/IDManager.h>
+#include <util/cronexpression.h>
 
 
 #define CPM 0
@@ -88,6 +89,11 @@ public:
 
     void postMining(docid_t startid, docid_t endid);
 
+    bool setKeywordBidPrice(const std::string& keyword, const std::string& campaign_name, int bidprice);
+    bool setAdCampaignBudget(const std::string& campaign_name, int budget);
+    bool setAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list);
+    void refreshBidStrategy(int calltype);
+
 private:
 
     typedef izenelib::ir::be_index::DNFInvIndex AdDNFIndexType;
@@ -113,6 +119,7 @@ private:
     boost::shared_ptr<AdDNFIndexType> ad_dnf_index_;
     boost::shared_ptr<AdSelector> ad_selector_;
     boost::shared_ptr<sponsored::AdSponsoredMgr> ad_sponsored_mgr_;
+    izenelib::util::CronExpression refresh_schedule_exp_;
 };
 
 } //namespace sf1r

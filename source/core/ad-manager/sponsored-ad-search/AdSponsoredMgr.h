@@ -3,6 +3,8 @@
 
 #include "AdCommonDataType.h"
 #include <ir/id_manager/IDManager.h>
+
+#include "AdManualBidInfoMgr.h"
 #include <vector>
 #include <map>
 #include <deque>
@@ -47,7 +49,7 @@ public:
     ~AdSponsoredMgr();
     void init(const std::string& dict_path,
         const std::string& data_path,
-        const std::string& logdata_path,
+        const std::string& commondata_path,
         faceted::GroupManager* grp_mgr,
         DocumentManager* doc_mgr,
         izenelib::ir::idmanager::IDManager* id_manager,
@@ -73,26 +75,35 @@ public:
 
     void save();
     void changeDailyBudget(const std::string& ad_campaign_name, int dailybudget);
-    void updateAdCampaign(ad_docid_t adid, const std::string& campaign_name);
+
+    void setManualBidPrice(const std::string& campaign_name,
+        const std::vector<std::string>& key_list,
+        const std::vector<int>& price_list);
+
+    void resetDailyLeftBudget(bool reset_used);
 
 private:
     typedef boost::unordered_map<std::string, uint32_t>  StrIdMapT;
     typedef std::vector<std::pair<int, double> > BidAuctionLandscapeT;
     typedef std::string LogBidKeywordId;
 
+    void updateAdBidPhrase(ad_docid_t adid, const std::vector<std::string>& bid_phrase_list,
+        BidPhraseT& bidid_list);
+    void updateAdCampaign(ad_docid_t adid, const std::string& campaign_name);
+
     void generateBidPhrase(const std::string& ad_title, std::vector<std::string>& bidphrase);
     double getAdRelevantScore(const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list);
     double getAdQualityScore(ad_docid_t adid, const BidPhraseT& bidphrase, const BidPhraseT& query_kid_list);
     void consumeBudget(ad_docid_t adid, int cost);
     void load();
-    void resetDailyLeftBudget();
     bool getBidKeywordId(const std::string& keyword, bool insert, BidKeywordId& id);
     void getLogBidKeywordId(const BidKeywordId& id, LogBidKeywordId& keyword);
     void getBidPhrase(const std::string& adid, BidPhraseT& bidphrase, std::vector<LogBidKeywordId>& logbid_list);
 
     void getBidStatisticalData(const std::set<BidKeywordId>& bidkey_list,
         const std::map<LogBidKeywordId, BidAuctionLandscapeT>& bidkey_cpc_map,
-        std::list<AdQueryStatisticInfo>& ad_statistical_data);
+        const std::map<std::string, int>& manual_bidprice_list,
+        std::vector<AdQueryStatisticInfo>& ad_statistical_data);
 
     std::string data_path_;
     // all bid phrase for all ad creatives.
@@ -100,10 +111,8 @@ private:
     std::vector<std::string> keyword_id_value_list_;
     StrIdMapT keyword_value_id_list_;
 
-    // the total budget for specific ad campaign. update each day.
-    std::vector<int> ad_budget_list_;
-    // the left budget for specific ad campaign. update realtime.
-    std::vector<int> ad_budget_left_list_;
+    // the used budget for specific ad campaign. update realtime.
+    std::vector<int> ad_budget_used_list_;
     std::vector<std::string>  ad_campaign_name_list_;
     StrIdMapT ad_campaign_name_id_list_;
     std::vector<uint32_t>  ad_campaign_belong_list_; 
@@ -120,6 +129,8 @@ private:
     // bid price for different campaign.
     std::vector<std::map<BidKeywordId, int> > ad_bid_price_list_;
     std::vector<std::vector<std::pair<int, double> > > ad_uniform_bid_price_list_;
+
+    AdManualBidInfoMgr manual_bidinfo_mgr_;
 };
 
 }

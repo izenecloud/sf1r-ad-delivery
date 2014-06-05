@@ -134,7 +134,7 @@ public:
         sharding_strategy_ = shardingstrategy;
     }
 
-    bool setKeywordBidPrice(const std::string& keyword, double bidprice);
+    bool setKeywordBidPrice(const std::string& keyword, const std::string& campaign_name, double bidprice);
     bool setAdCampaignBudget(const std::string& ad_campaign_name, double budget);
     bool setAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list);
 
