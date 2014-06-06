@@ -885,11 +885,12 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     if (!ad_searcher_)
         return false;
     // search using OR mode for fuzzy search.
-    (*const_cast<SearchKeywordOperation*>(&actionOperation)).actionItem_.searchingMode_.mode_ = SearchingMode::SPONSORED_AD_SEARCH_SUFFIX;
-    ad_searcher_->search(actionOperation.actionItem_, searchResult);
+    KeywordSearchActionItem modified_action = actionOperation.actionItem_;
+    modified_action.searchingMode_.mode_ = SearchingMode::SPONSORED_AD_SEARCH_SUFFIX;
 
     std::vector<std::string> query_keyword_list;
     const std::string& query = actionOperation.actionItem_.env_.queryString_;
+    std::string modified_query;
     // filter by broad match.
     // tokenize the query to the bid keywords.
     generateBidPhrase(query, query_keyword_list);
@@ -902,6 +903,7 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
         if(getBidKeywordId(query_keyword_list[i], false, id))
         {
             query_kid_list.push_back(id);
+            modified_query += query_keyword_list[i] + " ";
         }
     }
     if (query_kid_list.empty())
@@ -912,6 +914,11 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
         searchResult.topKRankScoreList_.resize(0);
         return true;
     }
+
+    modified_action.env_.queryString_ = modified_query;
+
+    ad_searcher_->search(modified_action, searchResult);
+    (*const_cast<SearchKeywordOperation*>(&actionOperation)).actionItem_.disableGetDocs_ = modified_action.disableGetDocs_;
 
     std::sort(query_kid_list.begin(), query_kid_list.end());
     uint32_t first_kid = query_kid_list[0];
