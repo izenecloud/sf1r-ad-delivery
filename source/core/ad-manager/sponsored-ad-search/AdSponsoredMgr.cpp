@@ -112,7 +112,7 @@ private:
 
 
 AdSponsoredMgr::AdSponsoredMgr()
-    : grp_mgr_(NULL), doc_mgr_(NULL), id_manager_(NULL)
+    : grp_mgr_(NULL), doc_mgr_(NULL), id_manager_(NULL), bid_strategy_type_(UniformBid)
 {
 }
 
