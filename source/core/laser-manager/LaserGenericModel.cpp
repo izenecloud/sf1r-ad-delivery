@@ -77,35 +77,41 @@ void LaserGenericModel::dispatch(const std::string& method, msgpack::rpc::reques
 {
     if ("updatePerAdOnlineModel" == method)
     {
+        updatepAdDb(req);
     }
     else if ("updateOfflineModel" == method)
     {
+        updateOfflineModel(req);
     }
 }
     
 void LaserGenericModel::updatepAdDb(msgpack::rpc::request& req)
 {
-    msgpack::type::tuple<std::string, std::string, float, std::vector<float> > params;
+    msgpack::type::tuple<std::string, float, std::vector<float> > params;
     req.params().convert(&params);
-    LaserOnlineModel onlineModel(params.get<2>(), params.get<3>());
-    const std::string id(params.get<1>());
-    // TODO convert
+    LaserOnlineModel onlineModel(params.get<1>(), params.get<2>());
+    const std::string id(params.get<0>());
+    std::stringstream ss(id); 
     docid_t docid = 0;
+    ss >> docid;
     bool res = pAdDb_->update(docid, onlineModel);
     req.result(res);
 }
 
 void LaserGenericModel::updateOfflineModel(msgpack::rpc::request& req)
 {
-    msgpack::type::tuple<std::string, std::vector<float>, std::vector<float>, std::vector<std::vector<float> > > params;
-    std::vector<float> alpha(params.get<1>());
-    std::vector<float> beta(params.get<2>());
-    std::vector<std::vector<float> > quadratic(params.get<3>());
+    msgpack::type::tuple<std::vector<float>, std::vector<float>, std::vector<std::vector<float> > > params;
+    req.params().convert(&params);
+    std::vector<float> alpha(params.get<0>());
+    std::vector<float> beta(params.get<1>());
+    std::vector<std::vector<float> > quadratic(params.get<2>());
     
     boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
     offlineModel_->setAlpha(alpha);
     offlineModel_->setBeta(beta);
     offlineModel_->setQuadratic(quadratic);
+    offlineModel_->save();
+    req.result(true);
 }
 
 } }

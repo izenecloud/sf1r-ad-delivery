@@ -137,7 +137,7 @@ void AdIndexManager::index(const std::size_t& clusteringId,
         clusteringPtr_->put(clusteringId, src, srcLen, Lux::IO::OVERWRITE);
     }
     {
-        izenelib::util::izene_serialization<std::pair<std::size_t, std::vector<std::pair<int, float> > > > izs(std::make_pair(docid, vec));
+        izenelib::util::izene_serialization<std::pair<std::size_t, std::vector<std::pair<int, float> > > > izs(std::make_pair(clusteringId, vec));
         char* src;
         size_t srcLen;
         izs.write_image(src, srcLen);

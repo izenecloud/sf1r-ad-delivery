@@ -119,22 +119,6 @@ LaserManager::~LaserManager()
     }
 }
 
-bool LaserManager::convertDocId(
-    const std::string& docStr,
-    docid_t& docId) const
-{
-    uint128_t convertId = Utilities::md5ToUint128(docStr);
-
-    if (!idManager_.getDocIdByDocName(convertId, docId, false))
-    {
-        LOG(WARNING) << "in convertDocId(), DOCID " << docStr
-                     << " does not exist";
-        return false;
-    }
-
-    return true;
-}
-    
 bool LaserManager::recommend(const LaserRecommendParam& param, 
     GetDocumentsByIdsActionItem& actionItem,
     RawTextResultFromMIA& res) const 
@@ -219,6 +203,19 @@ float LaserManager::similarity_(const TokenSparseVector& lv, const TokenVector& 
     return sim;
 }
 
+bool LaserManager::convertDocId(
+    const std::string& docStr,
+    docid_t& docId) const
+{
+    uint128_t convertId = Utilities::md5ToUint128(docStr);
+
+    if (!idManager_.getDocIdByDocName(convertId, docId, false))
+    {
+        return false;
+    }
+    return true;
+}
+    
 void LaserManager::getAdInfoById(const std::string& text, 
     std::string& adId,
     std::string& clusteringId,
@@ -226,19 +223,21 @@ void LaserManager::getAdInfoById(const std::string& text,
     std::vector<float>& value) const
 {
     docid_t docid = 0;
-    if (!convertDocId(text, docid))
+    if (convertDocId(text, docid))
     {
         std::pair<std::size_t, std::vector<std::pair<int, float> > > vec;
-        if (!indexManager_->get(docid, vec))
+        if (indexManager_->get(docid, vec))
         {
-            std::stringstream ss;
-            ss<<docid;
-            adId = ss.str();
-
-            ss.clear();
-            ss <<vec.first;
-            clusteringId = ss.str() + "|clustering";
-
+            {
+                std::stringstream ss;
+                ss<<docid;
+                adId = ss.str();
+            }
+            {
+                std::stringstream ss;
+                ss <<vec.first;
+                clusteringId = ss.str() + "|clustering";
+            }
             std::vector<std::pair<int, float> >::const_iterator it = vec.second.begin();
             for (; it != vec.second.end(); ++it)
             {

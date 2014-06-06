@@ -63,4 +63,35 @@ bool HierarchicalModel::candidate(
     return true;
 }
 
+void HierarchicalModel::dispatch(const std::string& method, msgpack::rpc::request& req)
+{
+    if ("updatePerClusteringModel" == method)
+    {
+        updatepClusteringDb(req);
+    }
+    else
+    {
+        LaserGenericModel::dispatch(method, req);
+    }
+}
+
+void HierarchicalModel::updatepClusteringDb(msgpack::rpc::request& req)
+{
+    msgpack::type::tuple<std::string, float, std::vector<float> > params;
+    req.params().convert(&params);
+    LaserOnlineModel onlineModel(params.get<1>(), params.get<2>());
+    const std::string id(params.get<0>());
+    std::size_t pos = id.find("|clustering");
+    if (std::string::npos == pos)
+    {
+        req.error(msgpack::rpc::ARGUMENT_ERROR);
+        return;
+    }
+    std::stringstream ss(id.substr(0, pos)); 
+    std::size_t clusteringId = 0;
+    ss >> clusteringId;
+    bool res = pClusteringDb_->update(clusteringId, onlineModel);
+    req.result(res);
+}
+
 } }

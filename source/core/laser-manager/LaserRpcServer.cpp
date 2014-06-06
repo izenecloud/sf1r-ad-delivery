@@ -134,9 +134,13 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
             AdInfo adinfo;
             laserManager->getAdInfoById(params.get<0>(), 
                 adinfo.adId(), adinfo.clusteringId(), adinfo.index(), adinfo.value());
+            req.result(adinfo);
         }
         else if ("updateTopnClustering" == method ||
-                 "updatePerUserModel" == method) 
+                 "updatePerUserModel" == method ||
+                 "updatePerAdOnlineModel" == method ||
+                 "updateOfflineModel" == method ||
+                 "updatePerClusteringModel" == method) 
         {
             laserManager->recommend_->dispatch(method, req);
         }

@@ -38,7 +38,7 @@ public:
     {
         quadratic_.swap(quadratic);
     }
-private:
+    
     void save();
     void load();
 private:
