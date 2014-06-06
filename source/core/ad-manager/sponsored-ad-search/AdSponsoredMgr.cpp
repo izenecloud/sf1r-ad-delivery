@@ -346,6 +346,13 @@ void AdSponsoredMgr::load()
             izenelib::util::izene_deserialization<std::vector<uint32_t> > izd(data.data(), data.size());
             izd.read_image(ad_campaign_belong_list_);
         }
+        ad_campaign_bid_keyword_list_.resize(ad_campaign_name_id_list_.size());
+        for (std::size_t i = 0; i < ad_bidphrase_list_.size(); ++i)
+        {
+            uint32_t campaign_id = ad_campaign_belong_list_[i];
+            const BidPhraseT& bid_list = ad_bidphrase_list_[i];
+            ad_campaign_bid_keyword_list_[campaign_id].insert(bid_list.begin(), bid_list.end());
+        }
         LOG(INFO) << "campaign name info loaded: " << ad_campaign_name_list_.size();
 
         {
