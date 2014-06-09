@@ -917,6 +917,7 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
 
     modified_action.env_.queryString_ = modified_query;
 
+    LOG(INFO) << "modified sponsored search query: " << modified_query;
     ad_searcher_->search(modified_action, searchResult);
     (*const_cast<SearchKeywordOperation*>(&actionOperation)).actionItem_.disableGetDocs_ = modified_action.disableGetDocs_;
 
@@ -969,7 +970,6 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
         }
         t2.restart();
         int leftbudget = getBudgetLeft(result_list[i]);
-        t2_total += t2.elapsed();
         if (leftbudget > 0)
         {
             t3.restart();
@@ -978,18 +978,17 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
 
             int bidprice = 0;
             getAdBidPrice(item.docId, query, leftbudget, bidprice);
-            if (bidprice > 0)
+            bidprice = std::max(LOWEST_CLICK_COST, bidprice);
+            item.qscore = getAdQualityScore(item.docId, bidphrase, query_kid_list);
+            item.score = bidprice * item.qscore;
+            if (item.score > MIN_AD_SCORE)
             {
-                item.qscore = getAdQualityScore(item.docId, bidphrase, query_kid_list);
-                item.score = bidprice * item.qscore;
-                if (item.score > MIN_AD_SCORE)
-                {
-                    ranked_queue.insert(item);
-                }
+                ranked_queue.insert(item);
             }
             filtered_result_list.push_back(result_list[i]);
             t3_total += t3.elapsed();
         }
+        t2_total += t2.elapsed();
     }
     LOG(INFO) << "result num: " << result_list.size() << ", after broad match and budget filter: " << filtered_result_list.size();
     LOG(INFO) << "time cost: " << t1_total << ", " << t2_total << ", " << t3_total;
