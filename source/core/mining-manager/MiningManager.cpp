@@ -37,6 +37,7 @@
 
 #include <ad-manager/AdIndexManager.h>
 #include <laser-manager/LaserManager.h>
+#include <slim-manager/SlimManager.h>
 
 #include <search-manager/SearchManager.h>
 #include <search-manager/NumericPropertyTableBuilderImpl.h>
@@ -184,6 +185,7 @@ MiningManager::MiningManager(
     , suffixMatchManager_(NULL)
     , productTokenizer_(NULL)
     , laserManager_(NULL)
+    , slimManager_(NULL)
     , adIndexManager_(NULL)
     , miningTaskBuilder_(NULL)
     , multiThreadMiningTaskBuilder_(NULL)
@@ -211,6 +213,7 @@ MiningManager::~MiningManager()
     if (suffixMatchManager_) delete suffixMatchManager_;
     if (productTokenizer_) delete productTokenizer_;
     if (laserManager_) delete laserManager_;
+    if (slimManager_) delete slimManager_;
 
     close();
 }
@@ -442,6 +445,13 @@ bool MiningManager::open()
         if(!initLaserManager_(mining_schema_.laser_index_config))
         {
             LOG(ERROR) << "init LaserManager fail"<<endl;
+            return false;
+        }
+
+        /** slim */
+        if(mining_schema_.laser_index_config.isEnable && !initSlimManager_())
+        {
+            LOG(ERROR) << "init SlimManager fail"<<endl;
             return false;
         }
 
@@ -1663,6 +1673,14 @@ bool MiningManager::initLaserManager_(LaserIndexConfig& laserIndexConfig)
     LOG(INFO)<<"init LaserManager..";
     laserManager_=new LaserManager(adSearchService_, document_manager_, collectionName_);
     multiThreadMiningTaskBuilder_->addTask(laserManager_->getLaserIndexTask());
+
+    return true;
+}
+
+bool MiningManager::initSlimManager_()
+{
+    LOG(INFO)<<"init SlimManager..";
+    slimManager_=new SlimManager(adSearchService_, document_manager_, collectionName_);
 
     return true;
 }

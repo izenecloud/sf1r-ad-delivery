@@ -27,6 +27,7 @@ FILE(GLOB_RECURSE node_SRC "node-manager/*.cpp")
 FILE(GLOB sf1r_net_SRC "sf1r-net/*.cpp")
 FILE(GLOB ad_SRC "ad-manager/*.cpp" "ad-manager/sponsored-ad-search/*.cpp")
 FILE(GLOB laser_SRC "laser-manager/*.cpp")
+FILE(GLOB slim_SRC "slim-manager/*.cpp")
 
 FILE(GLOB index_SRC
   "index-manager/zambezi-manager/*.cpp"
@@ -82,6 +83,7 @@ ADD_LIBRARY(sf1r_node_manager ${node_SRC})
 ADD_LIBRARY(sf1r_net ${sf1r_net_SRC})
 ADD_LIBRARY(sf1r_ad_manager ${ad_SRC})
 ADD_LIBRARY(sf1r_laser_manager ${laser_SRC})
+ADD_LIBRARY(sf1r_slim_manager ${slim_SRC})
 
 INSTALL(TARGETS
     sf1r_configuration_manager
@@ -100,6 +102,7 @@ INSTALL(TARGETS
     sf1r_net
     sf1r_ad_manager
     sf1r_laser_manager
+    sf1r_slim_manager
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     COMPONENT sf1r_libraries)

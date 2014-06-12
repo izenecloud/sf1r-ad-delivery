@@ -91,6 +91,7 @@ class AdIndexManager;
 class ProductTokenizer;
 class AdSearchService;
 class LaserManager;
+class SlimManager;
 
 namespace faceted
 {
@@ -320,6 +321,11 @@ public:
         return laserManager_;
     }
 
+    SlimManager* GetSlimManager()
+    {
+        return slimManager_;
+    }
+
     ProductScoreManager* GetProductScoreManager()
     {
         return productScoreManager_;
@@ -422,6 +428,7 @@ private:
 
     bool initAdIndexManager_(AdIndexConfig& adIndexConfig);
     bool initLaserManager_(LaserIndexConfig& laserIndexConfig);
+    bool initSlimManager_();
     
     const std::string& getOfferItemCountPropName_() const;
 
@@ -507,6 +514,9 @@ private:
     
     /** LaserManager */
     LaserManager* laserManager_;
+
+    /** SlimManager */
+    SlimManager* slimManager_;
 
     /** AdIndexManager */
     AdIndexManager* adIndexManager_;

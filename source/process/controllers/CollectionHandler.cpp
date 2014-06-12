@@ -16,6 +16,7 @@
 #include "DocumentsGetHandler.h"
 #include "DocumentsSearchHandler.h"
 #include "LaserHandler.h"
+#include "SlimHandler.h"
 
 #include <common/Keys.h>
 #include <common/JobScheduler.h>
@@ -104,6 +105,12 @@ bool CollectionHandler::destroy(const ::izenelib::driver::Value& document)
 void CollectionHandler::laserRecommend(::izenelib::driver::Request& request, ::izenelib::driver::Response& response)
 {
     LaserHandler handler(request, response, *this);
+    handler.recommend();
+}
+
+void CollectionHandler::slimRecommend(::izenelib::driver::Request& request, ::izenelib::driver::Response& response)
+{
+    SlimHandler handler(request, response, *this);
     handler.recommend();
 }
 
