@@ -135,7 +135,6 @@ void AdStreamSubscriber::stop()
     heart_check_thread_.interrupt();
     heart_check_thread_.join();
     unsubscribe_all();
-    boost::unique_lock<boost::mutex> guard(mutex_);
     if (rpcserver_)
     {
         rpcserver_->stop();
