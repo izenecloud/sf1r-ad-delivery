@@ -124,6 +124,9 @@ AdSponsoredMgr::~AdSponsoredMgr()
 void AdSponsoredMgr::init(const std::string& res_path,
     const std::string& data_path,
     const std::string& commondata_path,
+    const std::string& adtitle_prop,
+    const std::string& adbidphrase_prop,
+    const std::string& adcampaign_prop,
     faceted::GroupManager* grp_mgr,
     DocumentManager* doc_mgr,
     izenelib::ir::idmanager::IDManager* id_manager,
@@ -135,6 +138,10 @@ void AdSponsoredMgr::init(const std::string& res_path,
     {
         bfs::create_directories(data_path_);
     }
+    ad_title_prop_ = adtitle_prop;
+    ad_bidphrase_prop_ = adbidphrase_prop;
+    ad_campaign_prop_ = adcampaign_prop;
+
     grp_mgr_ = grp_mgr;
     doc_mgr_ = doc_mgr;
     id_manager_ = id_manager;
@@ -393,10 +400,10 @@ void AdSponsoredMgr::miningAdCreatives(ad_docid_t start_id, ad_docid_t end_id)
     for(ad_docid_t i = start_id; i <= end_id; ++i)
     {
         Document::doc_prop_value_strtype prop_value;
-        doc_mgr_->getPropertyValue(i, "Title", prop_value);
+        doc_mgr_->getPropertyValue(i, ad_title_prop_, prop_value);
         ad_title = propstr_to_str(prop_value);
         generateBidPhrase(ad_title, bidphrase);
-        doc_mgr_->getPropertyValue(i, "BidPhrase", prop_value);
+        doc_mgr_->getPropertyValue(i, ad_bidphrase_prop_, prop_value);
         const std::string bidstr = propstr_to_str(prop_value);
         if (!bidstr.empty())
         {
@@ -411,7 +418,7 @@ void AdSponsoredMgr::miningAdCreatives(ad_docid_t start_id, ad_docid_t end_id)
         }
 
         ad_bidphrase_list_[i].swap(bidphrase);
-        doc_mgr_->getPropertyValue(i, "Campaign", prop_value);
+        doc_mgr_->getPropertyValue(i, ad_campaign_prop_, prop_value);
         std::string campaign = propstr_to_str(prop_value);
         if (campaign.empty())
         {

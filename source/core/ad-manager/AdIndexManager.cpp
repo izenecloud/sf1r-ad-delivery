@@ -17,6 +17,7 @@
 #include <search-manager/HitQueue.h>
 #include <util/ustring/UString.h>
 #include <util/scheduler.h>
+#include <configuration-manager/AdIndexConfig.h>
 
 #include <algorithm>
 
@@ -34,11 +35,7 @@ using namespace sponsored;
 AdIndexManager::AdIndexManager(
         const std::string& ad_resource_path,
         const std::string& ad_data_path,
-        const std::string& ad_common_data_path,
-        bool enable_ad_selector,
-        bool enable_ad_rec,
-        bool enable_ad_sponsored_search,
-        const std::string& adlog_topic,
+        const AdIndexConfig& adconfig,
         boost::shared_ptr<DocumentManager>& dm,
         izenelib::ir::idmanager::IDManager* id_manager,
         NumericPropertyTableBuilder* ntb,
@@ -47,17 +44,14 @@ AdIndexManager::AdIndexManager(
     : indexPath_(ad_data_path + "/index.bin"),
       ad_res_path_(ad_resource_path),
       ad_data_path_(ad_data_path),
-      ad_common_data_path_(ad_common_data_path),
-      enable_ad_selector_(enable_ad_selector),
-      enable_ad_rec_(enable_ad_rec),
-      enable_ad_sponsored_search_(enable_ad_sponsored_search),
-      adlog_topic_(adlog_topic),
+      adconfig_(adconfig),
       documentManager_(dm),
       id_manager_(id_manager),
       numericTableBuilder_(ntb),
       ad_searcher_(searcher),
       groupManager_(grp_mgr)
 {
+    adlog_topic_ = adconfig_.adlog_topic;
 }
 
 AdIndexManager::~AdIndexManager()
@@ -84,7 +78,7 @@ bool AdIndexManager::buildMiningTask()
     ad_dnf_index_.reset(new AdDNFIndexType());
 
     ad_click_predictor_ = AdClickPredictor::get();
-    ad_click_predictor_->init(ad_common_data_path_ + "/ctr_predictor");
+    ad_click_predictor_->init(adconfig_.ad_common_data_path + "/ctr_predictor");
 
     std::ifstream ifs(indexPath_.c_str(), std::ios_base::binary);
     if(ifs.good())
@@ -101,19 +95,20 @@ bool AdIndexManager::buildMiningTask()
         }
     }
 
-    if (enable_ad_selector_)
+    if (adconfig_.enable_selector)
     {
         ad_selector_.reset(new AdSelector());
         ad_selector_->init(ad_res_path_ + "/ad_selector", ad_data_path_ + "/ad_selector",
-            ad_common_data_path_ + "/ad_rec", enable_ad_rec_, ad_click_predictor_, groupManager_,
-            documentManager_.get());
+            adconfig_.ad_common_data_path + "/ad_rec", adconfig_.enable_rec, ad_click_predictor_,
+            groupManager_, documentManager_.get());
     }
 
-    if (enable_ad_sponsored_search_)
+    if (adconfig_.enable_sponsored_search)
     {
         ad_sponsored_mgr_.reset(new AdSponsoredMgr());
         ad_sponsored_mgr_->init(ad_res_path_ + "/ad_sponsored", ad_data_path_ + "/ad_sponsored",
-            ad_common_data_path_ + "/ad_sponsored",
+            adconfig_.ad_common_data_path + "/ad_sponsored",
+            adconfig_.sponsored_config.adtitle, adconfig_.sponsored_config.adbidphrase, adconfig_.sponsored_config.adcampaign,
             groupManager_, documentManager_.get(), id_manager_, ad_searcher_);
         // 
         refresh_schedule_exp_.setExpression("0 * * * *");
@@ -190,7 +185,7 @@ void AdIndexManager::onAdStreamMessage(const std::vector<AdMessage>& msg_list)
             }
         }
         bool is_clicked = feedback_info.action > AdFeedbackMgr::View;
-        if (enable_ad_sponsored_search_)
+        if (adconfig_.enable_sponsored_search)
         {
             if (is_clicked && !feedback_info.ad_id.empty())
             {
@@ -198,7 +193,7 @@ void AdIndexManager::onAdStreamMessage(const std::vector<AdMessage>& msg_list)
                     feedback_info.click_cost, feedback_info.click_slot);
             }
         }
-        if (enable_ad_selector_)
+        if (adconfig_.enable_selector)
         {
             docid_t docid = 0;
             uint128_t num_docid = Utilities::md5ToUint128(feedback_info.ad_id);
@@ -217,7 +212,7 @@ void AdIndexManager::onAdStreamMessage(const std::vector<AdMessage>& msg_list)
                 }
             }
             ad_selector_->updateSegments(user_feature, AdSelector::UserSeg);
-            if (enable_ad_rec_)
+            if (adconfig_.enable_rec)
             {
                 ad_selector_->trainOnlineRecommender(feedback_info.user_id,
                     user_feature, feedback_info.ad_id, is_clicked);

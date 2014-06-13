@@ -1800,6 +1800,13 @@ void CollectionConfig::parseAdIndexNode(
     getAttribute(adIndexNode, "adlog_topic", adIndexConfig.adlog_topic);
     miningSchema.ad_index_config.isEnable = true;
     adIndexConfig.ad_common_data_path = collectionMeta.getCollectionPath().getBasePath() + "/ad_common_data";
+    if (adIndexConfig.enable_sponsored_search)
+    {
+        const ticpp::Element* node = getUniqChildElement(adIndexNode, "SponsoredSearch");
+        getAttribute(node, "AdTitle", adIndexConfig.sponsored_config.adtitle);
+        getAttribute(node, "AdBidPhrase", adIndexConfig.sponsored_config.adbidphrase);
+        getAttribute(node, "AdCampaign", adIndexConfig.sponsored_config.adcampaign);
+    }
 }
     
 void CollectionConfig::parseLaserIndexNode(

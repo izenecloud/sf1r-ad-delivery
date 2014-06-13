@@ -1643,11 +1643,7 @@ bool MiningManager::initAdIndexManager_(AdIndexConfig& adIndexConfig)
     adIndexManager_ = new AdIndexManager(
         system_resource_path_ + "/ad_resource",
         adIndexDir.string(),
-        adIndexConfig.ad_common_data_path,
-        adIndexConfig.enable_selector,
-        adIndexConfig.enable_rec,
-        adIndexConfig.enable_sponsored_search,
-        adIndexConfig.adlog_topic,
+        adIndexConfig,
         document_manager_, idManager_.get(), numericTableBuilder_,
         adSearchService_.get(), groupManager_);
     adIndexManager_->buildMiningTask();

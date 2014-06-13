@@ -33,6 +33,27 @@ private:
     }
 };
 
+class AdSponsoredSearchConfig
+{
+public:
+    std::string adtitle;
+    std::string adbidphrase;
+    std::string adcampaign;
+    AdSponsoredSearchConfig()
+    {
+    }
+private:
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void serialize(Archive & ar, const unsigned int version)
+    {
+        ar & adtitle;
+        ar & adbidphrase;
+        ar & adcampaign;
+    }
+};
+
 /**
  * @brief The configuration for <Ad Index>.
  */
@@ -45,6 +66,7 @@ public:
     bool enable_rec;
     bool enable_sponsored_search;
     std::string adlog_topic;
+    AdSponsoredSearchConfig sponsored_config;
 
     AdIndexConfig() : isEnable(false)
                       , enable_selector(false)

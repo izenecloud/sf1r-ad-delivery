@@ -74,13 +74,20 @@
     <xs:element name="AdIndex">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="Property" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="SponsoredSearch" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="ctrpath" type="xs:string" use="required"/>
             <xs:attribute name="enable_selector" type="YesNoType" use="required"/>
             <xs:attribute name="enable_rec" type="YesNoType" use="required"/>
             <xs:attribute name="enable_sponsored_search" type="YesNoType" use="required"/>
             <xs:attribute name="adlog_topic" type="xs:string" use="required"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="SponsoredSearch">
+        <xs:complexType>
+            <xs:attribute name="AdTitle" type="xs:string" use="required"/>
+            <xs:attribute name="AdBidPhrase" type="xs:string" use="required"/>
+            <xs:attribute name="AdCampaign" type="xs:string" use="required"/>
         </xs:complexType>
     </xs:element>
     

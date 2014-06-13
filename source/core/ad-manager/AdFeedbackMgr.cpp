@@ -325,13 +325,23 @@ bool AdFeedbackMgr::parserFeedbackLog(const std::string& log_data, FeedbackInfo&
 
     if (feedback_info.action == Click)
     {
-        if (args.HasMember("click_cost"))
+        try
         {
-            feedback_info.click_cost = args["click_cost"].GetDouble();
+            if (args.HasMember("click_cost"))
+            {
+                feedback_info.click_cost = boost::lexical_cast<double>(args["click_cost"].GetString());
+            }
+            if (args.HasMember("click_slot"))
+            {
+                std::string slot_pos = args["click_slot"].GetString();
+                // position is some string like "H1" or "V1".
+                slot_pos = slot_pos.substr(1);
+                feedback_info.click_slot = boost::lexical_cast<int>(slot_pos);
+            }
         }
-        if (args.HasMember("click_slot"))
+        catch(const std::exception& e)
         {
-            feedback_info.click_slot = args["click_slot"].GetInt();
+            LOG(WARNING) << "Getting click info error: " << e.what();
         }
         LOG(INFO) << "got clicked log : " << feedback_info.user_id << "," << feedback_info.ad_id;
     }

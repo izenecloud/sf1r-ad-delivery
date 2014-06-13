@@ -50,6 +50,9 @@ public:
     void init(const std::string& dict_path,
         const std::string& data_path,
         const std::string& commondata_path,
+        const std::string& adtitle_prop,
+        const std::string& adbidphrase_prop,
+        const std::string& adcampaign_prop,
         faceted::GroupManager* grp_mgr,
         DocumentManager* doc_mgr,
         izenelib::ir::idmanager::IDManager* id_manager,
@@ -119,6 +122,9 @@ private:
         std::vector<AdQueryStatisticInfo>& ad_statistical_data);
 
     std::string data_path_;
+    std::string ad_title_prop_;
+    std::string ad_bidphrase_prop_;
+    std::string ad_campaign_prop_;
     // all bid phrase for all ad creatives.
     std::vector<BidPhraseT>  ad_bidphrase_list_;
     std::vector<double>  ad_ctr_list_;

@@ -29,6 +29,7 @@ class KeywordSearchResult;
 class SearchWorker;
 class AdSearchService;
 class AdSelector;
+class AdIndexConfig;
 namespace faceted
 {
     class GroupManager;
@@ -46,11 +47,7 @@ public:
     AdIndexManager(
             const std::string& ad_resource_path,
             const std::string& ad_data_path,
-            const std::string& ad_common_data_path,
-            bool enable_ad_selector,
-            bool enable_ad_rec,
-            bool enable_ad_sponsored_search,
-            const std::string& adlog_topic,
+            const AdIndexConfig& adconfig,
             boost::shared_ptr<DocumentManager>& dm,
             izenelib::ir::idmanager::IDManager* id_manager,
             NumericPropertyTableBuilder* ntb,
@@ -101,11 +98,7 @@ private:
 
     std::string ad_res_path_;
     std::string ad_data_path_;
-    std::string ad_common_data_path_;
-
-    bool enable_ad_selector_;
-    bool enable_ad_rec_;
-    bool enable_ad_sponsored_search_;
+    const AdIndexConfig& adconfig_;
     std::string adlog_topic_;
 
     boost::shared_ptr<DocumentManager>& documentManager_;
