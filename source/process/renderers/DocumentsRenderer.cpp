@@ -150,6 +150,15 @@ void DocumentsRenderer::renderDocuments(
 
     std::vector<sf1r::wdocid_t> topKWDocs;
     searchResult.getTopKWDocs(topKWDocs);
+    std::vector<double> topKAdCost;
+    try
+    {
+        const AdKeywordSearchResult& tmp = dynamic_cast<const AdKeywordSearchResult&>(searchResult);
+        topKAdCost = tmp.topKAdCost_;
+    }
+    catch(const std::exception& e)
+    {
+    }
 
     bool enableCustomRankScore = searchResult.topKCustomRankScoreList_.size() == searchResult.topKDocs_.size();
     bool enableGeoDistance = searchResult.topKGeoDistanceList_.size() == searchResult.topKDocs_.size();
@@ -159,6 +168,10 @@ void DocumentsRenderer::renderDocuments(
         Value& newResource = resources();
         newResource[Keys::_id] = topKWDocs[indexInTopK];
         newResource[Keys::_rank] = searchResult.topKRankScoreList_[indexInTopK];
+        if (indexInTopK < topKAdCost.size())
+        {
+            newResource[Keys::_ad_click_cost] = topKAdCost[indexInTopK];
+        }
 
         renderPropertyList(splitRenderer_, propertyList, searchResult, i, newResource);
 
