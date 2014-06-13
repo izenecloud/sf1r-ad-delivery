@@ -39,6 +39,7 @@ TARGET_LINK_LIBRARIES(clusteringMatcher
   sf1r_mining_manager
   sf1r_ad_manager
   sf1r_laser_manager
+  sf1r_slim_manager
 
   sf1r_log_manager
   sf1r_document_manager
@@ -84,6 +85,7 @@ TARGET_LINK_LIBRARIES(clustering
   sf1r_mining_manager
   sf1r_ad_manager
   sf1r_laser_manager
+  sf1r_slim_manager
 
   sf1r_log_manager
   sf1r_document_manager
@@ -139,6 +141,7 @@ TARGET_LINK_LIBRARIES(CobraProcess
   sf1r_mining_manager
   sf1r_ad_manager
   sf1r_laser_manager
+  sf1r_slim_manager
 
   sf1r_log_manager
   sf1r_document_manager

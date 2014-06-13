@@ -4,6 +4,7 @@ headers:
   - controllers/StatusController.h
   - controllers/CollectionController.h
   - controllers/LaserController.h
+  - controllers/SlimController.h
   - controllers/AdController.h
 
 controllers:
@@ -51,6 +52,10 @@ controllers:
       - delete_collection
   
   LaserController:
+    actions:
+      - recommend
+
+  SlimController:
     actions:
       - recommend
 

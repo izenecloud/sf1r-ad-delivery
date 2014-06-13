@@ -23,6 +23,7 @@
 #include <parsers/SearchParser.h>
 #include <parsers/SortParser.h>
 #include <parsers/CustomRankingParser.h>
+#include <parsers/GeoLocationRankingParser.h>
 #include <common/BundleSchemaHelpers.h>
 #include <ad-manager/sponsored-ad-search/AdResultType.h>
 
@@ -239,6 +240,10 @@ bool DocumentsSearchHandler::parse()
     parsers.push_back(&sortParser);
     values.push_back(&request_[Keys::sort]);
 
+    GeoLocationRankingParser geoLocationParser(indexSchema_);
+    parsers.push_back(&geoLocationParser);
+    values.push_back(&request_[Keys::geolocation]);
+
     PageInfoParser pageInfoParser;
     parsers.push_back(&pageInfoParser);
     values.push_back(&request_.get());
@@ -337,6 +342,14 @@ bool DocumentsSearchHandler::parse()
     actionItem_.strExp_ = actionItem_.customRanker_->getExpression();
     actionItem_.paramConstValueMap_ = actionItem_.customRanker_->getConstParamMap();
     actionItem_.paramPropertyValueMap_ = actionItem_.customRanker_->getPropertyParamMap();
+
+    // GeoLocationRankingParser
+    //swap(
+    //    actionItem_.geoLocationRanker_,
+    //    geoLocationRankingParser.getGeoLocationRanker() // null after swap
+    //);
+    actionItem_.geoLocation_ = geoLocationParser.getReference();
+    actionItem_.geoLocationProperty_ = geoLocationParser.getPropertyName();
 
     // orderArrayParser
     swap(

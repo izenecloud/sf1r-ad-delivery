@@ -142,6 +142,12 @@ bool IndexSearchService::getSearchResult(
                 distResultItem.topKCustomRankScoreList_.erase(distResultItem.topKCustomRankScoreList_.begin(),
                     distResultItem.topKCustomRankScoreList_.begin() + erase_to);
             }
+            if (!distResultItem.topKGeoDistanceList_.empty())
+            {
+                size_t erase_to = std::min(topKStart, distResultItem.topKGeoDistanceList_.size());
+                distResultItem.topKGeoDistanceList_.erase(distResultItem.topKGeoDistanceList_.begin(),
+                    distResultItem.topKGeoDistanceList_.begin() + erase_to);
+            }
         }
 
         distResultItem.adjustStartCount(topKStart);

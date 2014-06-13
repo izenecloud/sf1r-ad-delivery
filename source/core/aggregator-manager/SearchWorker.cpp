@@ -466,6 +466,7 @@ bool SearchWorker::getSearchResult_(
                                             resultItem.topKDocs_,
                                             resultItem.topKRankScoreList_,
                                             resultItem.topKCustomRankScoreList_,
+                                            resultItem.topKGeoDistanceList_,
                                             resultItem.totalCount_,
                                             resultItem.groupRep_,
                                             resultItem.attrRep_,

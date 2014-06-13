@@ -37,6 +37,7 @@
 
 #include <ad-manager/AdIndexManager.h>
 #include <laser-manager/LaserManager.h>
+#include <slim-manager/SlimManager.h>
 
 #include <search-manager/SearchManager.h>
 #include <search-manager/NumericPropertyTableBuilderImpl.h>
@@ -184,6 +185,7 @@ MiningManager::MiningManager(
     , suffixMatchManager_(NULL)
     , productTokenizer_(NULL)
     , laserManager_(NULL)
+    , slimManager_(NULL)
     , adIndexManager_(NULL)
     , miningTaskBuilder_(NULL)
     , multiThreadMiningTaskBuilder_(NULL)
@@ -211,6 +213,7 @@ MiningManager::~MiningManager()
     if (suffixMatchManager_) delete suffixMatchManager_;
     if (productTokenizer_) delete productTokenizer_;
     if (laserManager_) delete laserManager_;
+    if (slimManager_) delete slimManager_;
 
     close();
 }
@@ -368,7 +371,7 @@ bool MiningManager::open()
 
         if (customDocIdConverter_) delete customDocIdConverter_;
         customDocIdConverter_ = new CustomDocIdConverter(*idManager_);
-        
+
         /** Suffix Match */
         if (mining_schema_.suffixmatch_schema.suffix_match_enable)
         {
@@ -442,6 +445,13 @@ bool MiningManager::open()
         if(!initLaserManager_(mining_schema_.laser_index_config))
         {
             LOG(ERROR) << "init LaserManager fail"<<endl;
+            return false;
+        }
+
+        /** slim */
+        if(mining_schema_.laser_index_config.isEnable && !initSlimManager_())
+        {
+            LOG(ERROR) << "init SlimManager fail"<<endl;
             return false;
         }
 
@@ -1083,6 +1093,7 @@ bool MiningManager::GetSuffixMatch(
         std::vector<uint32_t>& docIdList,
         std::vector<float>& rankScoreList,
         std::vector<float>& customRankScoreList,
+        std::vector<float>& geoDistanceList,
         std::size_t& totalCount,
         faceted::GroupRep& groupRep,
         sf1r::faceted::OntologyRep& attrRep,
@@ -1339,7 +1350,7 @@ bool MiningManager::GetSuffixMatch(
         docIdList[i] = res_list[i].second;
     }
     searchManager_->fuzzySearchRanker_.rankByPropValue(
-        actionOperation, start, docIdList, rankScoreList, customRankScoreList, distSearchInfo);
+        actionOperation, start, docIdList, rankScoreList, customRankScoreList, geoDistanceList, distSearchInfo);
 
 
     return true;
@@ -1659,6 +1670,14 @@ bool MiningManager::initLaserManager_(LaserIndexConfig& laserIndexConfig)
     LOG(INFO)<<"init LaserManager..";
     laserManager_=new LaserManager(adSearchService_, document_manager_, collectionName_);
     multiThreadMiningTaskBuilder_->addTask(laserManager_->getLaserIndexTask());
+
+    return true;
+}
+
+bool MiningManager::initSlimManager_()
+{
+    LOG(INFO)<<"init SlimManager..";
+    slimManager_=new SlimManager(adSearchService_, document_manager_, collectionName_);
 
     return true;
 }
