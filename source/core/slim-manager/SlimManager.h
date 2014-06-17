@@ -6,6 +6,7 @@
 #include <query-manager/ActionItem.h>
 #include <common/ResultType.h>
 #include <ad-manager/AdSearchService.h>
+#include <laser-manager/LaserManager.h>
 #include <string>
 
 #include "SlimRecommend.h"
@@ -17,7 +18,8 @@ class SlimManager {
 public:
     SlimManager(const boost::shared_ptr<AdSearchService>& adSearchService,
                 const boost::shared_ptr<DocumentManager>& documentManager,
-                const std::string& collection);
+                const std::string& collection,
+                LaserManager* laser);
     ~SlimManager();
 
 public:
@@ -30,6 +32,7 @@ private:
     const boost::shared_ptr<AdSearchService> & adSearchService_;
     const boost::shared_ptr<DocumentManager> & documentManager_;
     slim::SlimRecommend* recommend_;
+    LaserManager* laser_;
 };
 
 }

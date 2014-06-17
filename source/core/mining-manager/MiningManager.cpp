@@ -1677,7 +1677,7 @@ bool MiningManager::initLaserManager_(LaserIndexConfig& laserIndexConfig)
 bool MiningManager::initSlimManager_()
 {
     LOG(INFO)<<"init SlimManager..";
-    slimManager_=new SlimManager(adSearchService_, document_manager_, collectionName_);
+    slimManager_=new SlimManager(adSearchService_, document_manager_, collectionName_, laserManager_);
 
     return true;
 }
