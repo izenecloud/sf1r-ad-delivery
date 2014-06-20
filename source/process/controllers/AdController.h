@@ -13,6 +13,7 @@ public:
     void set_keyword_bidprice();
     void set_ad_campaign_budget();
     void set_ad_bid_phrase();
+    void update_online_status();
 protected:
     virtual bool checkCollectionService(std::string& error);
 

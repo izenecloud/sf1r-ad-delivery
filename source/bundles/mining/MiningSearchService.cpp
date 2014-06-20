@@ -211,4 +211,15 @@ bool MiningSearchService::setAdBidPhrase(const std::string& ad_strid, const std:
     return miningManager_->getAdIndexManager()->setAdBidPhrase(ad_strid, bid_phrase_list);
 }
 
+bool MiningSearchService::updateAdOnlineStatus(const std::string& ad_strid, bool is_online)
+{
+    if (!miningManager_->getAdIndexManager())
+    {
+        LOG(WARNING) << "ad manager not enabled.";
+        return false;
+    }
+
+    return miningManager_->getAdIndexManager()->updateAdOnlineStatus(ad_strid, is_online);
+}
+
 }

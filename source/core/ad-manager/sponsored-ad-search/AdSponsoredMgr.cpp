@@ -30,7 +30,7 @@ namespace sponsored
 
 static const int MAX_BIDPHRASE_LEN = 3;
 static const int MAX_DIFF_BID_KEYWORD_NUM = 1000000;
-static const int MAX_RANKED_AD_NUM = 10;
+static const int MAX_RANKED_AD_NUM = 20;
 static const int LOWEST_CLICK_COST = 1;
 static const int DEFAULT_AD_BUDGET = 1000;
 static const double MIN_AD_SCORE = 1e-6;
@@ -418,8 +418,12 @@ void AdSponsoredMgr::miningAdCreatives(ad_docid_t start_id, ad_docid_t end_id)
     }
     ad_bidphrase_list_.resize(end_id + 1);
     ad_orig_bidstr_list_.resize(end_id + 1);
+    ad_status_bitmap_.resize(end_id + 1, false);
     std::string ad_title;
     std::vector<std::string> ad_bid_phrase_strlist;
+    std::vector<std::string> ad_processed_bid_phrase_strlist;
+    std::vector<std::string> pricestr_list;
+    std::vector<int> priceint_list;
     BidPhraseListT  bidphrase_list;
     BidPhraseT bidphrase;
     for(ad_docid_t i = start_id; i <= end_id; ++i)
@@ -427,16 +431,46 @@ void AdSponsoredMgr::miningAdCreatives(ad_docid_t start_id, ad_docid_t end_id)
         Document::doc_prop_value_strtype prop_value;
         doc_mgr_->getPropertyValue(i, ad_bidphrase_prop_, prop_value);
         const std::string bidstr = propstr_to_str(prop_value);
+        doc_mgr_->getPropertyValue(i, ad_campaign_prop_, prop_value);
+        std::string campaign = propstr_to_str(prop_value);
+        if (campaign.empty())
+        {
+            doc_mgr_->getPropertyValue(i, "DOCID", prop_value);
+            campaign = propstr_to_str(prop_value);
+        }
+
         if (!bidstr.empty())
         {
             ad_bid_phrase_strlist.clear();
+            ad_processed_bid_phrase_strlist.clear();
+            pricestr_list.clear();
+            priceint_list.clear();
+
             boost::split(ad_bid_phrase_strlist, bidstr, boost::is_any_of(",;"));
             bidphrase_list.resize(ad_bid_phrase_strlist.size());
+
+            doc_mgr_->getPropertyValue(i, "KeywordsPrice", prop_value);
+            const std::string bidprice_str = propstr_to_str(prop_value);
+            if (!bidprice_str.empty())
+            {
+                boost::split(pricestr_list, bidprice_str, boost::is_any_of(","));
+            }
+            if (pricestr_list.size() != ad_bid_phrase_strlist.size())
+            {
+                LOG(WARNING) << "bid price list number not matched with bid string.";
+                pricestr_list.resize(ad_bid_phrase_strlist.size(), 0);
+            }
+
+            ad_processed_bid_phrase_strlist.resize(ad_bid_phrase_strlist.size());
+            priceint_list.resize(ad_bid_phrase_strlist.size());
             for(std::size_t j = 0; j < ad_bid_phrase_strlist.size(); ++j)
             {
                 generateBidPhrase(ad_bid_phrase_strlist[j], bidphrase);
+                getBidPhraseStr(bidphrase, ad_processed_bid_phrase_strlist[j]);
                 bidphrase_list[j].swap(bidphrase);
+                priceint_list[j] = int(boost::lexical_cast<double>(pricestr_list[j]) * 100);
             }
+            manual_bidinfo_mgr_.setManualBidPrice(campaign, ad_processed_bid_phrase_strlist, priceint_list);
             ad_orig_bidstr_list_[i].swap(ad_bid_phrase_strlist);
         }
         else
@@ -450,13 +484,6 @@ void AdSponsoredMgr::miningAdCreatives(ad_docid_t start_id, ad_docid_t end_id)
         }
 
         ad_bidphrase_list_[i].swap(bidphrase_list);
-        doc_mgr_->getPropertyValue(i, ad_campaign_prop_, prop_value);
-        std::string campaign = propstr_to_str(prop_value);
-        if (campaign.empty())
-        {
-            doc_mgr_->getPropertyValue(i, "DOCID", prop_value);
-            campaign = propstr_to_str(prop_value);
-        }
         updateAdCampaign(i, campaign);
         if (i % 100000 == 0)
         {
@@ -664,6 +691,22 @@ void AdSponsoredMgr::resetDailyLogStatisticalData(bool reset_used)
     }
     bid_price_file.close();
     LOG(INFO) << "end compute auto bid strategy.";
+}
+
+bool AdSponsoredMgr::updateAdOnlineStatus(const std::string& ad_strid, bool is_online)
+{
+    uint32_t adid = 0;
+    if (!getAdIdFromAdStrId(ad_strid, adid))
+        return false;
+    if (!is_online)
+    {
+        ad_status_bitmap_.set(adid);
+    }
+    else
+    {
+        ad_status_bitmap_.reset(adid);
+    }
+    return true;
 }
 
 void AdSponsoredMgr::setManualBidPrice(const std::string& campaign_name,
@@ -980,6 +1023,11 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     double t3_total = 0;
     for(std::size_t i = 0; i < result_list.size(); ++i)
     {
+        if (ad_status_bitmap_.test(result_list[i]))
+        {
+            // this item is offline.
+            continue;
+        }
         int best_match_index = -1;
         std::size_t best_match_size = 0;
         const BidPhraseListT& bidphrase_list = ad_bidphrase_list_[result_list[i]];
@@ -1066,11 +1114,11 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
 
             if (i == count - 1)
             {
-                topKAdCost[i] = LOWEST_CLICK_COST;
+                topKAdCost[i] = LOWEST_CLICK_COST*100;
             }
             else
             {
-                topKAdCost[i] = LOWEST_CLICK_COST + searchResult.topKRankScoreList_[i + 1]/item.qscore;
+                topKAdCost[i] = 100*(LOWEST_CLICK_COST + searchResult.topKRankScoreList_[i + 1]/item.qscore);
             }
         }
     }

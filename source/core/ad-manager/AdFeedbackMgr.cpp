@@ -338,6 +338,10 @@ bool AdFeedbackMgr::parserFeedbackLog(const std::string& log_data, FeedbackInfo&
                 slot_pos = slot_pos.substr(1);
                 feedback_info.click_slot = boost::lexical_cast<int>(slot_pos);
             }
+            if (args.HasMember("hit_orig_bidstr"))
+            {
+                feedback_info.hit_bidstr = args["hit_orig_bidstr"].GetString();
+            }
         }
         catch(const std::exception& e)
         {

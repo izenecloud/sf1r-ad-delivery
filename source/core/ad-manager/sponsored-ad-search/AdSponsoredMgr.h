@@ -10,6 +10,7 @@
 #include <deque>
 #include <boost/unordered_map.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/dynamic_bitset.hpp>
 #include <string>
 #include <set>
 
@@ -83,6 +84,7 @@ public:
         const std::vector<std::string>& key_list,
         const std::vector<int>& price_list);
 
+    bool updateAdOnlineStatus(const std::string& ad_strid, bool is_online);
     void resetDailyLogStatisticalData(bool reset_used);
     inline double getAdCTR(ad_docid_t adid)
     {
@@ -157,6 +159,7 @@ private:
     std::vector<std::vector<std::pair<int, double> > > ad_uniform_bid_price_list_;
 
     AdManualBidInfoMgr manual_bidinfo_mgr_;
+    boost::dynamic_bitset<> ad_status_bitmap_;
 };
 
 }

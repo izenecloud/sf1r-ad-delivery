@@ -137,6 +137,7 @@ public:
     bool setKeywordBidPrice(const std::string& keyword, const std::string& campaign_name, double bidprice);
     bool setAdCampaignBudget(const std::string& ad_campaign_name, double budget);
     bool setAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list);
+    bool updateAdOnlineStatus(const std::string& ad_strid, bool is_online);
 
 private:
     bool HookDistributeRequestForSearch(const std::string& coll, uint32_t workerId);

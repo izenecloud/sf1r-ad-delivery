@@ -73,5 +73,16 @@ void AdController::set_ad_bid_phrase()
     }
 }
 
+void AdController::update_online_status()
+{
+    Value& input = request()[Keys::resource];
+    std::string ad_strid = asString(input[Keys::DOCID]);
+    bool ret = miningSearchService_->updateAdOnlineStatus(ad_strid, asBool(input[Keys::is_online_ad]));
+    if (!ret)
+    {
+        response().addError("Request failed.");
+        return;
+    }
+}
 
 }

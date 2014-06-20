@@ -432,6 +432,16 @@ bool AdIndexManager::setAdCampaignBudget(const std::string& campaign_name, int b
     return true;
 }
 
+bool AdIndexManager::updateAdOnlineStatus(const std::string& ad_strid, bool is_online)
+{
+    if (!ad_sponsored_mgr_)
+        return false;
+    if (!is_online)
+        LOG(INFO) << "The ad is setting offline: " << ad_strid;
+    ad_sponsored_mgr_->updateAdOnlineStatus(ad_strid, is_online);
+    return true;
+}
+
 bool AdIndexManager::setAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list)
 {
     if (!ad_sponsored_mgr_)

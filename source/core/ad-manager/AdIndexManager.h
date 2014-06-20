@@ -89,6 +89,7 @@ public:
     bool setKeywordBidPrice(const std::string& keyword, const std::string& campaign_name, int bidprice);
     bool setAdCampaignBudget(const std::string& campaign_name, int budget);
     bool setAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list);
+    bool updateAdOnlineStatus(const std::string& ad_strid, bool is_online);
     void refreshBidStrategy(int calltype);
 
 private:
