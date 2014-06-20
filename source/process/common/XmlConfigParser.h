@@ -124,7 +124,7 @@ protected:
         if (!getAttribute(ele, name, temp, throwIfNoAttribute))
             return false;
 
-        if (TermTypeDetector::checkFloatFormat(temp))
+        if (TermTypeDetector::checkNumericFormat<float>(temp))
         {
             stringstream ss;
             ss << temp;
@@ -158,7 +158,7 @@ protected:
         if (!getAttribute(ele, name, temp, throwIfNoAttribute))
             return false;
 
-        if (TermTypeDetector::checkInt64Format(temp))
+        if (TermTypeDetector::checkNumericFormat<int64_t>(temp))
         {
             stringstream ss;
             ss << temp;
