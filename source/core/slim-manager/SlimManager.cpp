@@ -5,13 +5,15 @@ namespace sf1r {
 
 SlimManager::SlimManager(const boost::shared_ptr<AdSearchService>& adSearchService,
                          const boost::shared_ptr<DocumentManager>& documentManager,
-                         const std::string& collection)
+                         const std::string& collection,
+                         LaserManager* laser)
     : collection_(collection)
     , adSearchService_(adSearchService)
     , documentManager_(documentManager)
     , recommend_(NULL)
+    , laser_(laser)
 {
-    recommend_ = new slim::SlimRecommend();
+    recommend_ = new slim::SlimRecommend(laser_->indexManager_);
 }
 
 SlimManager::~SlimManager()

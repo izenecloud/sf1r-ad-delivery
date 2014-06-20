@@ -50,6 +50,7 @@ private:
 
     friend class laser::LaserIndexTask;
     friend class laser::LaserRpcServer;
+    friend class SlimManager;
 private:
     const std::string collection_;
     boost::shared_ptr<AdSearchService> adSearchService_;
