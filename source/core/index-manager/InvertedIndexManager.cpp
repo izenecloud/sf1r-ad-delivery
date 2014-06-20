@@ -52,7 +52,8 @@ void split_string(const izenelib::util::UString& szText, std::list<PropertyType>
     out.push_back(ustr_to_propstr(str.substr(nOld)));
 }
 
-void split_int32(const std::string& str, std::list<PropertyType>& out, const char* sep)
+template <typename T>
+void split_numeric(const std::string& str, std::list<PropertyType>& out, const char* sep)
 {
     std::size_t n = 0, nOld = 0;
     while (n != std::string::npos)
@@ -66,7 +67,7 @@ void split_int32(const std::string& str, std::list<PropertyType>& out, const cha
                 {
                     std::string tmpStr = str.substr(nOld, n - nOld);
                     boost::algorithm::trim(tmpStr);
-                    int32_t value = boost::lexical_cast<int32_t>(tmpStr);
+                    T value = boost::lexical_cast<T>(tmpStr);
                     out.push_back(value);
                 }
                 catch (boost::bad_lexical_cast &)
@@ -82,83 +83,7 @@ void split_int32(const std::string& str, std::list<PropertyType>& out, const cha
     {
         std::string tmpStr = str.substr(nOld);
         boost::algorithm::trim(tmpStr);
-        int32_t value = boost::lexical_cast<int32_t>(tmpStr);
-        out.push_back(value);
-    }
-    catch (boost::bad_lexical_cast &)
-    {
-    }
-}
-
-void split_int64(const std::string& str, std::list<PropertyType>& out, const char* sep)
-{
-    std::size_t n = 0, nOld = 0;
-    while (n != std::string::npos)
-    {
-        n = str.find_first_of(sep, n);
-        if (n != std::string::npos)
-        {
-            if (n != nOld)
-            {
-                try
-                {
-                    std::string tmpStr = str.substr(nOld, n - nOld);
-                    boost::algorithm::trim(tmpStr);
-                    int64_t value = boost::lexical_cast<int64_t>(tmpStr);
-                    out.push_back(value);
-                }
-                catch (boost::bad_lexical_cast &)
-                {
-                }
-            }
-            ++n;
-            nOld = n;
-        }
-    }
-
-    try
-    {
-        std::string tmpStr = str.substr(nOld);
-        boost::algorithm::trim(tmpStr);
-        int64_t value = boost::lexical_cast<int64_t>(tmpStr);
-        out.push_back(value);
-    }
-    catch (boost::bad_lexical_cast &)
-    {
-    }
-}
-
-void split_float(const std::string& str, std::list<PropertyType>& out, const char* sep)
-{
-    std::size_t n = 0, nOld = 0;
-    while (n != std::string::npos)
-    {
-        n = str.find_first_of(sep, n);
-        if (n != std::string::npos)
-        {
-            if (n != nOld)
-            {
-                try
-                {
-                    std::string tmpStr = str.substr(nOld, n - nOld);
-                    boost::algorithm::trim(tmpStr);
-                    float value = boost::lexical_cast<float>(tmpStr);
-                    out.push_back(value);
-                }
-                catch (boost::bad_lexical_cast &)
-                {
-                }
-            }
-            ++n;
-            nOld = n;
-        }
-    }
-
-    try
-    {
-        std::string tmpStr = str.substr(nOld);
-        boost::algorithm::trim(tmpStr);
-        float value = boost::lexical_cast<float>(tmpStr);
+        T value = boost::lexical_cast<T>(tmpStr);
         out.push_back(value);
     }
     catch (boost::bad_lexical_cast &)
@@ -577,7 +502,6 @@ bool InvertedIndexManager::prepareIndexRTypeProperties_(
             }
             break;
 
-		case DOUBLE_PROPERTY_TYPE:
         case FLOAT_PROPERTY_TYPE:
             if (iter->getIsRange())
             {
@@ -613,6 +537,43 @@ bool InvertedIndexManager::prepareIndexRTypeProperties_(
                 indexDocument.insertProperty(indexerPropertyConfig, value);
             }
             break;
+
+        case DOUBLE_PROPERTY_TYPE:
+            if (iter->getIsRange())
+            {
+                std::pair<double, double> value;
+                NumericRangePropertyTable<double>* numericPropertyTable = static_cast<NumericRangePropertyTable<double> *>(it->second.get());
+                if (!numericPropertyTable->getValue(docId, value))
+                {
+                    ret = false;
+                    break;
+                }
+
+                if (value.first == value.second)
+                {
+                    indexDocument.insertProperty(indexerPropertyConfig, value.first);
+                }
+                else
+                {
+                    indexerPropertyConfig.setIsMultiValue(true);
+                    MultiValuePropertyType multiProps;
+                    multiProps.push_back(value.first);
+                    multiProps.push_back(value.second);
+                    indexDocument.insertProperty(indexerPropertyConfig, multiProps);
+                }
+            }
+            else
+            {
+                double value;
+                if (!it->second->getDoubleValue(docId, value))
+                {
+                    ret = false;
+                    break;
+                }
+                indexDocument.insertProperty(indexerPropertyConfig, value);
+            }
+            break;
+
         case DATETIME_PROPERTY_TYPE:
         case INT64_PROPERTY_TYPE:
             if (iter->getIsRange())
@@ -649,6 +610,7 @@ bool InvertedIndexManager::prepareIndexRTypeProperties_(
                 indexDocument.insertProperty(indexerPropertyConfig, value);
             }
             break;
+
         default:
             break;
         }
@@ -843,7 +805,7 @@ bool InvertedIndexManager::prepareIndexDocumentNumericProperty_(
         if (iter->getIsMultiValue())
         {
             MultiValuePropertyType props;
-            split_int32(prop_str, props, ",;");
+            split_numeric<int32_t>(prop_str, props, ",;");
             indexDocument.insertProperty(indexerPropertyConfig, props);
         }
         else
@@ -859,19 +821,19 @@ bool InvertedIndexManager::prepareIndexDocumentNumericProperty_(
                 MultiValuePropertyType multiProps;
                 if (checkSeparatorType_(propertyValueU, encoding, '-'))
                 {
-                    split_int32(prop_str, multiProps, "-");
+                    split_numeric<int32_t>(prop_str, multiProps, "-");
                     indexerPropertyConfig.setIsMultiValue(true);
                     indexDocument.insertProperty(indexerPropertyConfig, multiProps);
                 }
                 else if (checkSeparatorType_(propertyValueU, encoding, '~'))
                 {
-                    split_int32(prop_str, multiProps, "~");
+                    split_numeric<int32_t>(prop_str, multiProps, "~");
                     indexerPropertyConfig.setIsMultiValue(true);
                     indexDocument.insertProperty(indexerPropertyConfig, multiProps);
                 }
                 else if (checkSeparatorType_(propertyValueU, encoding, ','))
                 {
-                    split_int32(prop_str, multiProps, ",");
+                    split_numeric<int32_t>(prop_str, multiProps, ",");
                     indexerPropertyConfig.setIsMultiValue(true);
                     indexDocument.insertProperty(indexerPropertyConfig, multiProps);
                 }
@@ -891,13 +853,13 @@ bool InvertedIndexManager::prepareIndexDocumentNumericProperty_(
         }
         break;
     }
-	case DOUBLE_PROPERTY_TYPE:
+
     case FLOAT_PROPERTY_TYPE:
     {
         if (iter->getIsMultiValue())
         {
             MultiValuePropertyType props;
-            split_float(prop_str, props, ",;");
+            split_numeric<float>(prop_str, props, ",;");
             indexDocument.insertProperty(indexerPropertyConfig, props);
         }
         else
@@ -912,17 +874,50 @@ bool InvertedIndexManager::prepareIndexDocumentNumericProperty_(
             {
                 MultiValuePropertyType multiProps;
                 if (checkSeparatorType_(propertyValueU, encoding, '-'))
-                    split_float(prop_str, multiProps, "-");
+                    split_numeric<float>(prop_str, multiProps, "-");
                 else if (checkSeparatorType_(propertyValueU, encoding, '~'))
-                    split_float(prop_str, multiProps, "~");
+                    split_numeric<float>(prop_str, multiProps, "~");
                 else if (checkSeparatorType_(propertyValueU, encoding, ','))
-                    split_float(prop_str, multiProps, ",");
+                    split_numeric<float>(prop_str, multiProps, ",");
                 indexerPropertyConfig.setIsMultiValue(true);
                 indexDocument.insertProperty(indexerPropertyConfig, multiProps);
             }
         }
         break;
     }
+
+    case DOUBLE_PROPERTY_TYPE:
+    {
+        if (iter->getIsMultiValue())
+        {
+            MultiValuePropertyType props;
+            split_numeric<double>(prop_str, props, ",;");
+            indexDocument.insertProperty(indexerPropertyConfig, props);
+        }
+        else
+        {
+            double value = 0;
+            try
+            {
+                value = boost::lexical_cast<double>(prop_str);
+                indexDocument.insertProperty(indexerPropertyConfig, value);
+            }
+            catch (const boost::bad_lexical_cast &)
+            {
+                MultiValuePropertyType multiProps;
+                if (checkSeparatorType_(propertyValueU, encoding, '-'))
+                    split_numeric<double>(prop_str, multiProps, "-");
+                else if (checkSeparatorType_(propertyValueU, encoding, '~'))
+                    split_numeric<double>(prop_str, multiProps, "~");
+                else if (checkSeparatorType_(propertyValueU, encoding, ','))
+                    split_numeric<double>(prop_str, multiProps, ",");
+                indexerPropertyConfig.setIsMultiValue(true);
+                indexDocument.insertProperty(indexerPropertyConfig, multiProps);
+            }
+        }
+        break;
+    }
+
     case DATETIME_PROPERTY_TYPE:
     {
         if (iter->getIsMultiValue())
@@ -938,12 +933,13 @@ bool InvertedIndexManager::prepareIndexDocumentNumericProperty_(
         }
         break;
     }
+
     case INT64_PROPERTY_TYPE:
     {
         if (iter->getIsMultiValue())
         {
             MultiValuePropertyType props;
-            split_int64(prop_str, props, ",;");
+            split_numeric<int64_t>(prop_str, props, ",;");
             indexDocument.insertProperty(indexerPropertyConfig, props);
         }
         else
@@ -959,19 +955,19 @@ bool InvertedIndexManager::prepareIndexDocumentNumericProperty_(
                 MultiValuePropertyType multiProps;
                 if (checkSeparatorType_(propertyValueU, encoding, '-'))
                 {
-                    split_int64(prop_str, multiProps, "-");
+                    split_numeric<int64_t>(prop_str, multiProps, "-");
                     indexerPropertyConfig.setIsMultiValue(true);
                     indexDocument.insertProperty(indexerPropertyConfig, multiProps);
                 }
                 else if (checkSeparatorType_(propertyValueU, encoding, '~'))
                 {
-                    split_int64(prop_str, multiProps, "~");
+                    split_numeric<int64_t>(prop_str, multiProps, "~");
                     indexerPropertyConfig.setIsMultiValue(true);
                     indexDocument.insertProperty(indexerPropertyConfig, multiProps);
                 }
                 else if (checkSeparatorType_(propertyValueU, encoding, ','))
                 {
-                    split_int64(prop_str, multiProps, ",");
+                    split_numeric<int64_t>(prop_str, multiProps, ",");
                     indexerPropertyConfig.setIsMultiValue(true);
                     indexDocument.insertProperty(indexerPropertyConfig, multiProps);
                 }
@@ -991,6 +987,7 @@ bool InvertedIndexManager::prepareIndexDocumentNumericProperty_(
         }
         break;
     }
+
     default:
         break;
     }
