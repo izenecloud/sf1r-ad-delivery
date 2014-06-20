@@ -15,11 +15,13 @@ public:
     }
 
     std::vector<double> topKAdCost_;
+    std::vector<std::string> topKAdBidStrList_;
 
     void swap(AdKeywordSearchResult& other)
     {
         KeywordSearchResult::swap(other);
         topKAdCost_.swap(other.topKAdCost_);
+        topKAdBidStrList_.swap(other.topKAdBidStrList_);
     }
 };
 

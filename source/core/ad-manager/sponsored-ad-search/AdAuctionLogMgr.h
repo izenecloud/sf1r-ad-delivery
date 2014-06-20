@@ -141,7 +141,7 @@ public:
     void init(const std::string& datapath);
     void updateAdSearchStat(const std::set<LogBidKeywordId>& keyword_list,
         const std::vector<std::string>& ranked_ad_list);
-    void updateAuctionLogData(const std::string& ad_id, const std::vector<LogBidKeywordId>& keyword_list,
+    void updateAuctionLogData(const std::string& ad_id, const LogBidKeywordId& keyword_str,
         int click_cost_in_fen, uint32_t click_slot);
 
     double getAdCTR(const std::string& adid);

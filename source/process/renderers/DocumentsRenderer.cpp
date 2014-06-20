@@ -150,11 +150,13 @@ void DocumentsRenderer::renderDocuments(
 
     std::vector<sf1r::wdocid_t> topKWDocs;
     searchResult.getTopKWDocs(topKWDocs);
-    std::vector<double> topKAdCost;
+    std::vector<double>* topKAdCost = NULL;
+    std::vector<std::string>* topKAdBidStrList = NULL;
     try
     {
         const AdKeywordSearchResult& tmp = dynamic_cast<const AdKeywordSearchResult&>(searchResult);
-        topKAdCost = tmp.topKAdCost_;
+        topKAdCost = const_cast<std::vector<double>*>(&(tmp.topKAdCost_));
+        topKAdBidStrList = const_cast<std::vector<std::string>*>(&(tmp.topKAdBidStrList_));
     }
     catch(const std::exception& e)
     {
@@ -168,9 +170,13 @@ void DocumentsRenderer::renderDocuments(
         Value& newResource = resources();
         newResource[Keys::_id] = topKWDocs[indexInTopK];
         newResource[Keys::_rank] = searchResult.topKRankScoreList_[indexInTopK];
-        if (indexInTopK < topKAdCost.size())
+        if (topKAdCost && indexInTopK < (*topKAdCost).size())
         {
-            newResource[Keys::_ad_click_cost] = topKAdCost[indexInTopK];
+            newResource[Keys::_ad_click_cost] = (*topKAdCost)[indexInTopK];
+        }
+        if (topKAdBidStrList && indexInTopK < (*topKAdBidStrList).size())
+        {
+            newResource[Keys::_ad_hit_bidstr] = (*topKAdBidStrList)[indexInTopK];
         }
 
         renderPropertyList(splitRenderer_, propertyList, searchResult, i, newResource);

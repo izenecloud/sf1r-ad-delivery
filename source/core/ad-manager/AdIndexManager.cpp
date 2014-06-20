@@ -190,7 +190,8 @@ void AdIndexManager::onAdStreamMessage(const std::vector<AdMessage>& msg_list)
             if (is_clicked && !feedback_info.ad_id.empty())
             {
                 ad_sponsored_mgr_->updateAuctionLogData(feedback_info.ad_id,
-                    feedback_info.click_cost, feedback_info.click_slot);
+                    feedback_info.hit_bidstr,
+                    feedback_info.click_cost*100, feedback_info.click_slot);
             }
         }
         if (adconfig_.enable_selector)

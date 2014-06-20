@@ -272,7 +272,7 @@ void AdAuctionLogMgr::updateAdSearchStat(const std::set<LogBidKeywordId>& keywor
     }
 }
 
-void AdAuctionLogMgr::updateAuctionLogData(const std::string& ad_id, const std::vector<LogBidKeywordId>& keyword_list,
+void AdAuctionLogMgr::updateAuctionLogData(const std::string& ad_id, const std::string& keyword_str,
     int click_cost_in_fen, uint32_t click_slot)
 {
     std::string timestr = gettimestr(0);
@@ -309,14 +309,13 @@ void AdAuctionLogMgr::updateAuctionLogData(const std::string& ad_id, const std::
             insert_it.first->second++;
         }
     }
-    for (std::size_t i = 0; i < keyword_list.size(); ++i)
     {
-        boost::mutex& m = lock_list_[getHashIndex(keyword_list[i]) % DEFAULT_LOCK_NUM];
+        boost::mutex& m = lock_list_[getHashIndex(keyword_str) % DEFAULT_LOCK_NUM];
         boost::unique_lock<boost::mutex> guard(m);
-        KeywordViewInfoPeriodListT& key_stat = keyword_stat_data_[keyword_list[i]];
+        KeywordViewInfoPeriodListT& key_stat = keyword_stat_data_[keyword_str];
         if (key_stat.find(timestr) == key_stat.end())
         {
-            updateHistoryKeywordLogData(keyword_list[i], key_stat);
+            updateHistoryKeywordLogData(keyword_str, key_stat);
         }
 
         KeywordViewInfo& key_view_info = key_stat[timestr];

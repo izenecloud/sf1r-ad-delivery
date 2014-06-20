@@ -49,6 +49,8 @@ struct ScoreSponsoredAdDoc
     ad_docid_t docId;
     double score;
     double qscore;
+    std::string hit_bidstr;
+    std::string hit_orig_bidstr;
 };
 
 class ScoreSortedSponsoredAdQueue
@@ -151,19 +153,17 @@ void AdSponsoredMgr::init(const std::string& res_path,
     ad_log_mgr_->init(commondata_path);
     ad_bid_strategy_.reset(new AdBidStrategy());
 
-    manual_bidinfo_mgr_.init(commondata_path);
+    manual_bidinfo_mgr_.init(data_path_);
 
     load();
     resetDailyLogStatisticalData(false);
 }
 
-void AdSponsoredMgr::updateAuctionLogData(const std::string& ad_strid,
+void AdSponsoredMgr::updateAuctionLogData(const std::string& ad_strid, const std::string& hit_orig_bidstr,
     int click_cost_in_fen, uint32_t click_slot)
 {
-    BidPhraseT bidphrase;
-    std::vector<LogBidKeywordId> logbid_list;
-    getBidPhrase(ad_strid, bidphrase, logbid_list);
-    ad_log_mgr_->updateAuctionLogData(ad_strid, logbid_list, click_cost_in_fen, click_slot);
+    std::string hit_bidstr = preprocessBidPhraseStr(hit_orig_bidstr);
+    ad_log_mgr_->updateAuctionLogData(ad_strid, hit_bidstr, click_cost_in_fen, click_slot);
     ad_docid_t adid;
     if (!getAdIdFromAdStrId(ad_strid, adid))
     {
@@ -180,13 +180,22 @@ void AdSponsoredMgr::save()
     std::size_t len = 0;
     char* buf = NULL;
     {
-        izenelib::util::izene_serialization<std::vector<BidPhraseT> > izs(ad_bidphrase_list_);
+        izenelib::util::izene_serialization<std::vector<BidPhraseListT> > izs(ad_bidphrase_list_);
         izs.write_image(buf, len);
         ofs.write((const char*)&len, sizeof(len));
         ofs.write(buf, len);
         ofs.flush();
 
     }
+    {
+        len = 0;
+        izenelib::util::izene_serialization<std::vector<BidPhraseStrListT> > izs(ad_orig_bidstr_list_);
+        izs.write_image(buf, len);
+        ofs.write((const char*)&len, sizeof(len));
+        ofs.write(buf, len);
+        ofs.flush();
+    }
+
     {
         len = 0;
         izenelib::util::izene_serialization<std::vector<std::string> > izs(keyword_id_value_list_);
@@ -211,7 +220,11 @@ void AdSponsoredMgr::save()
         txt_data << i << ":";
         for(std::size_t j = 0; j < ad_bidphrase_list_[i].size(); ++j)
         {
-            txt_data << ad_bidphrase_list_[i][j] << ",";
+            for(std::size_t k = 0; k < ad_bidphrase_list_[i][j].size(); ++k)
+            {
+                txt_data << ad_bidphrase_list_[i][j][k] << ",";
+            }
+            txt_data << "-:-";
         }
         txt_data << std::endl;
     }
@@ -259,7 +272,7 @@ void AdSponsoredMgr::save()
     }
     {
         len = 0;
-        izenelib::util::izene_serialization<std::vector<std::map<BidKeywordId, int> > > izs(ad_bid_price_list_);
+        izenelib::util::izene_serialization<std::vector<std::map<BidPhraseStrT, int> > > izs(ad_bid_price_list_);
         izs.write_image(buf, len);
         ofs.write((const char*)&len, sizeof(len));
         ofs.write(buf, len);
@@ -292,8 +305,16 @@ void AdSponsoredMgr::load()
             ifs.read((char*)&len, sizeof(len));
             data.resize(len);
             ifs.read((char*)&data[0], len);
-            izenelib::util::izene_deserialization<std::vector<BidPhraseT> > izd(data.data(), data.size());
+            izenelib::util::izene_deserialization<std::vector<BidPhraseListT> > izd(data.data(), data.size());
             izd.read_image(ad_bidphrase_list_);
+        }
+        {
+            len = 0;
+            ifs.read((char*)&len, sizeof(len));
+            data.resize(len);
+            ifs.read((char*)&data[0], len);
+            izenelib::util::izene_deserialization<std::vector<BidPhraseStrListT> > izd(data.data(), data.size());
+            izd.read_image(ad_orig_bidstr_list_);
         }
 
         LOG(INFO) << "ad bidphrase loaded : " << ad_bidphrase_list_.size();
@@ -353,12 +374,14 @@ void AdSponsoredMgr::load()
             izenelib::util::izene_deserialization<std::vector<uint32_t> > izd(data.data(), data.size());
             izd.read_image(ad_campaign_belong_list_);
         }
-        ad_campaign_bid_keyword_list_.resize(ad_campaign_name_id_list_.size());
+        ad_campaign_bid_phrase_list_.resize(ad_campaign_name_id_list_.size());
         for (std::size_t i = 0; i < ad_bidphrase_list_.size(); ++i)
         {
             uint32_t campaign_id = ad_campaign_belong_list_[i];
-            const BidPhraseT& bid_list = ad_bidphrase_list_[i];
-            ad_campaign_bid_keyword_list_[campaign_id].insert(bid_list.begin(), bid_list.end());
+            const BidPhraseListT& bidphrase_list = ad_bidphrase_list_[i];
+            BidPhraseStrListT bidstr_list;
+            getBidPhraseStrList(bidphrase_list, bidstr_list);
+            ad_campaign_bid_phrase_list_[campaign_id].insert(bidstr_list.begin(), bidstr_list.end());
         }
         LOG(INFO) << "campaign name info loaded: " << ad_campaign_name_list_.size();
 
@@ -367,7 +390,7 @@ void AdSponsoredMgr::load()
             ifs.read((char*)&len, sizeof(len));
             data.resize(len);
             ifs.read((char*)&data[0], len);
-            izenelib::util::izene_deserialization<std::vector<std::map<BidKeywordId, int> > > izd(data.data(), data.size());
+            izenelib::util::izene_deserialization<std::vector<std::map<BidPhraseStrT, int> > > izd(data.data(), data.size());
             izd.read_image(ad_bid_price_list_);
         }
 
@@ -394,30 +417,39 @@ void AdSponsoredMgr::miningAdCreatives(ad_docid_t start_id, ad_docid_t end_id)
         return;
     }
     ad_bidphrase_list_.resize(end_id + 1);
+    ad_orig_bidstr_list_.resize(end_id + 1);
     std::string ad_title;
-    std::vector<std::string> ad_bid_phrase;
+    std::vector<std::string> ad_bid_phrase_strlist;
+    BidPhraseListT  bidphrase_list;
     BidPhraseT bidphrase;
     for(ad_docid_t i = start_id; i <= end_id; ++i)
     {
         Document::doc_prop_value_strtype prop_value;
-        doc_mgr_->getPropertyValue(i, ad_title_prop_, prop_value);
-        ad_title = propstr_to_str(prop_value);
-        generateBidPhrase(ad_title, bidphrase);
         doc_mgr_->getPropertyValue(i, ad_bidphrase_prop_, prop_value);
         const std::string bidstr = propstr_to_str(prop_value);
         if (!bidstr.empty())
         {
-            ad_bid_phrase.clear();
-            boost::split(ad_bid_phrase, bidstr, boost::is_any_of(",;"));
+            ad_bid_phrase_strlist.clear();
+            boost::split(ad_bid_phrase_strlist, bidstr, boost::is_any_of(",;"));
+            bidphrase_list.resize(ad_bid_phrase_strlist.size());
+            for(std::size_t j = 0; j < ad_bid_phrase_strlist.size(); ++j)
+            {
+                generateBidPhrase(ad_bid_phrase_strlist[j], bidphrase);
+                bidphrase_list[j].swap(bidphrase);
+            }
+            ad_orig_bidstr_list_[i].swap(ad_bid_phrase_strlist);
         }
-        BidKeywordId kid = 0;
-        for(std::size_t j = 0; j < ad_bid_phrase.size(); ++j)
+        else
         {
-            getBidKeywordId(ad_bid_phrase[j], true, kid);
-            bidphrase.push_back(kid);
+            doc_mgr_->getPropertyValue(i, ad_title_prop_, prop_value);
+            ad_title = propstr_to_str(prop_value);
+            generateBidPhrase(ad_title, bidphrase);
+            bidphrase_list.resize(1);
+            bidphrase_list[0].swap(bidphrase);
+            getBidPhraseStrList(bidphrase_list, ad_orig_bidstr_list_[i]);
         }
 
-        ad_bidphrase_list_[i].swap(bidphrase);
+        ad_bidphrase_list_[i].swap(bidphrase_list);
         doc_mgr_->getPropertyValue(i, ad_campaign_prop_, prop_value);
         std::string campaign = propstr_to_str(prop_value);
         if (campaign.empty())
@@ -436,17 +468,38 @@ void AdSponsoredMgr::miningAdCreatives(ad_docid_t start_id, ad_docid_t end_id)
 }
 
 void AdSponsoredMgr::updateAdBidPhrase(ad_docid_t adid, const std::vector<std::string>& bid_phrase_list,
-    BidPhraseT& bidid_list)
+    BidPhraseListT& bidid_list)
 {
     bidid_list.clear();
-    BidKeywordId kid = 0;
+    BidPhraseT phrase;
     for(std::size_t j = 0; j < bid_phrase_list.size(); ++j)
     {
-        getBidKeywordId(bid_phrase_list[j], true, kid);
-        bidid_list.push_back(kid);
+        generateBidPhrase(bid_phrase_list[j], phrase);
+        bidid_list.push_back(phrase);
     }
 
     ad_bidphrase_list_[adid].swap(bidid_list);
+    ad_orig_bidstr_list_[adid] = bid_phrase_list;
+}
+
+void AdSponsoredMgr::getBidPhraseStr(const BidPhraseT& bidphrase, BidPhraseStrT& bidstr)
+{
+    bidstr.clear();
+    for(std::size_t j = 0; j < bidphrase.size(); ++j)
+    {
+        std::string keystr;
+        getBidKeywordStrFromId(bidphrase[j], keystr);
+        bidstr += keystr + " ";
+    }
+}
+
+void AdSponsoredMgr::getBidPhraseStrList(const BidPhraseListT& bidphrase_list, BidPhraseStrListT& bidstr_list)
+{
+    bidstr_list.resize(bidphrase_list.size());
+    for(std::size_t i = 0; i < bidphrase_list.size(); ++i)
+    {
+        getBidPhraseStr(bidphrase_list[i], bidstr_list[i]);
+    }
 }
 
 void AdSponsoredMgr::updateAdCampaign(ad_docid_t adid, const std::string& campaign_name)
@@ -468,39 +521,39 @@ void AdSponsoredMgr::updateAdCampaign(ad_docid_t adid, const std::string& campai
         ad_campaign_belong_list_.resize(adid + 1);
     }
     ad_campaign_belong_list_[adid] = campaign_id;
-    if (campaign_id >= ad_campaign_bid_keyword_list_.size())
+    if (campaign_id >= ad_campaign_bid_phrase_list_.size())
     {
-        ad_campaign_bid_keyword_list_.resize(campaign_id + 1);
+        ad_campaign_bid_phrase_list_.resize(campaign_id + 1);
     }
     if (adid >= ad_bidphrase_list_.size())
     {
         return;
     }
-    const BidPhraseT& bidphrase = ad_bidphrase_list_[adid];
-    ad_campaign_bid_keyword_list_[campaign_id].insert(bidphrase.begin(), bidphrase.end());
+    const BidPhraseListT& bidphrase_list = ad_bidphrase_list_[adid];
+    BidPhraseStrListT bidstr_list;
+    getBidPhraseStrList(bidphrase_list, bidstr_list);
+    ad_campaign_bid_phrase_list_[campaign_id].insert(bidstr_list.begin(), bidstr_list.end());
 }
 
-void AdSponsoredMgr::getBidStatisticalData(const std::set<BidKeywordId>& bidkey_list,
-    const std::map<LogBidKeywordId, BidAuctionLandscapeT>& bidkey_cpc_map,
+void AdSponsoredMgr::getBidStatisticalData(const std::set<BidPhraseStrT>& bidstr_list,
+    const std::map<std::string, BidAuctionLandscapeT>& bidkey_cpc_map,
     const std::map<std::string, int>& manual_bidprice_list,
     std::vector<AdQueryStatisticInfo>& ad_statistical_data)
 {
     ad_statistical_data.clear();
-    std::set<BidKeywordId>::const_iterator bid_it = bidkey_list.begin();
-    for(; bid_it != bidkey_list.end(); ++bid_it)
+    std::set<BidPhraseStrT>::const_iterator bid_it = bidstr_list.begin();
+    for(; bid_it != bidstr_list.end(); ++bid_it)
     {
-        const BidKeywordId& bid = *bid_it;
+        const BidPhraseStrT& bidstr = *bid_it;
         ad_statistical_data.push_back(AdQueryStatisticInfo());
-        LogBidKeywordId logbid;
-        getLogBidKeywordId(bid, logbid);
-        ad_statistical_data.back().impression_ = ad_log_mgr_->getKeywordAvgDailyImpression(logbid);
+        ad_statistical_data.back().impression_ = ad_log_mgr_->getKeywordAvgDailyImpression(bidstr);
         ad_statistical_data.back().minBid_ = LOWEST_CLICK_COST;
-        std::map<std::string, int>::const_iterator manual_it = manual_bidprice_list.find(logbid);
+        std::map<std::string, int>::const_iterator manual_it = manual_bidprice_list.find(bidstr);
         if (manual_it != manual_bidprice_list.end())
         {
             ad_statistical_data.back().bid_ = manual_it->second;
         }
-        std::map<LogBidKeywordId, BidAuctionLandscapeT>::const_iterator it = bidkey_cpc_map.find(logbid);
+        std::map<std::string, BidAuctionLandscapeT>::const_iterator it = bidkey_cpc_map.find(bidstr);
         if (it == bidkey_cpc_map.end())
             continue;
         for (std::size_t j = 0; j < it->second.size(); ++j)
@@ -530,13 +583,13 @@ void AdSponsoredMgr::resetDailyLogStatisticalData(bool reset_used)
     int ad_daily_budget = 0;
 
     std::vector<AdQueryStatisticInfo> ad_statistical_data;
-    std::vector<LogBidKeywordId> keyword_list;
+    std::vector<BidPhraseStrT> bidstr_list;
     std::vector<AdAuctionLogMgr::BidAuctionLandscapeT> cost_click_list;
-    ad_log_mgr_->getKeywordBidLandscape(keyword_list, cost_click_list);
-    std::map<LogBidKeywordId, BidAuctionLandscapeT> bidkey_cpc_map;
-    for(std::size_t i = 0; i < keyword_list.size(); ++i)
+    ad_log_mgr_->getKeywordBidLandscape(bidstr_list, cost_click_list);
+    std::map<std::string, BidAuctionLandscapeT> bidkey_cpc_map;
+    for(std::size_t i = 0; i < bidstr_list.size(); ++i)
     {
-        bidkey_cpc_map[keyword_list[i]] = cost_click_list[i];
+        bidkey_cpc_map[bidstr_list[i]] = cost_click_list[i];
     }
 
     ad_ctr_list_.resize(ad_bidphrase_list_.size());
@@ -554,17 +607,17 @@ void AdSponsoredMgr::resetDailyLogStatisticalData(bool reset_used)
         ad_uniform_bid_price_list_.resize(ad_campaign_name_list_.size());
         for(std::size_t i = 0; i < ad_campaign_name_list_.size(); ++i)
         {
-            if (i >= ad_campaign_bid_keyword_list_.size())
+            if (i >= ad_campaign_bid_phrase_list_.size())
                 break;
 
             // because the budget may change every hour, 
             // the daily budget should be computed to reflect the change.
             ad_daily_budget = (manual_bidinfo_mgr_.getBidBudget(ad_campaign_name_list_[i]) - ad_budget_used_list_[i])/left_ratio;
 
-            const std::set<BidKeywordId>& bidkey_list = ad_campaign_bid_keyword_list_[i];
+            const CampaignBidStrListT& bidstr_list = ad_campaign_bid_phrase_list_[i];
             std::map<std::string, int> manual_bidprice_list;
             manual_bidinfo_mgr_.getManualBidPriceList(ad_campaign_name_list_[i], manual_bidprice_list);
-            getBidStatisticalData(bidkey_list, bidkey_cpc_map, manual_bidprice_list, ad_statistical_data);
+            getBidStatisticalData(bidstr_list, bidkey_cpc_map, manual_bidprice_list, ad_statistical_data);
             bid_price_list = ad_bid_strategy_->convexUniformBid(ad_statistical_data, ad_daily_budget);
             bid_price_file << "campaign: " << ad_campaign_name_list_[i] << ": ";
             for(std::size_t j = 0; j < bid_price_list.size(); ++j)
@@ -582,18 +635,18 @@ void AdSponsoredMgr::resetDailyLogStatisticalData(bool reset_used)
         ad_bid_price_list_.resize(ad_campaign_name_list_.size());
         for (std::size_t i = 0; i < ad_campaign_name_list_.size(); ++i)
         {
-            if (i >= ad_campaign_bid_keyword_list_.size())
+            if (i >= ad_campaign_bid_phrase_list_.size())
                 break;
-            const std::set<BidKeywordId>& bidkey_list = ad_campaign_bid_keyword_list_[i];
+            const CampaignBidStrListT& bidstr_list = ad_campaign_bid_phrase_list_[i];
             std::map<std::string, int> manual_bidprice_list;
             manual_bidinfo_mgr_.getManualBidPriceList(ad_campaign_name_list_[i], manual_bidprice_list);
-            getBidStatisticalData(bidkey_list, bidkey_cpc_map, manual_bidprice_list, ad_statistical_data);
+            getBidStatisticalData(bidstr_list, bidkey_cpc_map, manual_bidprice_list, ad_statistical_data);
 
             ad_daily_budget = (manual_bidinfo_mgr_.getBidBudget(ad_campaign_name_list_[i]) - ad_budget_used_list_[i])/left_ratio;
 
             std::vector<int> bid_price_list = ad_bid_strategy_->geneticBid(ad_statistical_data, ad_daily_budget);
-            assert(bid_price_list.size() == bidkey_list.size());
-            std::set<BidKeywordId>::const_iterator bid_it = bidkey_list.begin();
+            assert(bid_price_list.size() == bidstr_list.size());
+            CampaignBidStrListT::const_iterator bid_it = bidstr_list.begin();
             bid_price_file << "campaign: " << ad_campaign_name_list_[i] << ": ";
             for(std::size_t j = 0; j < bid_price_list.size(); ++j)
             {
@@ -614,15 +667,36 @@ void AdSponsoredMgr::resetDailyLogStatisticalData(bool reset_used)
 }
 
 void AdSponsoredMgr::setManualBidPrice(const std::string& campaign_name,
-    const std::vector<std::string>& key_list,
+    const std::vector<std::string>& bidphrase_list,
     const std::vector<int>& price_list)
 {
-    if (key_list.size() != price_list.size())
+    if (bidphrase_list.size() != price_list.size())
     {
         LOG(ERROR) << "the manual bidprice list size not match.";
         return;
     }
-    manual_bidinfo_mgr_.setManualBidPrice(campaign_name, key_list, price_list);
+    // 
+    std::vector<std::string> bidstr_list(bidphrase_list.size());
+    for (std::size_t i = 0; i < bidphrase_list.size(); ++i)
+    {
+        bidstr_list[i] = preprocessBidPhraseStr(bidphrase_list[i]);
+    }
+    manual_bidinfo_mgr_.setManualBidPrice(campaign_name, bidstr_list, price_list);
+}
+
+std::string AdSponsoredMgr::preprocessBidPhraseStr(const std::string& orig)
+{
+    std::vector<string> tokens_list;
+    generateBidPhrase(orig, tokens_list);
+    if (tokens_list.size() > (std::size_t)MAX_BIDPHRASE_LEN)
+        tokens_list.resize(MAX_BIDPHRASE_LEN);
+
+    std::string new_str;
+    for(std::size_t i = 0; i < tokens_list.size(); ++i)
+    {
+        new_str += tokens_list[i] + " ";
+    }
+    return new_str;
 }
 
 void AdSponsoredMgr::changeDailyBudget(const std::string& ad_campaign_name, int dailybudget)
@@ -653,7 +727,7 @@ void AdSponsoredMgr::generateBidPrice(ad_docid_t adid, std::vector<int>& price_l
     // Using the interface of the bid optimization module.
 }
 
-void AdSponsoredMgr::getAdBidPrice(ad_docid_t adid, const std::string& query,
+void AdSponsoredMgr::getAdBidPrice(ad_docid_t adid, const std::string& query, const std::string& hit_bidstr,
     int leftbudget, int& price)
 {
     price = 0;
@@ -668,30 +742,18 @@ void AdSponsoredMgr::getAdBidPrice(ad_docid_t adid, const std::string& query,
             return;
         if (campaign_id >= ad_budget_used_list_.size() || campaign_id >= ad_campaign_name_list_.size())
             return;
-        const BidPhraseT& bidphrase = ad_bidphrase_list_[adid];
         int used_budget = ad_budget_used_list_[campaign_id];
         int left_budget = manual_bidinfo_mgr_.getBidBudget(ad_campaign_name_list_[campaign_id]) - used_budget;
         AdQueryStatisticInfo info;
-        LogBidKeywordId logkid;
-        for (std::size_t i = 0; i < bidphrase.size(); ++i)
+        int current_impression = ad_log_mgr_->getKeywordCurrentImpression(hit_bidstr);
+        ad_log_mgr_->getKeywordStatData(hit_bidstr, info.impression_,
+            info.cpc_, info.ctr_);
+        info.impression_ -= current_impression;
+        info.minBid_ = LOWEST_CLICK_COST;
+        int tmp_price = ad_bid_strategy_->realtimeBidWithRevenueMax(info, used_budget, left_budget);
+        if (tmp_price > price)
         {
-            BidKeywordId bid = bidphrase[i];
-            getLogBidKeywordId(bid, logkid);
-            int current_impression = ad_log_mgr_->getKeywordCurrentImpression(logkid);
-            ad_log_mgr_->getKeywordStatData(logkid, info.impression_,
-                info.cpc_, info.ctr_);
-            info.impression_ -= current_impression;
-            info.minBid_ = LOWEST_CLICK_COST;
-            //info.cpc_.clear();
-            //for (std::size_t j = 0; j < cpc_list.size(); ++j)
-            //{
-            //    info.cpc_.push_back(cpc_list[j]);
-            //}
-            int tmp_price = ad_bid_strategy_->realtimeBidWithRevenueMax(info, used_budget, left_budget);
-            if (tmp_price > price)
-            {
-                price = tmp_price;
-            }
+            price = tmp_price;
         }
     }
     else if (bid_strategy_type_ == UniformBid)
@@ -723,19 +785,13 @@ void AdSponsoredMgr::getAdBidPrice(ad_docid_t adid, const std::string& query,
             LOG(INFO) << "no bid price for this adid : " << adid << ", maxid :" << ad_bid_price_list_.size();
             return;
         }
-        const std::map<BidKeywordId, int>& bid_list = ad_bid_price_list_[campaign_id];
+        const std::map<BidPhraseStrT, int>& bid_list = ad_bid_price_list_[campaign_id];
         if (adid >= ad_bidphrase_list_.size())
             return;
-        const BidPhraseT& bidphrase = ad_bidphrase_list_[adid];
-        for(std::size_t i = 0; i < bidphrase.size(); ++i)
+        std::map<BidPhraseStrT, int>::const_iterator it = bid_list.find(hit_bidstr);
+        if (it != bid_list.end())
         {
-            std::map<BidKeywordId, int>::const_iterator it = bid_list.find(bidphrase[i]);
-            if (it == bid_list.end())
-                continue;
-            if (it->second > price)
-            {
-                price = it->second;
-            }
+            price = it->second;
         }
     }
 }
@@ -751,7 +807,7 @@ int AdSponsoredMgr::getBudgetLeft(ad_docid_t adid)
     return left_budget;
 }
 
-bool AdSponsoredMgr::getBidKeywordId(const std::string& keyword, bool insert, BidKeywordId& id)
+bool AdSponsoredMgr::getBidKeywordIdFromStr(const BidKeywordStrT& keyword, bool insert, BidKeywordId& id)
 {
     boost::unordered_map<std::string, uint32_t>::iterator it = keyword_value_id_list_.find(keyword);
     if (it != keyword_value_id_list_.end())
@@ -767,7 +823,7 @@ bool AdSponsoredMgr::getBidKeywordId(const std::string& keyword, bool insert, Bi
     return true;
 }
 
-void AdSponsoredMgr::getLogBidKeywordId(const BidKeywordId& id, LogBidKeywordId& keyword)
+void AdSponsoredMgr::getBidKeywordStrFromId(const BidKeywordId& id, BidKeywordStrT& keyword)
 {
     if (id >= keyword_id_value_list_.size())
     {
@@ -779,28 +835,24 @@ void AdSponsoredMgr::getLogBidKeywordId(const BidKeywordId& id, LogBidKeywordId&
 
 
 void AdSponsoredMgr::getBidPhrase(const std::string& adid,
-    BidPhraseT& bidphrase)
+    BidPhraseListT& bidphrase_list)
 {
-    bidphrase.clear();
+    bidphrase_list.clear();
     ad_docid_t adid_int = 0;
     if (!getAdIdFromAdStrId(adid, adid_int))
         return;
     if (adid_int > ad_bidphrase_list_.size())
         return;
-    bidphrase = ad_bidphrase_list_[adid_int];
+    bidphrase_list = ad_bidphrase_list_[adid_int];
 }
 
 void AdSponsoredMgr::getBidPhrase(const std::string& adid,
-    BidPhraseT& bidphrase,
-    std::vector<LogBidKeywordId>& logbid_list)
+    BidPhraseListT& bidphrase_list,
+    BidPhraseStrListT& bidstr_list)
 {
-    logbid_list.clear();
-    getBidPhrase(adid, bidphrase);
-    logbid_list.resize(bidphrase.size());
-    for (std::size_t i = 0; i < bidphrase.size(); ++i)
-    {
-        getLogBidKeywordId(bidphrase[i], logbid_list[i]);
-    }
+    bidstr_list.clear();
+    getBidPhrase(adid, bidphrase_list);
+    getBidPhraseStrList(bidphrase_list, bidstr_list);
 }
 
 void AdSponsoredMgr::generateBidPhrase(const std::string& ad_title, std::vector<std::string>& bidphrase)
@@ -814,21 +866,10 @@ void AdSponsoredMgr::generateBidPhrase(const std::string& ad_title, std::vector<
     std::string model;
 
     TitlePCAWrapper::get()->pca(pattern, tokens, brand, model, subtokens, false);
-    if (!brand.empty())
-    {
-        bidphrase.push_back(brand);
-    }
-    if (!model.empty())
-    {
-        bidphrase.push_back(model);
-    }
     std::sort(tokens.begin(), tokens.end(), sort_tokens_func);
     for (size_t i = 0; i < tokens.size(); ++i)
     {
-        if (tokens[i].first.length() > 1)
-        {
-            bidphrase.push_back(tokens[i].first);
-        }
+        bidphrase.push_back(tokens[i].first);
     }
 }
 
@@ -848,16 +889,6 @@ void AdSponsoredMgr::generateBidPhrase(const std::string& ad_title, BidPhraseT& 
     BidKeywordId kid;
 
     TitlePCAWrapper::get()->pca(pattern, tokens, brand, model, subtokens, false);
-    if (!brand.empty())
-    {
-        getBidKeywordId(brand, true, kid);
-        bidphrase.push_back(kid);
-    }
-    if (!model.empty())
-    {
-        getBidKeywordId(model, true, kid);
-        bidphrase.push_back(kid);
-    }
     if (tokens.empty())
     {
         LOG(INFO) << "empty tokens for title: " << ad_title;
@@ -866,11 +897,8 @@ void AdSponsoredMgr::generateBidPhrase(const std::string& ad_title, BidPhraseT& 
     std::sort(tokens.begin(), tokens.end(), sort_tokens_func);
     for (size_t i = 0; i < tokens.size(); ++i)
     {
-        if (tokens[i].first.length() > 1)
-        {
-            getBidKeywordId(tokens[i].first, true, kid);
-            bidphrase.push_back(kid);
-        }
+        getBidKeywordIdFromStr(tokens[i].first, true, kid);
+        bidphrase.push_back(kid);
         if (bidphrase.size() > (std::size_t)MAX_BIDPHRASE_LEN)
             break;
     }
@@ -907,7 +935,7 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     {
         LOG(INFO) << query_keyword_list[i];
         BidKeywordId id;
-        if(getBidKeywordId(query_keyword_list[i], false, id))
+        if(getBidKeywordIdFromStr(query_keyword_list[i], false, id))
         {
             query_kid_list.push_back(id);
             modified_query += query_keyword_list[i] + " ";
@@ -952,26 +980,38 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     double t3_total = 0;
     for(std::size_t i = 0; i < result_list.size(); ++i)
     {
-        const BidPhraseT& bidphrase = ad_bidphrase_list_[result_list[i]];
-        if (bidphrase.empty())
+        int best_match_index = -1;
+        std::size_t best_match_size = 0;
+        const BidPhraseListT& bidphrase_list = ad_bidphrase_list_[result_list[i]];
+        if (bidphrase_list.empty())
             continue;
         t1.restart();
-        int missed = 0;
         //std::cout << "bid for ad: " << result_list[i] << ": ";
-        for(std::size_t j = 0; j < bidphrase.size(); ++j)
+        for(std::size_t j = 0; j < bidphrase_list.size(); ++j)
         {
-            //std::cout << bidphrase[j] << ",";
-            if ((bidphrase[j] < first_kid) ||
-                !hit_set.test(bidphrase[j] - first_kid))
+            bool missed = false;
+            for(std::size_t k = 0; k < bidphrase_list[j].size(); ++k)
             {
-                ++missed;
-                if (missed > 0)
+                //std::cout << bidphrase[j] << ",";
+                if ((bidphrase_list[j][k] < first_kid) ||
+                    !hit_set.test(bidphrase_list[j][k] - first_kid))
+                {
+                    missed = true;
                     break;
+                }
+            }
+            if (!missed)
+            {
+                if (bidphrase_list[j].size() > best_match_size)
+                {
+                    best_match_size = bidphrase_list[j].size();
+                    best_match_index = j;
+                }
             }
         }
         t1_total += t1.elapsed();
         //std::cout << std::endl;
-        if (missed > 0)
+        if (best_match_index == -1)
         {
             continue;
         }
@@ -982,11 +1022,13 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
             t3.restart();
             ScoreSponsoredAdDoc item;
             item.docId = result_list[i];
+            item.hit_orig_bidstr = ad_orig_bidstr_list_[item.docId][best_match_index];
+            getBidPhraseStr(bidphrase_list[best_match_index], item.hit_bidstr);
 
             int bidprice = 0;
-            getAdBidPrice(item.docId, query, leftbudget, bidprice);
+            getAdBidPrice(item.docId, query, item.hit_bidstr, leftbudget, bidprice);
             bidprice = std::max(LOWEST_CLICK_COST, bidprice);
-            item.qscore = getAdQualityScore(item.docId, bidphrase, query_kid_list);
+            item.qscore = getAdQualityScore(item.docId, bidphrase_list[best_match_index], query_kid_list);
             item.score = bidprice * item.qscore;
             if (item.score > MIN_AD_SCORE)
             {
@@ -1003,19 +1045,22 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     int count = (int)ranked_queue.size();
     searchResult.topKDocs_.resize(count);
     searchResult.topKRankScoreList_.resize(count);
-    std::set<LogBidKeywordId> all_keyword_list;
-    all_keyword_list.insert(query_keyword_list.begin(), query_keyword_list.end());
+    std::set<std::string>  viewed_bidstr_list;
     std::vector<std::string> ranked_ad_strlist(count);
 
     try
     {
         std::vector<double>& topKAdCost = dynamic_cast<AdKeywordSearchResult&>(searchResult).topKAdCost_;
+        std::vector<std::string>& topKAdBidStrList = dynamic_cast<AdKeywordSearchResult&>(searchResult).topKAdBidStrList_;
         topKAdCost.resize(count);
+        topKAdBidStrList.resize(count);
         for(int i = count - 1; i >= 0; --i)
         {
             const ScoreSponsoredAdDoc& item = ranked_queue.pop();
             searchResult.topKDocs_[i] = item.docId;
             searchResult.topKRankScoreList_[i] = item.score;
+            topKAdBidStrList[i] = item.hit_orig_bidstr;
+            viewed_bidstr_list.insert(item.hit_bidstr);
 
             getAdStrIdFromAdId(item.docId, ranked_ad_strlist[i]);
 
@@ -1036,7 +1081,7 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     }
     
     searchResult.totalCount_ = count;
-    ad_log_mgr_->updateAdSearchStat(all_keyword_list, ranked_ad_strlist);
+    ad_log_mgr_->updateAdSearchStat(viewed_bidstr_list, ranked_ad_strlist);
     LOG(INFO) << "end of sponsored search.";
 
     return true;

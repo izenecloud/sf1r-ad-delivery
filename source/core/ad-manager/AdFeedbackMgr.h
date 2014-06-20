@@ -45,6 +45,7 @@ public:
         }
         std::string user_id;
         std::string ad_id;
+        std::string hit_bidstr;
         FeedbackActionT action;
         double click_cost;
         uint32_t click_slot;

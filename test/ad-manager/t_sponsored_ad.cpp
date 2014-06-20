@@ -139,7 +139,7 @@ int main()
             }
             searched_clicked_list.push_back(clicked_adstr);
             clicked_bid_phrase_list.push_back(clicked_keyword);
-            ad_auctionlog_mgr_.updateAuctionLogData(clicked_adstr, clicked_keyword, click_cost, click_slot);
+            ad_auctionlog_mgr_.updateAuctionLogData(clicked_adstr, clicked_keyword.front(), click_cost, click_slot);
         }
     }
 
