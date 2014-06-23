@@ -10,10 +10,10 @@ class AdController : public Sf1Controller
 {
 public:
     AdController();
-    void set_keyword_bidprice();
     void set_ad_campaign_budget();
-    void set_ad_bid_phrase();
+    void update_ad_bid_phrase();
     void update_online_status();
+    void del_ad_bid_phrase();
 protected:
     virtual bool checkCollectionService(std::string& error);
 

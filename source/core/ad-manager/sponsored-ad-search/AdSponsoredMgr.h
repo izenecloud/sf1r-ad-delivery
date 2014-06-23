@@ -71,6 +71,8 @@ public:
         int leftbudget, int& price);
     int getBudgetLeft(ad_docid_t adid);
     void getBidPhrase(const std::string& adid, BidPhraseListT& bidphrase_list);
+
+
     bool getAdIdFromAdStrId(const std::string& strid, ad_docid_t& adid);
     bool getAdStrIdFromAdId(ad_docid_t adid, std::string& ad_strid);
 
@@ -80,11 +82,14 @@ public:
     void save();
     void changeDailyBudget(const std::string& ad_campaign_name, int dailybudget);
 
-    void setManualBidPrice(const std::string& campaign_name,
-        const std::vector<std::string>& key_list,
-        const std::vector<int>& price_list);
+    //bool setManualBidPrice(const std::string& ad_strid,
+    //    const std::vector<std::string>& key_list,
+    //    const std::vector<int>& price_list);
 
-    bool updateAdOnlineStatus(const std::string& ad_strid, bool is_online);
+    void delAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list);
+    void updateAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list,
+        const std::vector<int>& price_list);
+    bool updateAdOnlineStatus(const std::vector<std::string>& ad_strid_list, const std::vector<bool>& is_online_list);
     void resetDailyLogStatisticalData(bool reset_used);
     inline double getAdCTR(ad_docid_t adid)
     {
@@ -101,7 +106,7 @@ private:
     typedef std::set<BidPhraseStrT> CampaignBidStrListT;
 
     double computeAdCTR(ad_docid_t adid);
-    void updateAdBidPhrase(ad_docid_t adid, const std::vector<std::string>& bid_phrase_list,
+    void replaceAdBidPhrase(ad_docid_t adid, const std::vector<std::string>& bid_phrase_list,
         BidPhraseListT& bidid_list);
     void updateAdCampaign(ad_docid_t adid, const std::string& campaign_name);
 
@@ -119,13 +124,16 @@ private:
     void load();
     bool getBidKeywordIdFromStr(const BidKeywordStrT& keyword, bool insert, BidKeywordId& id);
     void getBidKeywordStrFromId(const BidKeywordId& id, BidKeywordStrT& keyword);
-    void getBidPhrase(const std::string& adid, BidPhraseListT& bidphrase_list, BidPhraseStrListT& bidstr_list);
+    void replaceBidPhrase(const std::string& adid, BidPhraseListT& bidphrase_list, BidPhraseStrListT& bidstr_list);
     void getBidPhraseStr(const BidPhraseT& bidphrase, BidPhraseStrT& bidstr);
     void getBidPhraseStrList(const BidPhraseListT& bidphrase_list, BidPhraseStrListT& bidstr_list);
+    void getBidPhrase(const std::string& adid,
+        BidPhraseListT& bidphrase_list,
+        BidPhraseStrListT& bidstr_list);
 
     void getBidStatisticalData(const CampaignBidStrListT& bidstr_list,
         const std::map<std::string, BidAuctionLandscapeT>& bidkey_cpc_map,
-        const std::map<std::string, int>& manual_bidprice_list,
+        //const std::map<std::string, int>& manual_bidprice_list,
         std::vector<AdQueryStatisticInfo>& ad_statistical_data);
 
     std::string data_path_;

@@ -5,7 +5,7 @@
 #include <fstream>
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/unordered_map.hpp>
-
+#include <boost/lexical_cast.hpp>
 #include <boost/filesystem.hpp>
 #define MAX_CAMPAIGN_NUM 1000000
 
@@ -92,14 +92,51 @@ void AdManualBidInfoMgr::save()
     }
 }
 
-void AdManualBidInfoMgr::setManualBidPrice(const std::string& campaign_name, const std::vector<std::string>& key_list,
-    const std::vector<int>& price_list)
+std::string AdManualBidInfoMgr::getManualKeyForAd(ad_docid_t adid, const std::string& bidstr)
 {
-    std::map<std::string, int>& v = manual_bidprice_list_[campaign_name];
+    return boost::lexical_cast<std::string>(adid) + "-" + bidstr;
+}
+
+void AdManualBidInfoMgr::removeManualBidPrice(const std::string& campaign_name, ad_docid_t adid,
+    const std::vector<std::string>& key_list)
+{
+    AdBidInfoValueT& v = manual_bidprice_list_[campaign_name];
     for(std::size_t i = 0; i < key_list.size(); ++i)
     {
-        v[key_list[i]] = price_list[i];
+        v.erase(getManualKeyForAd(adid, key_list[i]));
     }
+}
+
+void AdManualBidInfoMgr::setManualBidPrice(const std::string& campaign_name, ad_docid_t adid, const std::vector<std::string>& key_list,
+    const std::vector<int>& price_list)
+{
+    AdBidInfoValueT& v = manual_bidprice_list_[campaign_name];
+    for(std::size_t i = 0; i < key_list.size(); ++i)
+    {
+        std::string k = getManualKeyForAd(adid, key_list[i]);
+        v[k] = price_list[i];
+        if (price_list[i] == 0)
+            v.erase(k);
+    }
+}
+
+int AdManualBidInfoMgr::getManualBidPrice(const std::string& campaign_name, ad_docid_t adid, const std::string& bidstr)
+{
+    ManualBidInfoT::const_iterator cit = manual_bidprice_list_.find(campaign_name);
+    if (cit == manual_bidprice_list_.end())
+        return 0;
+    AdBidInfoValueT::const_iterator vit = cit->second.find(getManualKeyForAd(adid, bidstr));
+    if (vit == cit->second.end())
+        return 0;
+    return vit->second;
+}
+
+bool AdManualBidInfoMgr::hasManualBidPrice(const std::string& campaign_name)
+{
+    ManualBidInfoT::const_iterator cit = manual_bidprice_list_.find(campaign_name);
+    if (cit == manual_bidprice_list_.end())
+        return false;
+    return (!cit->second.empty());
 }
 
 void AdManualBidInfoMgr::getManualBidPriceList(const std::string& campaign_name, std::map<std::string, int>& price_list)

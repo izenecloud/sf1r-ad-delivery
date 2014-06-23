@@ -86,10 +86,11 @@ public:
 
     void postMining(docid_t startid, docid_t endid);
 
-    bool setKeywordBidPrice(const std::string& keyword, const std::string& campaign_name, int bidprice);
     bool setAdCampaignBudget(const std::string& campaign_name, int budget);
-    bool setAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list);
-    bool updateAdOnlineStatus(const std::string& ad_strid, bool is_online);
+    bool updateAdBidPhrase(const std::string& ad_strid,
+        const std::vector<std::string>& bid_phrase_list, const std::vector<int>& bidprice_list);
+    void delAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list);
+    bool updateAdOnlineStatus(const std::vector<std::string>& ad_strid_list, const std::vector<bool>& is_online_list);
     void refreshBidStrategy(int calltype);
 
 private:

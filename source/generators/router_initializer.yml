@@ -61,7 +61,8 @@ controllers:
 
   AdController:
     actions:
-      - set_keyword_bidprice
       - set_ad_campaign_budget
-      - set_ad_bid_phrase
+      - update_ad_bid_phrase
+      - del_ad_bid_phrase
+      - update_online_status
 

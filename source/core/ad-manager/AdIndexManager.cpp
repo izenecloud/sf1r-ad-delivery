@@ -412,18 +412,6 @@ bool AdIndexManager::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     return ad_sponsored_mgr_->sponsoredAdSearch(actionOperation, searchResult);
 }
 
-bool AdIndexManager::setKeywordBidPrice(const std::string& keyword, const std::string& campaign_name, int bidprice)
-{
-    if (!ad_sponsored_mgr_)
-        return false;
-    std::vector<std::string> keylist;
-    keylist.push_back(keyword);
-    std::vector<int> pricelist;
-    pricelist.push_back(bidprice);
-    ad_sponsored_mgr_->setManualBidPrice(campaign_name, keylist, pricelist);
-    return true;
-}
-
 bool AdIndexManager::setAdCampaignBudget(const std::string& campaign_name, int budget)
 {
     if (!ad_sponsored_mgr_)
@@ -432,22 +420,28 @@ bool AdIndexManager::setAdCampaignBudget(const std::string& campaign_name, int b
     return true;
 }
 
-bool AdIndexManager::updateAdOnlineStatus(const std::string& ad_strid, bool is_online)
+bool AdIndexManager::updateAdOnlineStatus(const std::vector<std::string>& ad_strid_list, const std::vector<bool>& is_online_list)
 {
     if (!ad_sponsored_mgr_)
         return false;
-    if (!is_online)
-        LOG(INFO) << "The ad is setting offline: " << ad_strid;
-    ad_sponsored_mgr_->updateAdOnlineStatus(ad_strid, is_online);
+    ad_sponsored_mgr_->updateAdOnlineStatus(ad_strid_list, is_online_list);
     return true;
 }
 
-bool AdIndexManager::setAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list)
+void AdIndexManager::delAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list)
+{
+    if (!ad_sponsored_mgr_)
+        return;
+    ad_sponsored_mgr_->delAdBidPhrase(ad_strid, bid_phrase_list);
+}
+
+bool AdIndexManager::updateAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list,
+    const std::vector<int>& bidprice_list)
 {
     if (!ad_sponsored_mgr_)
         return false;
-    LOG(INFO) << "Not supported.";
-    return false;
+    ad_sponsored_mgr_->updateAdBidPhrase(ad_strid, bid_phrase_list, bidprice_list);
+    return true;
 }
 
 } //namespace sf1r

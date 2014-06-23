@@ -172,17 +172,6 @@ bool MiningSearchService::GetProductScore(
     return miningManager_->getProductScore(docIdStr, scoreType, scoreValue);
 }
 
-bool MiningSearchService::setKeywordBidPrice(const std::string& keyword, const std::string& campaign_name, double bidprice)
-{
-    LOG(INFO) << "keyword bid price setting: " << keyword << ":" << bidprice << " for campaign: " << campaign_name;
-    if (!miningManager_->getAdIndexManager())
-    {
-        LOG(WARNING) << "ad manager not enabled.";
-        return false;
-    }
-    return miningManager_->getAdIndexManager()->setKeywordBidPrice(keyword, campaign_name, bidprice * 100);
-}
-
 bool MiningSearchService::setAdCampaignBudget(const std::string& campaign_name, double budget)
 {
     LOG(INFO) << "ad campaign budget setting: " << campaign_name << ":" << budget;
@@ -195,7 +184,9 @@ bool MiningSearchService::setAdCampaignBudget(const std::string& campaign_name, 
     return miningManager_->getAdIndexManager()->setAdCampaignBudget(campaign_name, budget * 100);
 }
 
-bool MiningSearchService::setAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list)
+bool MiningSearchService::updateAdBidPhrase(const std::string& ad_strid,
+    const std::vector<std::string>& bid_phrase_list,
+    const std::vector<int>& bid_price_list)
 {
     LOG(INFO) << "ad bid phrase setting: " << ad_strid << ":";
     for(std::size_t i = 0; i < bid_phrase_list.size(); ++i) 
@@ -208,10 +199,21 @@ bool MiningSearchService::setAdBidPhrase(const std::string& ad_strid, const std:
         return false;
     }
 
-    return miningManager_->getAdIndexManager()->setAdBidPhrase(ad_strid, bid_phrase_list);
+    return miningManager_->getAdIndexManager()->updateAdBidPhrase(ad_strid, bid_phrase_list, bid_price_list);
 }
 
-bool MiningSearchService::updateAdOnlineStatus(const std::string& ad_strid, bool is_online)
+void MiningSearchService::delAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list)
+{
+    if (!miningManager_->getAdIndexManager())
+    {
+        LOG(WARNING) << "ad manager not enabled.";
+        return;
+    }
+
+    return miningManager_->getAdIndexManager()->delAdBidPhrase(ad_strid, bid_phrase_list);
+}
+
+bool MiningSearchService::updateAdOnlineStatus(const std::vector<std::string>& ad_strid_list, const std::vector<bool>& is_online_list)
 {
     if (!miningManager_->getAdIndexManager())
     {
@@ -219,7 +221,7 @@ bool MiningSearchService::updateAdOnlineStatus(const std::string& ad_strid, bool
         return false;
     }
 
-    return miningManager_->getAdIndexManager()->updateAdOnlineStatus(ad_strid, is_online);
+    return miningManager_->getAdIndexManager()->updateAdOnlineStatus(ad_strid_list, is_online_list);
 }
 
 }

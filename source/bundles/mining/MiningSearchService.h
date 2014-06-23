@@ -134,10 +134,11 @@ public:
         sharding_strategy_ = shardingstrategy;
     }
 
-    bool setKeywordBidPrice(const std::string& keyword, const std::string& campaign_name, double bidprice);
     bool setAdCampaignBudget(const std::string& ad_campaign_name, double budget);
-    bool setAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list);
-    bool updateAdOnlineStatus(const std::string& ad_strid, bool is_online);
+    bool updateAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list,
+        const std::vector<int>& bid_price_list);
+    void delAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list);
+    bool updateAdOnlineStatus(const std::vector<std::string>& ad_strid_list, const std::vector<bool>& is_online_list);
 
 private:
     bool HookDistributeRequestForSearch(const std::string& coll, uint32_t workerId);
