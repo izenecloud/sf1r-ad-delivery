@@ -266,7 +266,11 @@ bool AdStreamSubscriber::subscribe(const std::string& topic, MessageCBFuncT cb)
     if (it != subscriber_list_.end())
     {
         LOG(INFO) << "topic already subscribed." << topic;
-        retry_sub_list_.erase(topic);
+        return false;
+    }
+    if (retry_sub_list_.find(topic) != retry_sub_list_.end())
+    {
+        LOG(INFO) << "topic already subscribed and retrying." << topic;
         return false;
     }
     // send subscribe rpc request to server.

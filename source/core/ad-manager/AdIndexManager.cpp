@@ -60,6 +60,10 @@ AdIndexManager::~AdIndexManager()
     // no any callback will be send later.
     if (!adlog_topic_.empty())
         AdStreamSubscriber::get()->unsubscribe(adlog_topic_);
+    if (ad_sponsored_mgr_)
+    {
+        izenelib::util::Scheduler::removeJob(RefreshBidStrategyJobName);
+    }
 
     if(adMiningTask_)
         delete adMiningTask_;
@@ -67,9 +71,9 @@ AdIndexManager::~AdIndexManager()
     if (ad_click_predictor_)
         ad_click_predictor_->stop();
 
-    if (ad_sponsored_mgr_)
+    if (ad_selector_)
     {
-        izenelib::util::Scheduler::removeJob(RefreshBidStrategyJobName);
+        ad_selector_->stop();
     }
 }
 
