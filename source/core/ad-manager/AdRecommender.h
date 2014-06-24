@@ -15,6 +15,10 @@ namespace sf1r
 
 struct ScoredAdItem
 {
+    ScoredAdItem()
+        :score(0)
+    {
+    }
     std::string key;
     double score;
 };

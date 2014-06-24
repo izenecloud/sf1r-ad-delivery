@@ -52,6 +52,7 @@ AdIndexManager::AdIndexManager(
       groupManager_(grp_mgr)
 {
     adlog_topic_ = adconfig_.adlog_topic;
+    adMiningTask_ = NULL;
 }
 
 AdIndexManager::~AdIndexManager()
@@ -64,9 +65,6 @@ AdIndexManager::~AdIndexManager()
     {
         izenelib::util::Scheduler::removeJob(RefreshBidStrategyJobName);
     }
-
-    if(adMiningTask_)
-        delete adMiningTask_;
 
     if (ad_click_predictor_)
         ad_click_predictor_->stop();
@@ -120,8 +118,11 @@ bool AdIndexManager::buildMiningTask()
         izenelib::util::Scheduler::addJob(RefreshBidStrategyJobName, 60*1000, 0, task);
     }
 
-    adMiningTask_ = new AdMiningTask(indexPath_, documentManager_, ad_dnf_index_, ad_selector_, rwMutex_);
-    adMiningTask_->setPostProcessFunc(boost::bind(&AdIndexManager::postMining, this, _1, _2));
+    if (adMiningTask_ == NULL)
+    {
+        adMiningTask_ = new AdMiningTask(indexPath_, documentManager_, ad_dnf_index_, ad_selector_, rwMutex_);
+        adMiningTask_->setPostProcessFunc(boost::bind(&AdIndexManager::postMining, this, _1, _2));
+    }
 
     bool ret = AdStreamSubscriber::get()->subscribe(adlog_topic_, boost::bind(&AdIndexManager::onAdStreamMessage, this, _1));
     if (!ret)
