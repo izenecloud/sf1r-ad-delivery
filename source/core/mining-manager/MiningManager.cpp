@@ -214,6 +214,11 @@ MiningManager::~MiningManager()
     if (productTokenizer_) delete productTokenizer_;
     if (laserManager_) delete laserManager_;
     if (slimManager_) delete slimManager_;
+    if (adIndexManager_)
+    {
+        delete adIndexManager_;
+        adIndexManager_ = NULL;
+    }
 
     close();
 }
