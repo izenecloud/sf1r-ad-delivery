@@ -534,18 +534,18 @@ void AdSponsoredMgr::delAdBidPhrase(const std::string& ad_strid, const std::vect
     }
     if (adid >= ad_orig_bidstr_list_.size())
         return;
-    std::vector<std::string>& bidstr_list = ad_orig_bidstr_list_[adid];
-    if (bidstr_list.empty())
+    std::vector<std::string>& orig_bidstr_list = ad_orig_bidstr_list_[adid];
+    if (orig_bidstr_list.empty())
         return;
     uint32_t campaign_id = ad_campaign_belong_list_[adid];
     std::string campaign_name = ad_campaign_name_list_[campaign_id];
     std::set<std::string> diff_bidstr_list;
-    diff_bidstr_list.insert(bidstr_list.begin(), bidstr_list.end());
+    diff_bidstr_list.insert(orig_bidstr_list.begin(), orig_bidstr_list.end());
     for(std::size_t i = 0; i < bid_phrase_list.size(); ++i)
     {
         diff_bidstr_list.erase(bid_phrase_list[i]);
     }
-    bidstr_list.resize(diff_bidstr_list.size());
+    orig_bidstr_list.resize(diff_bidstr_list.size());
     ad_bidphrase_list_[adid].resize(diff_bidstr_list.size());
 
     std::set<std::string>::const_iterator it = diff_bidstr_list.begin();
@@ -559,6 +559,7 @@ void AdSponsoredMgr::delAdBidPhrase(const std::string& ad_strid, const std::vect
         generateBidPhrase(*it, new_bidphrase);
         getBidPhraseStr(new_bidphrase, processed_bidstr_list[i]);
         ad_bidphrase_list_[adid][i].swap(new_bidphrase);
+        orig_bidstr_list[i] = *it;
         ++i;
     }
     manual_bidinfo_mgr_.removeManualBidPrice(campaign_name, adid, processed_bidstr_list);
@@ -574,19 +575,19 @@ void AdSponsoredMgr::updateAdBidPhrase(const std::string& ad_strid, const std::v
     }
     if (adid >= ad_orig_bidstr_list_.size())
         return;
-    std::vector<std::string>& bidstr_list = ad_orig_bidstr_list_[adid];
+    std::vector<std::string>& orig_bidstr_list = ad_orig_bidstr_list_[adid];
     uint32_t campaign_id = ad_campaign_belong_list_[adid];
     std::string campaign_name = ad_campaign_name_list_[campaign_id];
 
     std::set<std::string> diff_bidstr_list;
     std::map<std::string, int> price_map;
-    diff_bidstr_list.insert(bidstr_list.begin(), bidstr_list.end());
+    diff_bidstr_list.insert(orig_bidstr_list.begin(), orig_bidstr_list.end());
     for(std::size_t i = 0; i < bid_phrase_list.size(); ++i)
     {
         diff_bidstr_list.insert(bid_phrase_list[i]);
         price_map[bid_phrase_list[i]] = price_list[i];
     }
-    bidstr_list.resize(diff_bidstr_list.size());
+    orig_bidstr_list.resize(diff_bidstr_list.size());
     ad_bidphrase_list_[adid].resize(diff_bidstr_list.size());
 
     std::set<std::string>::const_iterator it = diff_bidstr_list.begin();
@@ -605,6 +606,7 @@ void AdSponsoredMgr::updateAdBidPhrase(const std::string& ad_strid, const std::v
             changed_price_list.push_back(price_map[*it]);
         }
         ad_bidphrase_list_[adid][i].swap(new_bidphrase);
+        orig_bidstr_list[i] = *it;
         ++i;
     }
     manual_bidinfo_mgr_.setManualBidPrice(campaign_name, adid, changed_processed_bidstr_list, changed_price_list);
@@ -1270,11 +1272,11 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
 
             if (i == count - 1)
             {
-                topKAdCost[i] = LOWEST_CLICK_COST*100;
+                topKAdCost[i] = LOWEST_CLICK_COST / (double)100;
             }
             else
             {
-                topKAdCost[i] = 100*(LOWEST_CLICK_COST + searchResult.topKRankScoreList_[i + 1]/item.qscore);
+                topKAdCost[i] = (LOWEST_CLICK_COST + searchResult.topKRankScoreList_[i + 1]/item.qscore) / (double)100;
             }
         }
     }
