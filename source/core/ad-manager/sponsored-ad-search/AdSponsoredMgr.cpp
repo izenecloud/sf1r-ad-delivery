@@ -460,17 +460,24 @@ void AdSponsoredMgr::miningAdCreatives(ad_docid_t start_id, ad_docid_t end_id)
             if (pricestr_list.size() != ad_bid_phrase_strlist.size())
             {
                 LOG(WARNING) << "bid price list number not matched with bid string.";
-                pricestr_list.resize(ad_bid_phrase_strlist.size(), 0);
+                pricestr_list.resize(ad_bid_phrase_strlist.size());
             }
 
             ad_processed_bid_phrase_strlist.resize(ad_bid_phrase_strlist.size());
-            priceint_list.resize(ad_bid_phrase_strlist.size());
+            priceint_list.resize(ad_bid_phrase_strlist.size(), 0);
             for(std::size_t j = 0; j < ad_bid_phrase_strlist.size(); ++j)
             {
                 generateBidPhrase(ad_bid_phrase_strlist[j], bidphrase);
                 getBidPhraseStr(bidphrase, ad_processed_bid_phrase_strlist[j]);
                 bidphrase_list[j].swap(bidphrase);
-                priceint_list[j] = int(boost::lexical_cast<double>(pricestr_list[j]) * 100);
+                if (!pricestr_list[j].empty())
+                {
+                    try
+                    {
+                        priceint_list[j] = int(boost::lexical_cast<double>(pricestr_list[j]) * 100);
+                    }
+                    catch(const std::exception& e){}
+                }
             }
             manual_bidinfo_mgr_.setManualBidPrice(campaign, i, ad_processed_bid_phrase_strlist, priceint_list);
             ad_orig_bidstr_list_[i].swap(ad_bid_phrase_strlist);
