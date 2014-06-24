@@ -1272,7 +1272,7 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
 
             if (i == count - 1)
             {
-                topKAdCost[i] = LOWEST_CLICK_COST / (double)100;
+                topKAdCost[i] = std::max((double)LOWEST_CLICK_COST, item.score/item.qscore) / (double)100;
             }
             else
             {
