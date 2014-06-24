@@ -286,6 +286,16 @@ void AdSponsoredMgr::save()
         ofs.write(buf, len);
         ofs.flush();
     }
+    {
+        std::string tmpstr;
+        boost::to_string(ad_status_bitmap_, tmpstr);
+        len = 0;
+        izenelib::util::izene_serialization<std::string> izs(tmpstr);
+        izs.write_image(buf, len);
+        ofs.write((const char*)&len, sizeof(len));
+        ofs.write(buf, len);
+        ofs.flush();
+    }
 
     ofs.close();
     if (ad_log_mgr_)
@@ -402,6 +412,18 @@ void AdSponsoredMgr::load()
             izenelib::util::izene_deserialization<std::vector<std::vector<std::pair<int, double> > > > izd(data.data(), data.size());
             izd.read_image(ad_uniform_bid_price_list_);
         }
+        {
+            std::string tmpstr;
+            len = 0;
+            ifs.read((char*)&len, sizeof(len));
+            data.resize(len);
+            ifs.read((char*)&data[0], len);
+            izenelib::util::izene_deserialization<std::string> izd(data.data(), data.size());
+            izd.read_image(tmpstr);
+            boost::dynamic_bitset<> tmpbit(tmpstr);
+            ad_status_bitmap_.swap(tmpbit);
+        }
+
     }
     ifs.close();
 
