@@ -1310,11 +1310,11 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
     std::sort(query_kid_list.begin(), query_kid_list.end());
     uint32_t first_kid = query_kid_list[0];
     uint32_t last_kid = query_kid_list[query_kid_list.size() - 1];
-    boost::dynamic_bitset<> hit_set(last_kid - first_kid + 1);
+    boost::dynamic_bitset<> hit_set(last_kid - first_kid + 1, false);
     std::cout << "query keyword id: ";
     for(std::size_t i = 0; i < query_kid_list.size(); ++i)
     {
-        hit_set[query_kid_list[i] - first_kid] = 1;
+        hit_set.set(query_kid_list[i] - first_kid, true);
         std::cout << query_kid_list[i] << ",";
     }
     std::cout << std::endl;
@@ -1352,6 +1352,7 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
                 {
                     //std::cout << bidphrase[j] << ",";
                     if ((bidphrase_list[j][k] < first_kid) ||
+                        (bidphrase_list[j][k] > last_kid) ||
                         !hit_set.test(bidphrase_list[j][k] - first_kid))
                     {
                         missed = true;
