@@ -25,9 +25,9 @@ public:
                 req.params().convert(&params);
                 add_feedback(req, params.get<0>(), params.get<1>());
             } else if (method == "train") {
-                msgpack::type::tuple<int> params;
+                msgpack::type::tuple<int, int> params;
                 req.params().convert(&params);
-                train(req, params.get<0>());
+                train(req, params.get<0>(), params.get<1>());
             } else {
                 req.error(msgpack::rpc::NO_METHOD_ERROR);
             }
@@ -48,10 +48,10 @@ public:
         _learner.add_feedback(user, item);
     }
 
-    void train(msgpack::rpc::request req, int thread_num) {
+    void train(msgpack::rpc::request req, int thread_num, int top_n) {
         req.result(true);
         _learner.coo_to_csr();
-        _learner.train(thread_num);
+        _learner.train(thread_num, top_n);
     }
 
 private:

@@ -68,8 +68,9 @@ bool SlimHandler::parseSelect_()
 bool SlimHandler::parseSlimRecommendParam_(slim::SlimRecommendParam& param)
 {
     const Value& recommendParam = request_[driver::Keys::recommend];
-    param.uuid_ = asString(recommendParam[driver::Keys::uuid]);
-    param.topN_ = asInt(recommendParam[driver::Keys::topn]);
+    param.title_ = asString(recommendParam[driver::Keys::title]);
+    param.id_ = asInt(recommendParam[driver::Keys::id]);
+    param.topn_ = asInt(recommendParam[driver::Keys::topn]);
     return true;
 }
 

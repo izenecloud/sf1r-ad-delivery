@@ -11,6 +11,7 @@
 
 #include "SlimRecommend.h"
 #include "SlimRecommendParam.h"
+#include "SlimRpcServer.h"
 
 namespace sf1r {
 
@@ -31,8 +32,14 @@ private:
     std::string collection_;
     const boost::shared_ptr<AdSearchService> & adSearchService_;
     const boost::shared_ptr<DocumentManager> & documentManager_;
-    slim::SlimRecommend* recommend_;
     LaserManager* laser_;
+
+    slim::SlimRecommend* recommend_;
+
+    slim::SlimRpcServer* rpcServer_;
+    std::vector<std::vector<int> > _similar_cluster;
+
+    boost::shared_mutex _rw_mutex;
 };
 
 }

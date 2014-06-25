@@ -10,10 +10,12 @@ SlimManager::SlimManager(const boost::shared_ptr<AdSearchService>& adSearchServi
     : collection_(collection)
     , adSearchService_(adSearchService)
     , documentManager_(documentManager)
-    , recommend_(NULL)
     , laser_(laser)
 {
-    recommend_ = new slim::SlimRecommend(laser_->indexManager_);
+    rpcServer_ = new slim::SlimRpcServer(_similar_cluster, _rw_mutex);
+    rpcServer_->start("127.0.0.1", 38611, 2);
+
+    recommend_ = new slim::SlimRecommend(laser_->indexManager_, laser_->tokenizer_, _similar_cluster, _rw_mutex, laser);
 }
 
 SlimManager::~SlimManager()
@@ -22,6 +24,12 @@ SlimManager::~SlimManager()
         delete recommend_;
         recommend_ = NULL;
     }
+
+    if (rpcServer_ != NULL) {
+        rpcServer_->stop();
+        delete rpcServer_;
+        rpcServer_ = NULL;
+    }
 }
 
 bool SlimManager::recommend(const slim::SlimRecommendParam& param,
@@ -29,8 +37,8 @@ bool SlimManager::recommend(const slim::SlimRecommendParam& param,
                             RawTextResultFromMIA& res) const
 {
     std::vector<docid_t> docIdList;
-    if (!recommend_->recommend(param.uuid_, param.topN_, docIdList)) {
-        res.error_ = "Internal ERROR in Recommend Engine, no data for uuid: " + param.uuid_;
+    if (!recommend_->recommend(param.title_, param.id_, param.topn_, docIdList)) {
+        res.error_ = "Internal ERROR in Recommend Engine";
         return false;
     }
 
