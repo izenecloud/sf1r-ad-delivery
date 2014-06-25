@@ -22,6 +22,8 @@
 #include <boost/unordered_set.hpp>
 #include <boost/archive/text_iarchive.hpp>
 
+#include <3rdparty/msgpack/rpc/client.h>
+
 namespace slim { namespace model {
 
 class learner {
@@ -79,11 +81,17 @@ public:
         _p_csr_X.reset(new csr_matrix(_coo));
     }
 
-    void train(int thread_num) {
-        slim_thread_manager slim_runner(thread_num, _model, *_p_csr_X);
+    void train(int thread_num, int top_n) {
+        _init_similar_cluster_size();
+
+        slim_thread_manager slim_runner(thread_num, _model, *_p_csr_X, top_n, _similar_cluster, _similar_cluster_mutex);
         std::cout << _p_csr_X->m() << "\t" << _p_csr_X->n() << std::endl;
         slim_runner.start();
         slim_runner.join();
+
+        msgpack::rpc::client cli("127.0.0.1", 38611);
+        bool update_flag = cli.call("update_similar_cluster", _similar_cluster).get<bool>();
+        std::cout << "update_similar_cluster called..." << std::endl;
     }
 
     int _assign_clustering(const TokenSparseVector & v) {
@@ -113,6 +121,11 @@ public:
         return sim;
     }
 
+    void _init_similar_cluster_size() {
+        _similar_cluster.clear();
+        _similar_cluster.resize(_p_csr_X->n());
+    }
+
     boost::shared_mutex _rw_mutex;
 
     boost::unordered_set<std::pair<int, int> > _current_u_c_pairs;
@@ -125,6 +138,9 @@ public:
 
     sf1r::laser::Tokenizer _tok;
     std::vector<TokenVector> _clustering_container;
+
+    std::vector<std::vector<int> > _similar_cluster;
+    boost::mutex _similar_cluster_mutex;
 };
 
 }}

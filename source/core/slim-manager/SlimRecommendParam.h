@@ -7,8 +7,9 @@ namespace sf1r { namespace slim {
 
 class SlimRecommendParam {
 public:
-    std::string uuid_;
-    int topN_;
+    std::string title_;
+    int id_;
+    int topn_;
 };
 
 }}

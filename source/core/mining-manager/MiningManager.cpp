@@ -212,8 +212,8 @@ MiningManager::~MiningManager()
     if (rtypeStringPropTableBuilder_) delete rtypeStringPropTableBuilder_;
     if (suffixMatchManager_) delete suffixMatchManager_;
     if (productTokenizer_) delete productTokenizer_;
-    if (laserManager_) delete laserManager_;
     if (slimManager_) delete slimManager_;
+    if (laserManager_) delete laserManager_;
     if (adIndexManager_)
     {
         delete adIndexManager_;
