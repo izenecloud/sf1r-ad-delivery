@@ -11,6 +11,7 @@
 #include <boost/unordered_map.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/dynamic_bitset.hpp>
+#include <boost/thread.hpp>
 #include <string>
 #include <set>
 
@@ -70,7 +71,7 @@ public:
     void getAdBidPrice(ad_docid_t adid, const std::string& query, const std::string& hit_bidstr,
         int leftbudget, int& price);
     int getBudgetLeft(ad_docid_t adid);
-    void getBidPhrase(const std::string& adid, BidPhraseListT& bidphrase_list);
+    //void getBidPhrase(const std::string& adid, BidPhraseListT& bidphrase_list);
 
 
     bool getAdIdFromAdStrId(const std::string& strid, ad_docid_t& adid);
@@ -104,11 +105,28 @@ private:
     typedef std::vector<std::pair<int, double> > BidAuctionLandscapeT;
     typedef std::string BidKeywordStrT;
     typedef std::set<BidPhraseStrT> CampaignBidStrListT;
+    typedef std::vector<std::map<BidPhraseStrT, int> >  BidPriceListT;
+    typedef std::vector<std::vector<std::pair<int, double> > > UniformBidPriceListT;
+
+    void resetDailyLogStatisticalData(
+        const std::vector<BidPhraseListT>& new_bidphrase_list,
+        const std::vector<std::string>& new_campaign_name_list,
+        const std::vector<CampaignBidStrListT>& new_campaign_bid_phrase_list,
+        std::vector<double>& new_ctr_list,
+        BidPriceListT& new_bid_price_list,
+        UniformBidPriceListT& new_uniform_bid_price_list);
+
+    void resetDailyLogStatisticalData(bool reset_used,
+        const std::vector<BidPhraseListT>& new_bidphrase_list,
+        const std::vector<std::string>& new_campaign_name_list,
+        const std::vector<CampaignBidStrListT>& new_campaign_bid_phrase_list,
+        std::vector<double>& new_ctr_list,
+        BidPriceListT& new_bid_price_list,
+        UniformBidPriceListT& new_uniform_bid_price_list);
 
     double computeAdCTR(ad_docid_t adid);
     void replaceAdBidPhrase(ad_docid_t adid, const std::vector<std::string>& bid_phrase_list,
         BidPhraseListT& bidid_list);
-    void updateAdCampaign(ad_docid_t adid, const std::string& campaign_name);
 
     std::string preprocessBidPhraseStr(const std::string& orig);
     void generateBidPhrase(const std::string& ad_title, std::vector<std::string>& bidphrase);
@@ -122,14 +140,15 @@ private:
     }
     void consumeBudget(ad_docid_t adid, int cost);
     void load();
-    bool getBidKeywordIdFromStr(const BidKeywordStrT& keyword, bool insert, BidKeywordId& id);
+    bool getBidKeywordIdFromStr(const BidKeywordStrT& keyword, BidKeywordId& id);
+    void getBidKeywordIdFromStrWithInsert(const BidKeywordStrT& keyword, BidKeywordId& id);
     void getBidKeywordStrFromId(const BidKeywordId& id, BidKeywordStrT& keyword);
     void replaceBidPhrase(const std::string& adid, BidPhraseListT& bidphrase_list, BidPhraseStrListT& bidstr_list);
     void getBidPhraseStr(const BidPhraseT& bidphrase, BidPhraseStrT& bidstr);
     void getBidPhraseStrList(const BidPhraseListT& bidphrase_list, BidPhraseStrListT& bidstr_list);
-    void getBidPhrase(const std::string& adid,
-        BidPhraseListT& bidphrase_list,
-        BidPhraseStrListT& bidstr_list);
+    //void getBidPhrase(const std::string& adid,
+    //    BidPhraseListT& bidphrase_list,
+    //    BidPhraseStrListT& bidstr_list);
 
     void getBidStatisticalData(const CampaignBidStrListT& bidstr_list,
         const std::map<std::string, BidAuctionLandscapeT>& bidkey_cpc_map,
@@ -143,6 +162,7 @@ private:
     // all bid phrase for all ad creatives.
     std::vector<BidPhraseListT>  ad_bidphrase_list_;
     std::vector<BidPhraseStrListT>  ad_orig_bidstr_list_;
+    boost::dynamic_bitset<> ad_status_bitmap_;
     std::vector<double>  ad_ctr_list_;
     std::vector<std::string> keyword_id_value_list_;
     StrIdMapT keyword_value_id_list_;
@@ -163,11 +183,17 @@ private:
     boost::shared_ptr<AdBidStrategy> ad_bid_strategy_;
     kBidStrategy bid_strategy_type_;
     // bid price for different campaign.
-    std::vector<std::map<BidPhraseStrT, int> > ad_bid_price_list_;
-    std::vector<std::vector<std::pair<int, double> > > ad_uniform_bid_price_list_;
+    BidPriceListT ad_bid_price_list_;
+    UniformBidPriceListT ad_uniform_bid_price_list_;
 
     AdManualBidInfoMgr manual_bidinfo_mgr_;
-    boost::dynamic_bitset<> ad_status_bitmap_;
+    // lock by the defined order to avoid deadlock.
+    boost::mutex  ad_write_mutex_;
+    boost::shared_mutex  ad_bid_mutex_;
+    boost::shared_mutex  budget_mutex_;
+    boost::shared_mutex  keyword_mutex_;
+    typedef boost::shared_lock<boost::shared_mutex> ReadHolderT;
+    typedef boost::unique_lock<boost::shared_mutex> WriteHolderT;
 };
 
 }

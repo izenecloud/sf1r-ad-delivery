@@ -100,6 +100,7 @@ std::string AdManualBidInfoMgr::getManualKeyForAd(ad_docid_t adid, const std::st
 void AdManualBidInfoMgr::removeManualBidPrice(const std::string& campaign_name, ad_docid_t adid,
     const std::vector<std::string>& key_list)
 {
+    boost::unique_lock<boost::shared_mutex> guard(bidprice_mutex_);
     AdBidInfoValueT& v = manual_bidprice_list_[campaign_name];
     for(std::size_t i = 0; i < key_list.size(); ++i)
     {
@@ -110,6 +111,7 @@ void AdManualBidInfoMgr::removeManualBidPrice(const std::string& campaign_name, 
 void AdManualBidInfoMgr::setManualBidPrice(const std::string& campaign_name, ad_docid_t adid, const std::vector<std::string>& key_list,
     const std::vector<int>& price_list)
 {
+    boost::unique_lock<boost::shared_mutex> guard(bidprice_mutex_);
     AdBidInfoValueT& v = manual_bidprice_list_[campaign_name];
     for(std::size_t i = 0; i < key_list.size(); ++i)
     {
@@ -125,6 +127,7 @@ int AdManualBidInfoMgr::getManualBidPrice(const std::string& campaign_name, ad_d
     ManualBidInfoT::const_iterator cit = manual_bidprice_list_.find(campaign_name);
     if (cit == manual_bidprice_list_.end())
         return 0;
+    boost::shared_lock<boost::shared_mutex> guard(bidprice_mutex_);
     AdBidInfoValueT::const_iterator vit = cit->second.find(getManualKeyForAd(adid, bidstr));
     if (vit == cit->second.end())
         return 0;
@@ -136,6 +139,7 @@ bool AdManualBidInfoMgr::hasManualBidPrice(const std::string& campaign_name)
     ManualBidInfoT::const_iterator cit = manual_bidprice_list_.find(campaign_name);
     if (cit == manual_bidprice_list_.end())
         return false;
+    boost::shared_lock<boost::shared_mutex> guard(bidprice_mutex_);
     return (!cit->second.empty());
 }
 
@@ -145,6 +149,7 @@ void AdManualBidInfoMgr::getManualBidPriceList(const std::string& campaign_name,
     ManualBidInfoT::const_iterator cit = manual_bidprice_list_.find(campaign_name);
     if (cit == manual_bidprice_list_.end())
         return;
+    boost::shared_lock<boost::shared_mutex> guard(bidprice_mutex_);
     price_list = cit->second;
 }
 

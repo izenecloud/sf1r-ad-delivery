@@ -6,6 +6,7 @@
 #include <vector>
 #include <map>
 #include <boost/unordered_map.hpp>
+#include <boost/thread.hpp>
 
 namespace sf1r
 {
@@ -47,6 +48,7 @@ private:
     // the list of all manual bid price for each campaign.
     ManualBidInfoT  manual_bidprice_list_; 
     std::string data_path_;
+    boost::shared_mutex  bidprice_mutex_;
     static const int DEFAULT_AD_BUDGET = 100;
 };
 
