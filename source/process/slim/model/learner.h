@@ -54,10 +54,10 @@ public:
         }
     }
 
-    void add_feedback(const std::string & uuid, const std::string & title) {
-        write_lock lock(_rw_mutex);
+    void add_feedback_title(const std::string & uuid, const std::string & title) {
+        write_lock lock(_rw_mutex_title);
 
-        std::pair<bool, int> uuid_ret = _uuid_mapper.insert(uuid);
+        std::pair<bool, int> uuid_ret = _uuid_mapper_title.insert(uuid);
 
         TokenSparseVector vec;
         _tok.tokenize(title, vec);
@@ -71,27 +71,58 @@ public:
         if (_current_u_c_pairs.find(std::make_pair(uuid_ret.second, cluster_id))
             == _current_u_c_pairs.end()) {
             _current_u_c_pairs.insert(std::make_pair(uuid_ret.second, cluster_id));
-            _coo.add(uuid_ret.second, cluster_id, 1.0);
+            _coo_title.add(uuid_ret.second, cluster_id, 1.0);
+        }
+    }
+
+    void add_feedback_tareid(const std::string & uuid, int tareid) {
+        write_lock lock(_rw_mutex_tareid);
+
+        std::pair<bool, int> uuid_ret = _uuid_mapper_tareid.insert(uuid);
+
+        if (_current_u_t_pairs.find(std::make_pair(uuid_ret.second, tareid))
+            == _current_u_t_pairs.end()) {
+            _current_u_t_pairs.insert(std::make_pair(uuid_ret.second, tareid));
+            _coo_tareid.add(uuid_ret.second, tareid, 1.0);
         }
     }
 
     void coo_to_csr() {
-        read_lock lock(_rw_mutex);
+        coo_to_csr_title();
+        coo_to_csr_tareid();
+    }
 
-        _p_csr_X.reset(new csr_matrix(_coo));
+    void coo_to_csr_title() {
+        read_lock lock(_rw_mutex_title);
+
+        _p_csr_X_title.reset(new csr_matrix(_coo_title));
+    }
+
+    void coo_to_csr_tareid() {
+        read_lock lock(_rw_mutex_tareid);
+
+        _p_csr_X_tareid.reset(new csr_matrix(_coo_tareid));
     }
 
     void train(int thread_num, int top_n) {
         _init_similar_cluster_size();
+        _init_similar_tareid_size();
 
-        slim_thread_manager slim_runner(thread_num, _model, *_p_csr_X, top_n, _similar_cluster, _similar_cluster_mutex);
-        std::cout << _p_csr_X->m() << "\t" << _p_csr_X->n() << std::endl;
-        slim_runner.start();
-        slim_runner.join();
+        slim_thread_manager slim_runner_title(thread_num, _model, *_p_csr_X_title, top_n, _similar_cluster, _similar_cluster_mutex);
+        std::cout << "training similar cluster for csr matrix of size "<< _p_csr_X_title->m() << "\t" << _p_csr_X_title->n() << std::endl;
+        slim_runner_title.start();
+        slim_runner_title.join();
+
+        slim_thread_manager slim_runner_tareid(thread_num, _model, *_p_csr_X_tareid, top_n, _similar_tareid, _similar_tareid_mutex);
+        std::cout << "training similar tareid for csr matrix of size "<< _p_csr_X_tareid->m() << "\t" << _p_csr_X_tareid->n() << std::endl;
+        slim_runner_tareid.start();
+        slim_runner_tareid.join();
 
         msgpack::rpc::client cli("127.0.0.1", 38611);
-        bool update_flag = cli.call("update_similar_cluster", _similar_cluster).get<bool>();
-        std::cout << "update_similar_cluster called..." << std::endl;
+        bool update_flag_title = cli.call("update_similar_cluster", _similar_cluster).get<bool>();
+        std::cout << "update_similar_cluster called... " << update_flag_title << std::endl;
+        bool update_flag_tareid = cli.call("update_similar_tareid", _similar_tareid).get<bool>();
+        std::cout << "update_similar_tareid called... " << update_flag_tareid << std::endl;
     }
 
     int _assign_clustering(const TokenSparseVector & v) {
@@ -123,16 +154,26 @@ public:
 
     void _init_similar_cluster_size() {
         _similar_cluster.clear();
-        _similar_cluster.resize(_p_csr_X->n());
+        _similar_cluster.resize(_p_csr_X_title->n());
     }
 
-    boost::shared_mutex _rw_mutex;
+    void _init_similar_tareid_size() {
+        _similar_tareid.clear();
+        _similar_tareid.resize(_p_csr_X_tareid->n());
+    }
+
+    boost::shared_mutex _rw_mutex_title;
+    boost::shared_mutex _rw_mutex_tareid;
 
     boost::unordered_set<std::pair<int, int> > _current_u_c_pairs;
-    coo_matrix _coo;
-    id_mapper _uuid_mapper;
+    boost::unordered_set<std::pair<int, int> > _current_u_t_pairs;
+    coo_matrix _coo_title;
+    coo_matrix _coo_tareid;
+    id_mapper _uuid_mapper_title;
+    id_mapper _uuid_mapper_tareid;
 
-    boost::shared_ptr<csr_matrix> _p_csr_X;
+    boost::shared_ptr<csr_matrix> _p_csr_X_title;
+    boost::shared_ptr<csr_matrix> _p_csr_X_tareid;
 
     slim_sgd _model;
 
@@ -141,6 +182,9 @@ public:
 
     std::vector<std::vector<int> > _similar_cluster;
     boost::mutex _similar_cluster_mutex;
+
+    std::vector<std::vector<int> > _similar_tareid;
+    boost::mutex _similar_tareid_mutex;
 };
 
 }}

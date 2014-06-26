@@ -12,10 +12,15 @@ SlimManager::SlimManager(const boost::shared_ptr<AdSearchService>& adSearchServi
     , documentManager_(documentManager)
     , laser_(laser)
 {
-    rpcServer_ = new slim::SlimRpcServer(_similar_cluster, _rw_mutex);
+    rpcServer_ = new slim::SlimRpcServer(_similar_cluster, _similar_tareid, _rw_mutex);
     rpcServer_->start("127.0.0.1", 38611, 2);
 
-    recommend_ = new slim::SlimRecommend(laser_->indexManager_, laser_->tokenizer_, _similar_cluster, _rw_mutex, laser);
+    recommend_ = new slim::SlimRecommend(laser_->indexManager_,
+                                         laser_->tokenizer_,
+                                         _similar_cluster,
+                                         _similar_tareid,
+                                         _rw_mutex,
+                                         laser);
 }
 
 SlimManager::~SlimManager()
