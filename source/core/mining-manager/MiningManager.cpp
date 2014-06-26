@@ -231,7 +231,6 @@ void MiningManager::close()
 bool MiningManager::open()
 {
     close();
-
     std::cout << "DO_GROUP : " << (int) mining_schema_.group_enable << std::endl;
     std::cout << "DO_ATTR : " << (int) mining_schema_.attr_enable << std::endl;
 
@@ -269,7 +268,7 @@ bool MiningManager::open()
             mining_schema_.product_ranking_config.isEnable ||
             mining_schema_.zambezi_config.isEnable ||
             mining_schema_.ad_index_config.isEnable ||
-            mining_schema_.laser_config.isEnable)
+            miningConfig_.laser_param.isEnableLaser())
         {
             miningTaskBuilder_ = new MiningTaskBuilder( document_manager_);
             multiThreadMiningTaskBuilder_ = new MultiThreadMiningTaskBuilder(
@@ -439,7 +438,7 @@ bool MiningManager::open()
         }
         
         /** laser */
-        if(!initLaserManager_(mining_schema_.laser_config))
+        if(!initLaserManager_(miningConfig_.laser_param))
         {
             LOG(ERROR) << "init LaserManager fail"<<endl;
             return false;
@@ -1656,12 +1655,10 @@ bool MiningManager::initAdIndexManager_(AdIndexConfig& adIndexConfig)
     return true;
 }
 
-bool MiningManager::initLaserManager_(LaserConfig& laserIndexConfig)
+bool MiningManager::initLaserManager_(LaserPara& laser_para)
 {
-    if (!laserIndexConfig.isEnable)
-        return true;
-    LOG(INFO)<<"init LaserManager..";
-    laserManager_=new LaserManager(adSearchService_, document_manager_, *idManager_, collectionName_, laserIndexConfig);
+    DLOG(INFO)<<"init LaserManager..";
+    laserManager_=new LaserManager(adSearchService_, document_manager_, *idManager_, collectionDataPath_, collectionName_, laser_para);
     multiThreadMiningTaskBuilder_->addTask(laserManager_->getLaserIndexTask());
 
     return true;

@@ -21,6 +21,7 @@ public:
 public:
     virtual bool candidate(
         const std::string& text,
+        const std::size_t ncandidate,
         const std::vector<std::pair<int, float> >& context, 
         std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
         std::vector<float>& score) const;
@@ -33,14 +34,19 @@ public:
     virtual void dispatch(const std::string& method, msgpack::rpc::request& req)
     {
     }
+    
+    virtual bool context(const std::string& text, std::vector<std::pair<int, float> >& context) const
+    {
+        return true;
+    }
         
-        friend class boost::serialization::access;
-        template<class Archive>
-        void serialize(Archive & ar, const unsigned int version)
-        {
-            ar & delta_;
-            ar & eta_;
-        }
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version)
+    {
+        ar & delta_;
+        ar & eta_;
+    }
 
 private:
     float delta_;

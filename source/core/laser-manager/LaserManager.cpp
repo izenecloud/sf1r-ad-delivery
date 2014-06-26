@@ -23,11 +23,12 @@ boost::shared_mutex LaserManager::mutex_;
 LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService, 
         const boost::shared_ptr<DocumentManager>& documentManager,
         izenelib::ir::idmanager::IDManager& idManager,
+        const std::string& collectionDataPath,
         const std::string& collection,
-        const LaserConfig& config)
+        const LaserPara& para)
     : collection_(collection)
-    , workdir_(MiningManager::system_working_path_ + "/collection/" + collection_ + "/collection-data/LASER/")
-    , config_(config)
+    , workdir_(collectionDataPath + "/LASER/")
+    , para_(para)
     , adSearchService_(adSearchService)
     , documentManager_(documentManager)
     , idManager_(idManager)
@@ -37,15 +38,7 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
     , clusteringContainer_(NULL)
     , similarClustering_(NULL)
 {
-    std::size_t pos = collection_.find("-rebuild");
-    if (std::string::npos == pos)
-    {
-        resdir_ = MiningManager::system_resource_path_ + "/laser_resource/" + collection_ + "/";
-    }
-    else
-    {
-        resdir_ = MiningManager::system_resource_path_ + "/laser_resource/" + collection_.substr(0, pos) + "/";
-    }
+    resdir_ = MiningManager::system_resource_path_ + "/laser_resource/";
     loadLaserDependency(); 
     
     if (!boost::filesystem::exists(workdir_))
@@ -53,33 +46,17 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
         boost::filesystem::create_directories(workdir_);
     }
     
-    // TODO 
-    tokenizer_ = new Tokenizer(resdir_ + "/dict/title_pca/",
-        resdir_ + "/dict/terms_dic.dat");
+    tokenizer_ = new Tokenizer(MiningManager::system_resource_path_ + "/dict/title_pca/",
+        resdir_ + "/terms_dic.dat");
 
-    if (config_.isEnableClustering()) 
+    bool isNeedClustering = isNeedClusteringKnowlege();
+    if (isNeedClustering)
     {
-        std::vector<boost::unordered_map<std::string, float> > clusteringContainer;
-        laser::clustering::loadClusteringResult(clusteringContainer, resdir_ + "/clustering_result");
-    
-        clusteringContainer_ = new std::vector<LaserManager::TokenVector>(clusteringContainer.size());
-        for (std::size_t i = 0; i < clusteringContainer.size(); ++i)
-        {
-            TokenVector vec;
-            tokenizer_->numeric(clusteringContainer[i], vec);
-            (*clusteringContainer_)[i] = vec;
-        }
-   
-        similarClustering_ = new std::vector<std::vector<int> >(clusteringContainer_->size());
-        {
-            std::ifstream ifs((resdir_ + "/clustering_similar").c_str(), std::ios::binary);
-            boost::archive::text_iarchive ia(ifs);
-            ia >> *similarClustering_;
-        }
+        loadClusteringKnowledge();
     }
     
     indexManager_ = new laser::AdIndexManager(workdir_, 
-        config_.isEnableClustering(),
+        isNeedClustering,
         documentManager_);
     recommend_ = new LaserRecommend(this);
     // delete by TaskBuilder
@@ -143,7 +120,7 @@ void LaserManager::index(const docid_t& docid, const std::string& title)
     TokenSparseVector vec;
     tokenizer_->tokenize(title, vec);
     
-    if (config_.isEnableClustering())
+    if (!clusteringContainer_->empty())
     {
         std::size_t clusteringId = assignClustering_(vec);
         if ( (std::size_t)-1 == clusteringId)
@@ -259,6 +236,40 @@ void LaserManager::tokenize(const std::string& text,
     {
         index.push_back(it->first);
         value.push_back(it->second);
+    }
+}
+
+bool LaserManager::isNeedClusteringKnowlege() const
+{
+    if ("TopNClusteringModel" == para_.modelType)
+    {
+        return true;
+    }
+    if ("HierarchicalModel" == para_.modelType)
+    {
+        return true;
+    }
+    return false;
+}
+    
+void LaserManager::loadClusteringKnowledge()
+{
+    std::vector<boost::unordered_map<std::string, float> > clusteringContainer;
+    laser::clustering::loadClusteringResult(clusteringContainer, resdir_ + "/clustering_result");
+    
+    clusteringContainer_ = new std::vector<LaserManager::TokenVector>(clusteringContainer.size());
+    for (std::size_t i = 0; i < clusteringContainer.size(); ++i)
+    {
+        TokenVector vec;
+        tokenizer_->numeric(clusteringContainer[i], vec);
+        (*clusteringContainer_)[i] = vec;
+    }
+   
+    similarClustering_ = new std::vector<std::vector<int> >(clusteringContainer_->size());
+    {
+        std::ifstream ifs((resdir_ + "/clustering_similar").c_str(), std::ios::binary);
+        boost::archive::text_iarchive ia(ifs);
+        ia >> *similarClustering_;
     }
 }
     

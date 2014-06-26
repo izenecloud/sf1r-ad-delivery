@@ -33,8 +33,9 @@ public:
     LaserManager(const boost::shared_ptr<AdSearchService>& adSearchService, 
         const boost::shared_ptr<DocumentManager>& documentManager,
         izenelib::ir::idmanager::IDManager& idManager,
+        const std::string& collectionDataPath,
         const std::string& collection,
-        const LaserConfig& config);
+        const LaserPara& para);
     ~LaserManager();
 public:
     bool recommend(const laser::LaserRecommendParam& param, 
@@ -69,6 +70,8 @@ private:
     std::size_t assignClustering_(const TokenSparseVector& v) const;
     float similarity_(const TokenSparseVector& lv, const TokenVector& rv) const;
 
+    bool isNeedClusteringKnowlege() const;
+    void loadClusteringKnowledge();
 
     friend class laser::LaserIndexTask;
     friend class laser::LaserRpcServer;
@@ -78,7 +81,7 @@ private:
     const std::string collection_;
     const std::string workdir_;
     std::string resdir_;
-    const LaserConfig& config_;
+    const LaserPara& para_;
     const boost::shared_ptr<AdSearchService>& adSearchService_;
     const boost::shared_ptr<DocumentManager>& documentManager_;
     mutable izenelib::ir::idmanager::IDManager& idManager_;

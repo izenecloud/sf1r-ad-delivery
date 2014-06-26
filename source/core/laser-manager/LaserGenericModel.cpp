@@ -2,14 +2,23 @@
 #include "LaserOnlineModel.h"
 #include "LaserOfflineModel.h"
 #include "AdIndexManager.h"
+#include "context/KVClient.h"
+#include "context/MQClient.h"
 
 namespace sf1r { namespace laser {
 
-LaserGenericModel::LaserGenericModel(const AdIndexManager& adIndexer, const std::string& workdir)
+LaserGenericModel::LaserGenericModel(const AdIndexManager& adIndexer, 
+    const std::string& kvaddr,
+    const int kvport,
+    const std::string& mqaddr,
+    const int mqport,
+    const std::string& workdir)
     : adIndexer_(adIndexer)
     , workdir_(workdir)
     , pAdDb_(NULL)
     , offlineModel_(NULL)
+    , kvclient_(NULL)
+    , mqclient_(NULL)
 {
     if (!boost::filesystem::exists(workdir_))
     {
@@ -17,6 +26,8 @@ LaserGenericModel::LaserGenericModel(const AdIndexManager& adIndexer, const std:
     }
     pAdDb_ = new LaserModelDB<docid_t, LaserOnlineModel>(workdir_ + "/per-item-online-model");
     offlineModel_ = new LaserOfflineModel(workdir_ + "/offline-model");
+    kvclient_ = new context::KVClient(kvaddr, kvport);
+    mqclient_ = new context::MQClient(mqaddr, mqport);
 }
 
 LaserGenericModel::~LaserGenericModel()
@@ -31,10 +42,34 @@ LaserGenericModel::~LaserGenericModel()
         delete offlineModel_;
         offlineModel_ = NULL;
     }
+    if (NULL != kvclient_)
+    {
+        kvclient_->shutdown();
+        delete kvclient_;
+        kvclient_ = NULL;
+    }
+    if (NULL != mqclient_)
+    {
+        mqclient_->shutdown();
+        delete mqclient_;
+        mqclient_ = NULL;
+    }
+}
+
+bool LaserGenericModel::context(const std::string& text, 
+     std::vector<std::pair<int, float> >& context) const
+{
+    bool ret = kvclient_->context(text, context);
+    if (!ret)
+    {
+        mqclient_->publish(text);
+    }
+    return ret;
 }
 
 bool LaserGenericModel::candidate(
     const std::string& text,
+    const std::size_t ncandidate,
     const std::vector<std::pair<int, float> >& context, 
     std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
     std::vector<float>& score) const

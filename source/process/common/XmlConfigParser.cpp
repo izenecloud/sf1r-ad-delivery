@@ -1427,6 +1427,15 @@ void CollectionConfig::parseMiningBundleParam(const ticpp::Element * mining, Col
     // for mining task
     params.Get<std::size_t>("MiningTaskPara/threadnum",
                             mining_config.mining_task_param.threadNum);
+    
+    //for laser
+    params.GetString("LaserPara/modelType", mining_config.laser_param.modelType);
+    boost::trim(mining_config.laser_param.modelType);
+    params.GetString("LaserPara/kvaddr", mining_config.laser_param.kvaddr);
+    params.Get<int>("LaserPara/kvport", mining_config.laser_param.kvport);
+    params.GetString("LaserPara/mqaddr", mining_config.laser_param.mqaddr);
+    params.Get<int>("LaserPara/mqport", mining_config.laser_param.mqport);
+    LOG(INFO)<<mining_config.laser_param.modelType;
 
     std::set<std::string> directories;
     params.Get("CollectionDataDirectory", directories);
@@ -1754,7 +1763,6 @@ void CollectionConfig::parseMiningBundleSchema(const ticpp::Element * mining_sch
     parseAdIndexNode(task_node, collectionMeta);
     
     task_node = getUniqChildElement(mining_schema_node, "Laser", false);
-    parseLaserNode(task_node, collectionMeta);
 }
 
 void CollectionConfig::parseFuzzyNormalizerNode(
@@ -1802,32 +1810,6 @@ void CollectionConfig::parseAdIndexNode(
     adIndexConfig.ad_common_data_path = collectionMeta.getCollectionPath().getBasePath() + "/ad_common_data";
 }
     
-void CollectionConfig::parseLaserNode(
-            const ticpp::Element* laserNode,
-            CollectionMeta& collectionMeta) const
-{
-    if(!laserNode)
-        return;
-
-    MiningSchema& miningSchema =
-        collectionMeta.miningBundleConfig_->mining_schema_;
-
-
-    miningSchema.laser_config.isEnable = true;
-    ticpp::Element* model_node = getUniqChildElement(laserNode, "ModelPara", false);
-    if (model_node)
-    {
-        getAttribute(model_node, "topnClustering", miningSchema.laser_config.isEnableTopnClustering, false);
-        getAttribute(model_node, "hierarchical", miningSchema.laser_config.isEnableHierarchical, false);
-        if (miningSchema.laser_config.isEnableTopnClustering &&
-            miningSchema.laser_config.isEnableHierarchical)
-        {
-            string message = "topnClustering and hierarchical is mutable";
-            throw XmlConfigParserException(message);
-        }
-    }
-}
-
 void CollectionConfig::parseZambeziNode(
     const ticpp::Element* zambeziNode,
     CollectionMeta& collectionMeta) const

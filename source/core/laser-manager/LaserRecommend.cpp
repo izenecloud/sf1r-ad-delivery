@@ -13,8 +13,8 @@ LaserRecommend::LaserRecommend(const LaserManager* laserManager)
     , model_(NULL)
 {
     factory_ = new LaserModelFactory(*laserManager_);
-    model_ = factory_->createModel(laserManager_->config_, 
-        laserManager_->workdir_ + "/model/", 1000);
+    model_ = factory_->createModel(laserManager_->para_, 
+        laserManager_->workdir_ + "/model/");
 }
 
 LaserRecommend::~LaserRecommend()
@@ -37,11 +37,14 @@ bool LaserRecommend::recommend(const std::string& text,
     const std::size_t num) const
 {
     std::vector<std::pair<int, float> > context;
-    extractContext(text, context);
+    if (!model_->context(text, context))
+    {
+        return false;
+    }
 
     std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > > ad;
     std::vector<float> score;
-    if (!model_->candidate(text, context, ad, score))
+    if (!model_->candidate(text, 1000, context, ad, score))
     {
         return false;
     }
@@ -60,10 +63,6 @@ bool LaserRecommend::recommend(const std::string& text,
         }
     }
     return true;
-}
-
-void LaserRecommend::extractContext(const std::string& text, std::vector<std::pair<int, float> >& context) const
-{
 }
 
 void LaserRecommend::topn(const docid_t& docid, const float score, const std::size_t n, priority_queue& queue) const

@@ -15,13 +15,13 @@ class TopnClusteringModel : public LaserModel
 public:
     TopnClusteringModel(const AdIndexManager& adIndexer,
         const std::vector<std::vector<int> >& similarClustering,
-        const std::string& workdir,
-        const std::size_t ncandidate);
+        const std::string& workdir);
     ~TopnClusteringModel();
 
 public:
     virtual bool candidate(
         const std::string& text,
+        const std::size_t ncandidate,
         const std::vector<std::pair<int, float> >& context, 
         std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
         std::vector<float>& score) const;
@@ -30,6 +30,11 @@ public:
         const std::vector<std::pair<int, float> >& user, 
         const std::pair<docid_t, std::vector<std::pair<int, float> > >& ad,
         const float score) const;
+    
+    virtual bool context(const std::string& text, std::vector<std::pair<int, float> >& context) const
+    {
+        return true;
+    }
     
     virtual void dispatch(const std::string& method, msgpack::rpc::request& req);
 private:
@@ -48,7 +53,6 @@ protected:
     const AdIndexManager& adIndexer_;
     const std::vector<std::vector<int> >& similarClustering_;
     const std::string workdir_;
-    const std::size_t ncandidate_;
     LaserModelDB<std::string, LaserOnlineModel>* pUserDb_;
     TopNClusteringDB* topClusteringDb_;
 };

@@ -8,11 +8,13 @@
 namespace sf1r { namespace laser {
 
 HierarchicalModel::HierarchicalModel(const AdIndexManager& adIndexer, 
-    const std::string& workdir,
-    const std::size_t ncandidate)
-    : LaserGenericModel(adIndexer, workdir)
+    const std::string& kvaddr,
+    const int kvport,
+    const std::string& mqaddr,
+    const int mqport,
+    const std::string& workdir)
+    : LaserGenericModel(adIndexer, kvaddr, kvport, mqaddr, mqport, workdir)
     , workdir_(workdir)
-    , ncandidate_(ncandidate)
     , pClusteringDb_(NULL)
 {
     if (!boost::filesystem::exists(workdir_))
@@ -33,6 +35,7 @@ HierarchicalModel::~HierarchicalModel()
 
 bool HierarchicalModel::candidate(
     const std::string& text,
+    const std::size_t ncandidate,
     const std::vector<std::pair<int, float> >& context, 
     std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
     std::vector<float>& score) const
@@ -56,7 +59,7 @@ bool HierarchicalModel::candidate(
     for (std::size_t i = 0; i < clustering.size(); ++i)
     {
         adIndexer_.get(clustering[i].first, ad);
-        if (ad.size() >= ncandidate_)
+        if (ad.size() >= ncandidate)
             break;
     }
     score.assign(ad.size(), 0);

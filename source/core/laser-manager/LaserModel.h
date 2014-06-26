@@ -28,16 +28,18 @@ public:
     
     virtual bool candidate(
         const std::string& text,
+        const std::size_t ncandidate,
         const std::vector<std::pair<int, float> >& context, 
         std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
         std::vector<float>& score) const = 0;
     
     virtual float score( 
         const std::string& text,
-        const std::vector<std::pair<int, float> >& user, 
+        const std::vector<std::pair<int, float> >& context, 
         const std::pair<docid_t, std::vector<std::pair<int, float> > >& ad,
         const float score) const = 0;
 
+    virtual bool context(const std::string& text, std::vector<std::pair<int, float> >& context) const = 0;
     virtual void dispatch(const std::string& method, msgpack::rpc::request& req) = 0;
 };
 } }

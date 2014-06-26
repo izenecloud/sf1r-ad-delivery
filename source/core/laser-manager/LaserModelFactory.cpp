@@ -13,21 +13,20 @@ LaserModelFactory::LaserModelFactory(const LaserManager& laserManager)
 {
 }
 
-LaserModel* LaserModelFactory::createModel(const LaserConfig& config,
-    const std::string& workdir,
-    const std::size_t ncandidate) const
+LaserModel* LaserModelFactory::createModel(const LaserPara& para,
+    const std::string& workdir) const
 {
-    if (!config.isEnableClustering())
+    if ("LaserGenericModel" == para.modelType)
     {
-        return new LaserGenericModel(adIndexer_, workdir);
+        return new LaserGenericModel(adIndexer_, para.kvaddr, para.kvport, para.mqaddr, para.mqport, workdir);
     }
-    else if (config.isEnableTopnClustering)
+    else if ("TopnClusteringModel" == para.modelType)
     {
-        return new TopnClusteringModel(adIndexer_, similarClustering_, workdir, ncandidate);
+        return new TopnClusteringModel(adIndexer_, similarClustering_, workdir);
     }
-    else if (config.isEnableHierarchical)
+    else if ("HierarchicalModel" == para.modelType)
     {
-        return new HierarchicalModel(adIndexer_, workdir, ncandidate);
+        return new HierarchicalModel(adIndexer_, para.kvaddr, para.kvport, para.mqaddr, para.mqport, workdir);
     }
     return NULL;
 }

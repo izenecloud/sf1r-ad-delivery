@@ -7,16 +7,26 @@ class AdIndexManager;
 class LaserOnlineModel;
 class LaserOfflineModel;
 
+namespace context {
+class KVClient;
+class MQClient;
+}
+
 class LaserGenericModel : public LaserModel
 {
 public:
     LaserGenericModel(const AdIndexManager& adIndexer,
+        const std::string& kvaddr,
+        const int kvport,
+        const std::string& mqaddr,
+        const int mqport,
         const std::string& workdir);
     ~LaserGenericModel();
 
 public:
     virtual bool candidate(
         const std::string& text,
+        const std::size_t ncandidate,
         const std::vector<std::pair<int, float> >& context, 
         std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
         std::vector<float>& score) const;
@@ -25,6 +35,9 @@ public:
         const std::vector<std::pair<int, float> >& user, 
         const std::pair<docid_t, std::vector<std::pair<int, float> > >& ad,
         const float score) const;
+    
+    virtual bool context(const std::string& text, 
+        std::vector<std::pair<int, float> >& context) const;
 
     virtual void dispatch(const std::string& method, msgpack::rpc::request& req);
 
@@ -36,6 +49,8 @@ protected:
     const std::string workdir_;
     LaserModelDB<docid_t, LaserOnlineModel>* pAdDb_;
     LaserOfflineModel* offlineModel_;
+    context::KVClient* kvclient_;
+    context::MQClient* mqclient_;
     mutable boost::shared_mutex mutex_;
 };
 } }

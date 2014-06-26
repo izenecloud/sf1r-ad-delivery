@@ -26,7 +26,6 @@ FILE(GLOB_RECURSE aggregator_SRC "aggregator-manager/*.cpp")
 FILE(GLOB_RECURSE node_SRC "node-manager/*.cpp")
 FILE(GLOB sf1r_net_SRC "sf1r-net/*.cpp")
 FILE(GLOB ad_SRC "ad-manager/*.cpp" "ad-manager/sponsored-ad-search/*.cpp")
-FILE(GLOB laser_SRC "laser-manager/*.cpp")
 
 FILE(GLOB index_SRC
   "index-manager/zambezi-manager/*.cpp"
@@ -60,6 +59,7 @@ FILE(GLOB laser_SRC
     "laser-manager/*.cpp"
     "laser-manager/predict/*.cpp"
     "laser-manager/service/*.cpp"
+    "laser-manager/context/*.cpp"
     "laser-manager/clusteringmanager/clustering/*.cpp"
     "laser-manager/clusteringmanager/common/*.cpp"
     "laser-manager/clusteringmanager/type/*.cpp"

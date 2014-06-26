@@ -136,6 +136,12 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
                 adinfo.adId(), adinfo.clusteringId(), adinfo.index(), adinfo.value());
             req.result(adinfo);
         }
+        /*else if ("getUserInfoByUrl" == method)
+        {
+            msgpack::type::tuple<std::string, std::string> params;
+            req.params().convert(&params);
+            laserManager->getUserInfoByUrl(params.get<0>(), params.get<1>(), );
+        }*/
         else if ("updateTopnClustering" == method ||
                  "updatePerUserModel" == method ||
                  "updatePerAdOnlineModel" == method ||

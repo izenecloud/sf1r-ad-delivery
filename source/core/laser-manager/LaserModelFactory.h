@@ -5,7 +5,7 @@
 
 namespace sf1r {
 class LaserManager;
-class LaserConfig;
+class LaserPara;
 }
 
 namespace sf1r { namespace laser {
@@ -17,9 +17,8 @@ class LaserModelFactory
 public:
     LaserModelFactory(const LaserManager& laserManager);
 public:
-    LaserModel* createModel(const LaserConfig& config,
-        const std::string& workdir,
-        const std::size_t ncandidate) const;
+    LaserModel* createModel(const LaserPara& para,
+        const std::string& workdir) const;
  
 private:
     const std::vector<std::vector<int> >& similarClustering_;

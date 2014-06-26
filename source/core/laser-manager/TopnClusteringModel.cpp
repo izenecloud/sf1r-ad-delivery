@@ -7,12 +7,10 @@
 namespace sf1r { namespace laser {
 TopnClusteringModel::TopnClusteringModel(const AdIndexManager& adIndexer,
     const std::vector<std::vector<int> >& similarClustering,
-    const std::string& workdir,
-    const std::size_t ncandidate)
+    const std::string& workdir)
     : adIndexer_(adIndexer)
     , similarClustering_(similarClustering)
     , workdir_(workdir)
-    , ncandidate_(ncandidate)
     , pUserDb_(NULL)
     , topClusteringDb_(NULL)
 {
@@ -40,12 +38,13 @@ TopnClusteringModel::~TopnClusteringModel()
 
 bool TopnClusteringModel::candidate(
     const std::string& text,
+    const std::size_t ncandidate,
     const std::vector<std::pair<int, float> >& context, 
     std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
     std::vector<float>& score) const
 {
-    ad.reserve(ncandidate_);
-    score.reserve(ncandidate_);
+    ad.reserve(ncandidate);
+    score.reserve(ncandidate);
 
     std::map<int, float> topn;
     if (!topClusteringDb_->get(text, topn))
@@ -62,7 +61,7 @@ bool TopnClusteringModel::candidate(
             score.push_back(it->second);
         }
         old = ad.size();
-        if (ad.size() >= ncandidate_)
+        if (ad.size() >= ncandidate)
             return true;
     }
     
@@ -74,9 +73,10 @@ bool TopnClusteringModel::candidate(
             score.push_back(it->second);
         }
         old = ad.size();
-        if (ad.size() >= ncandidate_)
+        if (ad.size() >= ncandidate)
             return true;
     }
+    return true;
 }
 
 bool TopnClusteringModel::getAD(const std::size_t& clusteringId, 

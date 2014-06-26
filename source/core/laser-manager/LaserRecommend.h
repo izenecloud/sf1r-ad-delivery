@@ -32,7 +32,6 @@ public:
     void dispatch(const std::string& method, msgpack::rpc::request& req);
 private:
     void topn(const docid_t& docid, const float score, const std::size_t n, priority_queue& queue) const;
-    void extractContext(const std::string& text, std::vector<std::pair<int, float> >& context) const;
 private:
     const LaserManager* laserManager_;
     const LaserModelFactory* factory_;

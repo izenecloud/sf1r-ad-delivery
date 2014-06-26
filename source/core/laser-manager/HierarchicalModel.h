@@ -6,12 +6,16 @@ class HierarchicalModel : public LaserGenericModel
 {
 public:
     HierarchicalModel(const AdIndexManager& adIndexer, 
-        const std::string& workdir,
-        const std::size_t ncandidate);
+        const std::string& kvaddr,
+        const int kvport,
+        const std::string& mqaddr,
+        const int mqport,
+        const std::string& workdir);
     ~HierarchicalModel();
 public:
     virtual bool candidate(
         const std::string& text,
+        const std::size_t ncandidate,
         const std::vector<std::pair<int, float> >& context, 
         std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
         std::vector<float>& score) const;
@@ -22,7 +26,6 @@ private:
     void updatepClusteringDb(msgpack::rpc::request& req);
 private:
     const std::string workdir_;
-    const std::size_t ncandidate_;
     LaserModelDB<std::size_t, LaserOnlineModel>* pClusteringDb_;
 };
 } }
