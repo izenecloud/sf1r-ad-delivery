@@ -5,6 +5,8 @@
 #include "HierarchicalModel.h"
 #include "AdIndexManager.h"
 
+#include <glog/logging.h>
+
 namespace sf1r { namespace laser {
 
 LaserModelFactory::LaserModelFactory(const LaserManager& laserManager)
@@ -16,6 +18,7 @@ LaserModelFactory::LaserModelFactory(const LaserManager& laserManager)
 LaserModel* LaserModelFactory::createModel(const LaserPara& para,
     const std::string& workdir) const
 {
+    LOG(INFO)<<"Create Laser model for type = "<<para.modelType;
     if ("LaserGenericModel" == para.modelType)
     {
         return new LaserGenericModel(adIndexer_, para.kvaddr, para.kvport, para.mqaddr, para.mqport, workdir);
@@ -28,6 +31,7 @@ LaserModel* LaserModelFactory::createModel(const LaserPara& para,
     {
         return new HierarchicalModel(adIndexer_, para.kvaddr, para.kvport, para.mqaddr, para.mqport, workdir);
     }
+    LOG(ERROR)<<"No Laser model for type = "<<para.modelType<<", LaserRecommend stays unavailable.";
     return NULL;
 }
 

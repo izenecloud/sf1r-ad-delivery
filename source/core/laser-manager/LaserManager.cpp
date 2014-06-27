@@ -52,6 +52,7 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
     bool isNeedClustering = isNeedClusteringKnowlege();
     if (isNeedClustering)
     {
+        LOG(INFO)<<"Clustering is enbale, load clustering knowledge...";
         loadClusteringKnowledge();
     }
     
@@ -98,7 +99,7 @@ LaserManager::~LaserManager()
 
 bool LaserManager::recommend(const LaserRecommendParam& param, 
     GetDocumentsByIdsActionItem& actionItem,
-    RawTextResultFromMIA& res) const 
+    RawTextResultFromAIA& res) const 
 {
     std::vector<docid_t> docIdList;
     std::vector<float> itemScoreList;
@@ -112,6 +113,7 @@ bool LaserManager::recommend(const LaserRecommendParam& param,
         actionItem.idList_.push_back(docIdList[i]);
     }
     adSearchService_->getDocumentsByIds(actionItem, res);
+    res.score_.swap(itemScoreList);
     return true;
 }
     
@@ -120,7 +122,7 @@ void LaserManager::index(const docid_t& docid, const std::string& title)
     TokenSparseVector vec;
     tokenizer_->tokenize(title, vec);
     
-    if (!clusteringContainer_->empty())
+    if (!clusteringContainer_)
     {
         std::size_t clusteringId = assignClustering_(vec);
         if ( (std::size_t)-1 == clusteringId)

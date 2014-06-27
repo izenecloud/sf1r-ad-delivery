@@ -40,7 +40,7 @@ public:
 public:
     bool recommend(const laser::LaserRecommendParam& param, 
         GetDocumentsByIdsActionItem& actionItem,
-        RawTextResultFromMIA& itemList) const;
+        RawTextResultFromAIA& itemList) const;
     void index(const docid_t& docid, const std::string& title);
 
     MiningTask* getLaserIndexTask();
