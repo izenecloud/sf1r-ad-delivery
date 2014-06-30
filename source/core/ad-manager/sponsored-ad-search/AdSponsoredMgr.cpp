@@ -31,7 +31,7 @@ namespace sponsored
 static const int MAX_BIDPHRASE_LEN = 3;
 static const int MAX_DIFF_BID_KEYWORD_NUM = 1000000;
 static const int MAX_RANKED_AD_NUM = 20;
-static const int LOWEST_CLICK_COST = 1;
+static const int LOWEST_CLICK_COST = 10;
 static const int DEFAULT_AD_BUDGET = 1000;
 static const double MIN_AD_SCORE = 1e-6;
 
@@ -1358,6 +1358,11 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
             if (ad_status_bitmap_.test(result_list[i]))
             {
                 // this item is offline.
+                continue;
+            }
+            if (result_list[i] >= ad_bidphrase_list_.size())
+            {
+                // this item has not been mined yet.
                 continue;
             }
             int best_match_index = -1;

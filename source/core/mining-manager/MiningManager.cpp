@@ -374,6 +374,12 @@ bool MiningManager::open()
             }
         }
 
+        if(!initAdIndexManager_(mining_schema_.ad_index_config))
+        {
+            LOG(ERROR) << "init AdIndexManager fail"<<endl;
+            return false;
+        }
+
         if (customDocIdConverter_) delete customDocIdConverter_;
         customDocIdConverter_ = new CustomDocIdConverter(*idManager_);
 
@@ -440,12 +446,6 @@ bool MiningManager::open()
 
         }
 
-        if(!initAdIndexManager_(mining_schema_.ad_index_config))
-        {
-            LOG(ERROR) << "init AdIndexManager fail"<<endl;
-            return false;
-        }
-        
         /** laser */
         if(!initLaserManager_(mining_schema_.laser_index_config))
         {
