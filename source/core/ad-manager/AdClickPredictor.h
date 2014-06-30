@@ -74,6 +74,7 @@ public:
 
     bool load();
 
+    void save();
 private:
     std::string workingPath_;
     std::string dataPath_;

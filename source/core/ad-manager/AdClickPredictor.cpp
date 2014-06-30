@@ -155,6 +155,27 @@ bool AdClickPredictor::postProcess()
     return true;
 }
 
+void AdClickPredictor::save()
+{
+    readLock lock(rwMutex_);
+
+    std::ofstream ofs(modelPath_.c_str(), std::ios_base::binary);
+    if (!ofs)
+    {
+        LOG(ERROR) << "failed openning file " << modelPath_ << std::endl;
+        return;
+    }
+    try
+    {
+        predictor_->save_binary(ofs);
+    }
+    catch(const std::exception& e)
+    {
+        LOG(ERROR) << "exception in writing file " << e.what()
+                   << ", path: " << modelPath_ << std::endl;
+    }
+}
+
 bool AdClickPredictor::load()
 {
     std::ifstream ifs(modelPath_.c_str(), std::ios_base::binary);

@@ -143,6 +143,7 @@ void AdRecommender::save()
     std::size_t len = 0;
     char* buf = NULL;
     {
+        boost::shared_lock<boost::shared_mutex> lock(ad_latent_lock_);
         izenelib::util::izene_serialization<LatentVecContainerT> izs(ad_latent_vec_list_);
         izs.write_image(buf, len);
         ofs.write((const char*)&len, sizeof(len));
@@ -152,6 +153,7 @@ void AdRecommender::save()
     }
 
     {
+        boost::shared_lock<boost::shared_mutex> lock(user_latent_lock_);
         ofs.open(std::string(data_path_ + "/user_latent.data").c_str());
         len = 0;
         izenelib::util::izene_serialization<LatentVecContainerT> izs(user_feature_latent_vec_list_);
@@ -170,6 +172,7 @@ void AdRecommender::save()
         ofs.close();
     }
 
+    boost::shared_lock<boost::shared_mutex> lock(ad_feature_lock_);
     ofs.open(std::string(data_path_ + "/ad_feature_info.data").c_str());
     {
         len = 0;
@@ -300,7 +303,7 @@ void AdRecommender::getCombinedUserLatentVec(const std::vector<std::string>& lat
 
 // get the user latent by combined the features of the user.
 // Linear combined or non-linear combined both work. Some weighted can be considered.
-void AdRecommender::getCombinedUserLatentVec(const std::vector<LatentVecT*>& latentvec_list, LatentVecT& latent_vec)
+void AdRecommender::getCombinedUserLatentVec(const std::vector<LatentVecT>& latentvec_list, LatentVecT& latent_vec)
 {
     latent_vec.clear();
     latent_vec.resize(default_latent_.size(), 0);
@@ -308,7 +311,7 @@ void AdRecommender::getCombinedUserLatentVec(const std::vector<LatentVecT*>& lat
     {
         for(std::size_t j = 0; j < latent_vec.size(); ++j)
         {
-            latent_vec[j] += (*latentvec_list[i])[j];
+            latent_vec[j] += latentvec_list[i][j];
         }
     }
     for(std::size_t j = 0; j < latent_vec.size(); ++j)
@@ -320,7 +323,7 @@ void AdRecommender::getCombinedUserLatentVec(const std::vector<LatentVecT*>& lat
     }
 }
 
-void AdRecommender::getCombinedUserLatentVec(const std::vector<LatentVecT*>& latentvec_list,
+void AdRecommender::getCombinedUserLatentVec(const std::vector<LatentVecT>& latentvec_list,
     const std::vector<double>& weight_list, LatentVecT& latent_vec)
 {
     latent_vec.clear();
@@ -330,7 +333,7 @@ void AdRecommender::getCombinedUserLatentVec(const std::vector<LatentVecT*>& lat
         double w = weight_list[i];
         for(std::size_t j = 0; j < latent_vec.size(); ++j)
         {
-            latent_vec[j] += (*latentvec_list[i])[j] * w;
+            latent_vec[j] += latentvec_list[i][j] * w;
         }
     }
     for(std::size_t j = 0; j < latent_vec.size(); ++j)
@@ -461,73 +464,107 @@ void AdRecommender::update(const std::string& user_str_id,
     getUserLatentVecKeys(user_info, user_keys);
     std::vector<LatentVecT*> user_feature_latent_list;
 
-    boost::unique_lock<boost::shared_mutex> lock_user(user_latent_lock_);
-    for (size_t i = 0; i < user_keys.size(); ++i)
     {
-        std::pair<LatentVecContainerT::iterator, bool> it_pair = user_feature_latent_vec_list_.insert(std::make_pair(user_keys[i], default_latent_));
-        if (it_pair.second && !is_clicked)
+        boost::unique_lock<boost::shared_mutex> lock_user(user_latent_lock_);
+        for (size_t i = 0; i < user_keys.size(); ++i)
         {
-            // a new feature value
-            continue;
+            std::pair<LatentVecContainerT::iterator, bool> it_pair = user_feature_latent_vec_list_.insert(std::make_pair(user_keys[i], default_latent_));
+            if (it_pair.second && !is_clicked)
+            {
+                // a new feature value
+                continue;
+            }
+            LatentVecT& feature_latent = it_pair.first->second;
+            user_feature_latent_list.push_back(&feature_latent);
         }
-        LatentVecT& feature_latent = it_pair.first->second;
-        user_feature_latent_list.push_back(&feature_latent);
+    }
+
+    std::vector<LatentVecT> tmp_user_feature_latent_list(user_feature_latent_list.size());
+    for(std::size_t i = 0; i < user_feature_latent_list.size(); ++i)
+    {
+        tmp_user_feature_latent_list[i] = *(user_feature_latent_list[i]);
     }
 
     std::vector<std::string> ad_keys;
     std::vector<LatentVecT*> ad_feature_latent_list;
 
-    boost::unique_lock<boost::shared_mutex> lock_ad(ad_latent_lock_);
     {
-        boost::shared_lock<boost::shared_mutex> lock_feature(ad_feature_lock_);
-        getAdLatentVecKeys(ad_docid, ad_keys);
-        for(size_t i = 0; i < ad_keys.size(); ++i)
+        boost::unique_lock<boost::shared_mutex> lock_ad(ad_latent_lock_);
         {
-            std::pair<LatentVecContainerT::iterator, bool> it_pair = ad_latent_vec_list_.insert(std::make_pair(ad_keys[i], default_latent_));
-            ad_feature_latent_list.push_back(&(it_pair.first->second));
-            unviewed_items_.reset(ad_feature_value_id_list_[ad_keys[i]]);
+            boost::shared_lock<boost::shared_mutex> lock_feature(ad_feature_lock_);
+            getAdLatentVecKeys(ad_docid, ad_keys);
+            for(size_t i = 0; i < ad_keys.size(); ++i)
+            {
+                std::pair<LatentVecContainerT::iterator, bool> it_pair = ad_latent_vec_list_.insert(std::make_pair(ad_keys[i], default_latent_));
+                ad_feature_latent_list.push_back(&(it_pair.first->second));
+                unviewed_items_.reset(ad_feature_value_id_list_[ad_keys[i]]);
+            }
         }
+    }
+    std::vector<LatentVecT> tmp_ad_feature_latent_list(ad_feature_latent_list.size());
+    for(std::size_t i = 0; i < ad_feature_latent_list.size(); ++i)
+    {
+        tmp_ad_feature_latent_list[i] = *(ad_feature_latent_list[i]);
     }
 
     double gradient = learning_rate_;
     double new_max_norm = 0;
     if (!is_clicked)
         gradient = ratio_ * learning_rate_;
-    for (size_t k = 0; k < ad_feature_latent_list.size(); ++k)
+    for (size_t k = 0; k < tmp_ad_feature_latent_list.size(); ++k)
     {
-        LatentVecT& ad_latent = *(ad_feature_latent_list[k]);
+        LatentVecT& ad_latent = tmp_ad_feature_latent_list[k];
         LatentVecT combined_user_latent;
-        getCombinedUserLatentVec(user_feature_latent_list, combined_user_latent);
+        getCombinedUserLatentVec(tmp_user_feature_latent_list, combined_user_latent);
         for (size_t i = 0; i < ad_latent.size(); ++i)
         {
             ad_latent[i] += gradient * combined_user_latent[i];
             new_max_norm = std::max(new_max_norm, std::fabs(ad_latent[i]));
-            for (size_t j = 0; j < user_feature_latent_list.size(); ++j)
+            for (size_t j = 0; j < tmp_user_feature_latent_list.size(); ++j)
             {
                 //(*(user_feature_latent_list[j]))[i] += gradient*ad_latent[i]*combined_latent[i]/(*(user_feature_latent_list[j]))[i];
-                (*(user_feature_latent_list[j]))[i] += gradient*ad_latent[i];
-                new_max_norm = std::max(new_max_norm, std::fabs((*(user_feature_latent_list[j]))[i]));
+                tmp_user_feature_latent_list[j][i] += gradient*ad_latent[i];
+                new_max_norm = std::max(new_max_norm, std::fabs(tmp_user_feature_latent_list[j][i]));
             }
         }
     }
-    if (new_max_norm > MAX_NORM)
     {
-        // scale the vectors to obey the norm constrain.
-        double scale = MAX_NORM/new_max_norm;
-        for (LatentVecContainerT::iterator it = ad_latent_vec_list_.begin();
-            it != ad_latent_vec_list_.end(); ++it)
+        boost::unique_lock<boost::shared_mutex> lock_user(user_latent_lock_);
+        for(std::size_t i = 0; i < user_feature_latent_list.size(); ++i)
         {
-            for(size_t j = 0; j < it->second.size(); ++j)
+            tmp_user_feature_latent_list[i].swap(*(user_feature_latent_list[i]));
+        }
+        if (new_max_norm > MAX_NORM)
+        {
+            // scale the vectors to obey the norm constrain.
+            double scale = MAX_NORM/new_max_norm;
+            for (LatentVecContainerT::iterator it = user_feature_latent_vec_list_.begin();
+                it != user_feature_latent_vec_list_.end(); ++it)
             {
-                it->second[j] *= scale;
+                for (size_t j = 0; j < it->second.size(); ++j)
+                {
+                    it->second[j] *= scale; 
+                }
             }
         }
-        for (LatentVecContainerT::iterator it = user_feature_latent_vec_list_.begin();
-            it != user_feature_latent_vec_list_.end(); ++it)
+    }
+    {
+        boost::unique_lock<boost::shared_mutex> lock_ad(ad_latent_lock_);
+        for(std::size_t i = 0; i < ad_feature_latent_list.size(); ++i)
         {
-            for (size_t j = 0; j < it->second.size(); ++j)
+            tmp_ad_feature_latent_list[i].swap(*(ad_feature_latent_list[i]));
+        }
+        if (new_max_norm > MAX_NORM)
+        {
+            // scale the vectors to obey the norm constrain.
+            double scale = MAX_NORM/new_max_norm;
+            for (LatentVecContainerT::iterator it = ad_latent_vec_list_.begin();
+                it != ad_latent_vec_list_.end(); ++it)
             {
-                it->second[j] *= scale; 
+                for(size_t j = 0; j < it->second.size(); ++j)
+                {
+                    it->second[j] *= scale;
+                }
             }
         }
     }

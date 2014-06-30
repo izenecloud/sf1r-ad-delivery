@@ -236,15 +236,17 @@ void AdSelector::save()
 
     ad_segid_mgr_->flush();
 
-    boost::shared_lock<boost::shared_mutex> lock(ad_segid_mutex_);
-    std::ofstream ofs_segid_data(std::string(segments_data_path_ + "/ad_segid.data").c_str());
-    len = 0;
-    buf = NULL;
-    izenelib::util::izene_serialization<std::vector<std::vector<SegIdT> > > izs_segid_data(ad_segid_data_);
-    izs_segid_data.write_image(buf, len);
-    ofs_segid_data.write((const char*)&len, sizeof(len));
-    ofs_segid_data.write(buf, len);
-    ofs_segid_data.flush();
+    {
+        boost::shared_lock<boost::shared_mutex> lock(ad_segid_mutex_);
+        std::ofstream ofs_segid_data(std::string(segments_data_path_ + "/ad_segid.data").c_str());
+        len = 0;
+        buf = NULL;
+        izenelib::util::izene_serialization<std::vector<std::vector<SegIdT> > > izs_segid_data(ad_segid_data_);
+        izs_segid_data.write_image(buf, len);
+        ofs_segid_data.write((const char*)&len, sizeof(len));
+        ofs_segid_data.write(buf, len);
+        ofs_segid_data.flush();
+    }
 
     if (ad_feature_item_rec_)
         ad_feature_item_rec_->save();

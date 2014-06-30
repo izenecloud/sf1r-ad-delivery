@@ -197,6 +197,10 @@ void AdIndexManager::onAdStreamMessage(const std::vector<AdMessage>& msg_list)
                 ad_sponsored_mgr_->updateAuctionLogData(feedback_info.ad_id,
                     feedback_info.hit_bidstr,
                     feedback_info.click_cost*100, feedback_info.click_slot);
+                if (cnt % 100000 == 0)
+                {
+                    ad_sponsored_mgr_->save();
+                }
             }
         }
         if (adconfig_.enable_selector)
@@ -222,6 +226,12 @@ void AdIndexManager::onAdStreamMessage(const std::vector<AdMessage>& msg_list)
             {
                 ad_selector_->trainOnlineRecommender(feedback_info.user_id,
                     user_feature, feedback_info.ad_id, is_clicked);
+            }
+
+            if (cnt % 100000 == 0)
+            {
+                ad_selector_->save();
+                ad_click_predictor_->save();
             }
         }
     }
