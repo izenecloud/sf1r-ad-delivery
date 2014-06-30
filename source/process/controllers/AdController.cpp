@@ -83,7 +83,12 @@ void AdController::del_ad_bid_phrase()
         bid_phrase_list[i] = asString(o);
     }
 
-    miningSearchService_->delAdBidPhrase(asString(input[Keys::DOCID]), bid_phrase_list);
+    bool ret = miningSearchService_->delAdBidPhrase(asString(input[Keys::DOCID]), bid_phrase_list);
+    if (!ret)
+    {
+        response().addError("Request failed.");
+        return;
+    }
 }
 
 void AdController::update_online_status()

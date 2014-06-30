@@ -137,7 +137,7 @@ public:
     bool setAdCampaignBudget(const std::string& ad_campaign_name, double budget);
     bool updateAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list,
         const std::vector<int>& bid_price_list);
-    void delAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list);
+    bool delAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list);
     bool updateAdOnlineStatus(const std::vector<std::string>& ad_strid_list, const std::vector<bool>& is_online_list);
 
 private:

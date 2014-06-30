@@ -202,12 +202,12 @@ bool MiningSearchService::updateAdBidPhrase(const std::string& ad_strid,
     return miningManager_->getAdIndexManager()->updateAdBidPhrase(ad_strid, bid_phrase_list, bid_price_list);
 }
 
-void MiningSearchService::delAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list)
+bool MiningSearchService::delAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list)
 {
     if (!miningManager_->getAdIndexManager())
     {
         LOG(WARNING) << "ad manager not enabled.";
-        return;
+        return false;
     }
 
     return miningManager_->getAdIndexManager()->delAdBidPhrase(ad_strid, bid_phrase_list);

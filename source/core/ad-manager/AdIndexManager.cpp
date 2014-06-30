@@ -443,11 +443,11 @@ bool AdIndexManager::updateAdOnlineStatus(const std::vector<std::string>& ad_str
     return true;
 }
 
-void AdIndexManager::delAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list)
+bool AdIndexManager::delAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list)
 {
     if (!ad_sponsored_mgr_)
-        return;
-    ad_sponsored_mgr_->delAdBidPhrase(ad_strid, bid_phrase_list);
+        return false;
+    return ad_sponsored_mgr_->delAdBidPhrase(ad_strid, bid_phrase_list);
 }
 
 bool AdIndexManager::updateAdBidPhrase(const std::string& ad_strid, const std::vector<std::string>& bid_phrase_list,
@@ -455,8 +455,7 @@ bool AdIndexManager::updateAdBidPhrase(const std::string& ad_strid, const std::v
 {
     if (!ad_sponsored_mgr_)
         return false;
-    ad_sponsored_mgr_->updateAdBidPhrase(ad_strid, bid_phrase_list, bidprice_list);
-    return true;
+    return ad_sponsored_mgr_->updateAdBidPhrase(ad_strid, bid_phrase_list, bidprice_list);
 }
 
 } //namespace sf1r
