@@ -130,7 +130,7 @@ std::vector<std::pair<int, double> > AdBidStrategy::convexUniformBid( const std:
 
     if (allPoints.empty())
     {
-        std::vector<std::pair<int, double> > minBID_(qsInfos.front().minBid_, std::make_pair(0, 0.5));
+        std::vector<std::pair<int, double> > minBID_(2, std::make_pair(qsInfos.front().minBid_, 0.5));
         return minBID_;
     }
 
