@@ -23,11 +23,13 @@ public:
     SlimRecommend(laser::AdIndexManager* index,
                   laser::Tokenizer* tok,
                   std::vector<std::vector<int> > & similar_cluster,
+                  std::vector<std::vector<int> > & similar_tareid,
                   boost::shared_mutex & rw_mutex,
                   LaserManager * laser)
         : indexManager_(index),
           tokenizer_(tok),
           _similar_cluster(similar_cluster),
+          _similar_tareid(similar_tareid),
           _rw_mutex(rw_mutex),
           laser_(laser)
     {
@@ -47,6 +49,7 @@ private:
     laser::AdIndexManager* indexManager_;
     laser::Tokenizer* tokenizer_;
     std::vector<std::vector<int> > & _similar_cluster;
+    std::vector<std::vector<int> > & _similar_tareid;
 
     boost::shared_mutex & _rw_mutex;
 

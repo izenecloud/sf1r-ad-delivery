@@ -23,9 +23,11 @@ bool SlimRecommend::recommend(const std::string & title,
             clusters.push_back(clusterID);
         }
 
-        for (int i = 0; i != (int)_similar_cluster[clusterID].size(); ++i) {
-            if (_similar_cluster[clusterID][i] != (int)_similar_cluster.size() - 1) {
-                clusters.push_back(_similar_cluster[clusterID][i]);
+        if (clusterID >= 0 && clusterID < (int)_similar_cluster.size()) {
+            for (int i = 0; i != (int)_similar_cluster[clusterID].size(); ++i) {
+                if (_similar_cluster[clusterID][i] != (int)_similar_cluster.size() - 1) {
+                    clusters.push_back(_similar_cluster[clusterID][i]);
+                }
             }
         }
 
@@ -46,6 +48,10 @@ bool SlimRecommend::recommend(const std::string & title,
             }
         }
 
+        if (queue.empty()) {
+            return false;
+        }
+
         while (!queue.empty()) {
             itemList.push_back(queue.top().first);
             queue.pop();
@@ -53,18 +59,22 @@ bool SlimRecommend::recommend(const std::string & title,
 
         return true;
     } else if (id != -1) {
+        if (id < 0 || id >= (int)_similar_tareid.size()) {
+            return false;
+        }
 
+        if (_similar_tareid[id].empty()) {
+            return false;
+        }
+
+        for (int i = 0; i != (int)_similar_tareid[id].size(); ++i) {
+            itemList.push_back(_similar_tareid[id][i]);
+        }
+
+        return true;
     } else {
-        // error
+        return false;
     }
-
-    // for (int i = 0; i != (int)_similar_cluster.size(); ++i) {
-    //     if (!_similar_cluster[i].empty()) {
-    //         std::cout << i << std::endl;
-    //     }
-    // }
-
-    return true;
 }
 
 void SlimRecommend::topN(boost::unordered_map<int, float> & title_vec,

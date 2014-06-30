@@ -20,10 +20,14 @@ public:
             std::string method;
             req.method().convert(&method);
 
-            if (method == "add_feedback") {
+            if (method == "add_feedback_title") {
                 msgpack::type::tuple<std::string, std::string> params;
                 req.params().convert(&params);
-                add_feedback(req, params.get<0>(), params.get<1>());
+                add_feedback_title(req, params.get<0>(), params.get<1>());
+            } else if (method == "add_feedback_tareid") {
+                msgpack::type::tuple<std::string, int> params;
+                req.params().convert(&params);
+                add_feedback_tareid(req, params.get<0>(), params.get<1>());
             } else if (method == "train") {
                 msgpack::type::tuple<int, int> params;
                 req.params().convert(&params);
@@ -43,9 +47,20 @@ public:
         }
     }
 
-    void add_feedback(msgpack::rpc::request req, const std::string & user, const std::string & item) {
+    void add_feedback_title(msgpack::rpc::request req,
+                            const std::string & user,
+                            const std::string & title)
+    {
         req.result(true);
-        _learner.add_feedback(user, item);
+        _learner.add_feedback_title(user, title);
+    }
+
+    void add_feedback_tareid(msgpack::rpc::request req,
+                             const std::string & user,
+                             int tareid)
+    {
+        req.result(true);
+        _learner.add_feedback_tareid(user, tareid);
     }
 
     void train(msgpack::rpc::request req, int thread_num, int top_n) {

@@ -38,6 +38,7 @@ private:
 
     slim::SlimRpcServer* rpcServer_;
     std::vector<std::vector<int> > _similar_cluster;
+    std::vector<std::vector<int> > _similar_tareid;
 
     boost::shared_mutex _rw_mutex;
 };
