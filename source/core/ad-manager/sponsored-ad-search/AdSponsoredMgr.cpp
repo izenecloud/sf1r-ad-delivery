@@ -541,7 +541,10 @@ void AdSponsoredMgr::miningAdCreatives(ad_docid_t start_id, ad_docid_t end_id)
                     catch(const std::exception& e){}
                 }
             }
-            manual_bidinfo_mgr_.setManualBidPrice(campaign, adid, ad_processed_bid_phrase_strlist, priceint_list);
+            if (!bidprice_str.empty())
+            {
+                manual_bidinfo_mgr_.setManualBidPrice(campaign, adid, ad_processed_bid_phrase_strlist, priceint_list);
+            }
             new_orig_bidstr_list[i].swap(ad_bid_phrase_strlist);
         }
         else
@@ -864,6 +867,7 @@ void AdSponsoredMgr::resetDailyLogStatisticalData(bool reset_used,
     LOG(INFO) << "compute ad ctr finished.";
     std::ofstream bid_price_file(std::string(data_path_ + "/bid_price.txt").c_str());
 
+    int auto_cnt = 0;
     // recompute the bid strategy.
     if (bid_strategy_type_ == UniformBid)
     {
@@ -879,6 +883,7 @@ void AdSponsoredMgr::resetDailyLogStatisticalData(bool reset_used,
                 continue;
             }
 
+            ++auto_cnt;
             // because the budget may change every hour, 
             // the daily budget should be computed to reflect the change.
             ad_daily_budget = (manual_bidinfo_mgr_.getBidBudget(new_campaign_name_list[i]) - ad_budget_used_list_[i])/left_ratio;
@@ -911,6 +916,7 @@ void AdSponsoredMgr::resetDailyLogStatisticalData(bool reset_used,
                 continue;
             }
 
+            ++auto_cnt;
             const CampaignBidStrListT& bidstr_list = new_campaign_bid_phrase_list[i];
             std::map<std::string, int> manual_bidprice_list;
             //manual_bidinfo_mgr_.getManualBidPriceList(ad_campaign_name_list_[i], manual_bidprice_list);
@@ -937,7 +943,7 @@ void AdSponsoredMgr::resetDailyLogStatisticalData(bool reset_used,
         // realtime bid.
     }
     bid_price_file.close();
-    LOG(INFO) << "end compute auto bid strategy.";
+    LOG(INFO) << "end compute auto bid strategy. total auto campaign: " << auto_cnt;
 }
 
 bool AdSponsoredMgr::updateAdOnlineStatus(const std::vector<std::string>& ad_strid_list, const std::vector<bool>& is_online_list)
