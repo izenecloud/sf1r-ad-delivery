@@ -158,7 +158,7 @@ void AdSelector::init(const std::string& res_path,
     if (enable_rec)
     {
         ad_feature_item_rec_.reset(new AdRecommender());
-        ad_feature_item_rec_->init(rec_data_path_, true);
+        ad_feature_item_rec_->init(rec_data_path_, false);
     }
 }
 

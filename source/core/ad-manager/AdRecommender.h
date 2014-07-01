@@ -130,9 +130,12 @@ private:
     void getCombinedUserLatentVec(const std::vector<std::string>& latentvec_keys, LatentVecT& latent_vec);
     void getCombinedUserLatentVec(const std::vector<std::string>& latentvec_keys,
         const std::vector<double>& weight_list, LatentVecT& latent_vec);
-    void getCombinedUserLatentVec(const std::vector<LatentVecT>& latentvec_list, LatentVecT& latent_vec);
+    void getCombinedUserLatentVec(const std::vector<LatentVecT>& latentvec_list,
+        LatentVecT& latent_vec, std::size_t k);
     void getCombinedUserLatentVec(const std::vector<LatentVecT>& latentvec_list,
         const std::vector<double>& weight_list, LatentVecT& latent_vec);
+    void getCombinedUserLatentVec(const std::vector<std::string>& latentvec_keys,
+        LatentVecT& latent_vec, std::size_t k);
 
     std::string data_path_;
     bool use_ad_feature_;

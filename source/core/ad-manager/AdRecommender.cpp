@@ -213,15 +213,21 @@ void AdRecommender::updateAdFeatures(const std::string& ad_docid, const std::vec
     boost::unique_lock<boost::shared_mutex> lock(ad_feature_lock_);
     std::set<uint32_t>& ad_feature_id_list = ad_features_map_[ad_docid];
     ad_feature_id_list.clear();
-    for (std::size_t i = 0; i < features.size(); ++i)
+    std::vector<std::string> expand_features = features;
+    if (!use_ad_feature_ || features.empty())
+    {
+        expand_features.push_back(ad_docid);
+    }
+    for (std::size_t i = 0; i < expand_features.size(); ++i)
     {
         uint32_t id = 0;
-        boost::unordered_map<std::string, uint32_t>::iterator it = ad_feature_value_id_list_.find(features[i]);
+        const std::string& feature_str = expand_features[i];
+        boost::unordered_map<std::string, uint32_t>::iterator it = ad_feature_value_id_list_.find(feature_str);
         if (it == ad_feature_value_id_list_.end())
         {
             id = ad_feature_value_list_.size();
-            ad_feature_value_list_.push_back(features[i]);
-            ad_feature_value_id_list_[features[i]] = id;
+            ad_feature_value_list_.push_back(feature_str);
+            ad_feature_value_id_list_[feature_str] = id;
             unviewed_items_.set(id);
         }
         else
@@ -278,6 +284,22 @@ void AdRecommender::getCombinedUserLatentVec(const std::vector<std::string>& lat
     }
 }
 
+void AdRecommender::getCombinedUserLatentVec(const std::vector<std::string>& latentvec_keys,
+    LatentVecT& latent_vec, std::size_t k)
+{
+    for (std::size_t i = 0; i < latentvec_keys.size(); ++i)
+    {
+        LatentVecContainerT::const_iterator it = user_feature_latent_vec_list_.find(latentvec_keys[i]);
+        if (it == user_feature_latent_vec_list_.end())
+            continue;
+        latent_vec[k] += it->second[k];
+    }
+    if (latentvec_keys.size() == 0)
+        latent_vec[k] = 1;
+    else
+        latent_vec[k] /= latentvec_keys.size();
+}
+
 void AdRecommender::getCombinedUserLatentVec(const std::vector<std::string>& latentvec_keys, LatentVecT& latent_vec)
 {
     latent_vec.clear();
@@ -303,24 +325,17 @@ void AdRecommender::getCombinedUserLatentVec(const std::vector<std::string>& lat
 
 // get the user latent by combined the features of the user.
 // Linear combined or non-linear combined both work. Some weighted can be considered.
-void AdRecommender::getCombinedUserLatentVec(const std::vector<LatentVecT>& latentvec_list, LatentVecT& latent_vec)
+void AdRecommender::getCombinedUserLatentVec(const std::vector<LatentVecT>& latentvec_list,
+    LatentVecT& latent_vec, std::size_t k)
 {
-    latent_vec.clear();
-    latent_vec.resize(default_latent_.size(), 0);
     for (std::size_t i = 0; i < latentvec_list.size(); ++i)
     {
-        for(std::size_t j = 0; j < latent_vec.size(); ++j)
-        {
-            latent_vec[j] += latentvec_list[i][j];
-        }
+        latent_vec[k] += latentvec_list[i][k];
     }
-    for(std::size_t j = 0; j < latent_vec.size(); ++j)
-    {
-        if (latentvec_list.size() == 0)
-            latent_vec[j] = 1;
-        else
-            latent_vec[j] /= latentvec_list.size();
-    }
+    if (latentvec_list.size() == 0)
+        latent_vec[k] = 1;
+    else
+        latent_vec[k] /= latentvec_list.size();
 }
 
 void AdRecommender::getCombinedUserLatentVec(const std::vector<LatentVecT>& latentvec_list,
@@ -452,12 +467,12 @@ void AdRecommender::update(const std::string& user_str_id,
     {
         clicked_num_++;
     }
-    if (impression_num_ % 1000 == 0)
+    if (impression_num_ % 10000 == 0)
     {
         learning_rate_ = 1/(double)clicked_num_;
         ratio_ = -1*SMOOTH*(double)clicked_num_/(double)(impression_num_ - clicked_num_) + (1 - SMOOTH)*ratio_;
-        //LOG(INFO) << " impression_num_ : " << impression_num_ << ", clicked_num_: " << clicked_num_
-        //    << ", ratio_ : " << ratio_;
+        LOG(INFO) << " impression_num_ : " << impression_num_ << ", clicked_num_: " << clicked_num_
+            << ", ratio_ : " << ratio_;
     }
 
     std::vector<std::string> user_keys;
@@ -511,20 +526,22 @@ void AdRecommender::update(const std::string& user_str_id,
     double new_max_norm = 0;
     if (!is_clicked)
         gradient = ratio_ * learning_rate_;
-    for (size_t k = 0; k < tmp_ad_feature_latent_list.size(); ++k)
+    for (size_t i = 0; i < tmp_ad_feature_latent_list.size(); ++i)
     {
-        LatentVecT& ad_latent = tmp_ad_feature_latent_list[k];
-        LatentVecT combined_user_latent;
-        getCombinedUserLatentVec(tmp_user_feature_latent_list, combined_user_latent);
-        for (size_t i = 0; i < ad_latent.size(); ++i)
+        LatentVecT& ad_latent = tmp_ad_feature_latent_list[i];
+        LatentVecT combined_user_latent(default_latent_.size(), 0);
+        for (size_t j = 0; j < tmp_user_feature_latent_list.size(); ++j)
         {
-            ad_latent[i] += gradient * combined_user_latent[i];
-            new_max_norm = std::max(new_max_norm, std::fabs(ad_latent[i]));
-            for (size_t j = 0; j < tmp_user_feature_latent_list.size(); ++j)
+            LatentVecT& user_latent = tmp_user_feature_latent_list[j];
+            assert(ad_latent.size() == user_latent.size());
+            for (size_t k = 0; k < ad_latent.size(); ++k)
             {
-                //(*(user_feature_latent_list[j]))[i] += gradient*ad_latent[i]*combined_latent[i]/(*(user_feature_latent_list[j]))[i];
-                tmp_user_feature_latent_list[j][i] += gradient*ad_latent[i];
-                new_max_norm = std::max(new_max_norm, std::fabs(tmp_user_feature_latent_list[j][i]));
+                getCombinedUserLatentVec(tmp_user_feature_latent_list, combined_user_latent, k);
+                ad_latent[k] += gradient * combined_user_latent[k];
+                user_latent[k] += gradient*ad_latent[k]*(combined_user_latent[k]/user_latent[k]);
+                //user_latent[k] += gradient*ad_latent[k];
+                new_max_norm = std::max(new_max_norm, std::fabs(ad_latent[k]));
+                new_max_norm = std::max(new_max_norm, std::fabs(user_latent[k]));
             }
         }
     }
@@ -590,6 +607,18 @@ void AdRecommender::dumpUserLatent()
         }
         ofs << std::endl;
     }
+    ofs << "dumped ad latent: " << std::endl;
+    for (LatentVecContainerT::const_iterator it = ad_latent_vec_list_.begin();
+        it != ad_latent_vec_list_.end(); ++it)
+    {
+        ofs << "key: " << it->first << ", latent vector: ";
+        for (size_t i = 0; i < it->second.size(); ++i)
+        {
+            ofs << it->second[i] << ",";
+        }
+        ofs << std::endl;
+    }
+
     ofs.flush();
 }
 

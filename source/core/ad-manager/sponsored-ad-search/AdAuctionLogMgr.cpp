@@ -17,7 +17,7 @@ namespace bfs = boost::filesystem;
 namespace sf1r { namespace sponsored {
 
 static const int MAX_AD_SLOT = 20;
-static const double DEFAULT_AD_CTR = 0.001;
+static const double DEFAULT_AD_CTR = 0.006;
 static const int DEFAULT_CLICK_COST = 5;
 
 static const int MIN_SEARCH_NUM = 1000;
@@ -96,11 +96,6 @@ static int getCurrentDayEnd()
 static std::string getHistoryTimeStr()
 {
     return gettimestr(0 - RECENT_HOURS);
-}
-
-static bool isRecent(const std::string& timestr)
-{
-    return true;
 }
 
 inline uint32_t getHashIndex(const std::string& key)
@@ -182,7 +177,7 @@ void AdAuctionLogMgr::load()
         int num = ad_stat_data_.load_factor() * ad_stat_data_.bucket_count();
         ad_stat_data_.rehash(std::max(num*2, DEFAULT_AD_BUCKET));
     }
-    else if (ad_stat_data_.bucket_count() < DEFAULT_AD_BUCKET)
+    else if (ad_stat_data_.bucket_count() < (std::size_t)DEFAULT_AD_BUCKET)
     {
         ad_stat_data_.rehash(DEFAULT_AD_BUCKET);
     }
@@ -192,7 +187,7 @@ void AdAuctionLogMgr::load()
         int num = keyword_stat_data_.load_factor() * keyword_stat_data_.bucket_count();
         keyword_stat_data_.rehash(std::max(num*2, DEFAULT_KEYWORD_BUCKET));
     }
-    else if (keyword_stat_data_.bucket_count() < DEFAULT_KEYWORD_BUCKET)
+    else if (keyword_stat_data_.bucket_count() < (std::size_t)DEFAULT_KEYWORD_BUCKET)
     {
         keyword_stat_data_.rehash(DEFAULT_KEYWORD_BUCKET);
     }
@@ -345,7 +340,7 @@ void AdAuctionLogMgr::updateAuctionLogData(const std::string& ad_id, const std::
 void AdAuctionLogMgr::updateHistoryGlobalLogData()
 {
     GlobalInfo history_ginfo;
-    for (std::size_t i = 1; i <= HISTORY_HOURS; ++i)
+    for (std::size_t i = 1; i <= (std::size_t)HISTORY_HOURS; ++i)
     {
         std::string timestr = gettimestr(0 - i);
         GlobalInfoPeriodListT::const_iterator period_it = global_stat_data_.find(timestr);
@@ -370,7 +365,7 @@ void AdAuctionLogMgr::updateHistoryGlobalLogData()
 void AdAuctionLogMgr::updateHistoryAdLogData(const std::string& adid, const AdViewInfoPeriodListT& ad_period_info)
 {
     AdViewInfoT history_adview;
-    for (std::size_t i = 1; i <= HISTORY_HOURS; ++i)
+    for (std::size_t i = 1; i <= (std::size_t)HISTORY_HOURS; ++i)
     {
         std::string timestr = gettimestr(0 - i);
         AdViewInfoPeriodListT::const_iterator period_it = ad_period_info.find(timestr);
@@ -408,7 +403,7 @@ void AdAuctionLogMgr::updateHistoryAdLogData(const std::string& adid, const AdVi
 void AdAuctionLogMgr::updateHistoryKeywordLogData(const std::string& kid, const KeywordViewInfoPeriodListT& keyword_period_info)
 {
     KeywordViewInfo history_keyview;
-    for (std::size_t i = 1; i <= HISTORY_HOURS; ++i)
+    for (std::size_t i = 1; i <= (std::size_t)HISTORY_HOURS; ++i)
     {
         std::string timestr = gettimestr(0 - i);
         KeywordViewInfoPeriodListT::const_iterator period_it = keyword_period_info.find(timestr);
