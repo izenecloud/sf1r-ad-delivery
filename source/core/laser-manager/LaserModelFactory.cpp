@@ -19,9 +19,11 @@ LaserModel* LaserModelFactory::createModel(const LaserPara& para,
     const std::string& workdir) const
 {
     LOG(INFO)<<"Create Laser model for type = "<<para.modelType;
+    const docid_t adDimension = adIndexer_.getLastDocId();
+    const std::size_t clusteringDimension = similarClustering_.size();
     if ("LaserGenericModel" == para.modelType)
     {
-        return new LaserGenericModel(adIndexer_, para.kvaddr, para.kvport, para.mqaddr, para.mqport, workdir);
+        return new LaserGenericModel(adIndexer_, para.kvaddr, para.kvport, para.mqaddr, para.mqport, workdir, adDimension);
     }
     else if ("TopnClusteringModel" == para.modelType)
     {
@@ -29,7 +31,7 @@ LaserModel* LaserModelFactory::createModel(const LaserPara& para,
     }
     else if ("HierarchicalModel" == para.modelType)
     {
-        return new HierarchicalModel(adIndexer_, para.kvaddr, para.kvport, para.mqaddr, para.mqport, workdir);
+        return new HierarchicalModel(adIndexer_, para.kvaddr, para.kvport, para.mqaddr, para.mqport, workdir, adDimension, clusteringDimension);
     }
     LOG(ERROR)<<"No Laser model for type = "<<para.modelType<<", LaserRecommend stays unavailable.";
     return NULL;

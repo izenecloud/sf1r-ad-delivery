@@ -10,7 +10,9 @@ public:
         const int kvport,
         const std::string& mqaddr,
         const int mqport,
-        const std::string& workdir);
+        const std::string& workdir,
+        const std::size_t adDimension,
+        const std::size_t clusteringDimension);
     ~HierarchicalModel();
 public:
     virtual bool candidate(
@@ -26,7 +28,8 @@ private:
     void updatepClusteringDb(msgpack::rpc::request& req);
 private:
     const std::string workdir_;
-    LaserModelDB<std::size_t, LaserOnlineModel>* pClusteringDb_;
+    const std::size_t clusteringDimension_;
+    std::vector<LaserOnlineModel>* pClusteringDb_;
 };
 } }
 #endif

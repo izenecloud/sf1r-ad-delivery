@@ -3,6 +3,7 @@
 #include "LaserModel.h"
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/serialization.hpp>
+#include <3rdparty/msgpack/msgpack.hpp>
 namespace sf1r { namespace laser {
 
 class LaserOnlineModel : public LaserModel 
@@ -17,6 +18,7 @@ public:
         , eta_(eta)
     {
     }
+    MSGPACK_DEFINE(delta_, eta_);
 
 public:
     virtual bool candidate(

@@ -6,6 +6,7 @@ namespace sf1r { namespace laser {
 class AdIndexManager;
 class LaserOnlineModel;
 class LaserOfflineModel;
+template <typename V> class LaserModelContainer;
 
 namespace context {
 class KVClient;
@@ -20,7 +21,8 @@ public:
         const int kvport,
         const std::string& mqaddr,
         const int mqport,
-        const std::string& workdir);
+        const std::string& workdir,
+        const std::size_t maxDocid);
     ~LaserGenericModel();
 
 public:
@@ -41,13 +43,17 @@ public:
 
     virtual void dispatch(const std::string& method, msgpack::rpc::request& req);
 
+    virtual void updateAdDimension(const std::size_t adDimension);
 private:
     void updatepAdDb(msgpack::rpc::request& req);
     void updateOfflineModel(msgpack::rpc::request& req);
+    void load();
+    void save();
 protected:
     const AdIndexManager& adIndexer_;
     const std::string workdir_;
-    LaserModelDB<docid_t, LaserOnlineModel>* pAdDb_;
+    std::size_t adDimension_;
+    std::vector<LaserOnlineModel>* pAdDb_;
     LaserOfflineModel* offlineModel_;
     context::KVClient* kvclient_;
     context::MQClient* mqclient_;

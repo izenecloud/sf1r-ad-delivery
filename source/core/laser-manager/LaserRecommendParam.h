@@ -8,7 +8,7 @@ namespace laser
 class LaserRecommendParam
 {
 public:
-    std::string uuid_;
+    std::string text_;
     unsigned topN_;
 };
 }

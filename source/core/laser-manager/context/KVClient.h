@@ -13,7 +13,11 @@ public:
 public:
     bool context(const std::string& text, std::vector<std::pair<int, float> >& context) const
     {
-        return false;
+        for (std::size_t i = 0; i < 200; ++i)
+        {
+            context.push_back(std::make_pair(i, (rand() % 100) / 100.0));
+        }
+        return true;
     }
 
     void shutdown()

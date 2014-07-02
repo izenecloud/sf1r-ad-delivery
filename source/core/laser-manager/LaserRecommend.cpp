@@ -3,6 +3,7 @@
 #include "LaserModelFactory.h"
 #include "LaserManager.h"
 #include <glog/logging.h>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 
 namespace sf1r { namespace laser {
@@ -36,30 +37,30 @@ bool LaserRecommend::recommend(const std::string& text,
     std::vector<float>& itemScoreList, 
     const std::size_t num) const
 {
-    for (std::size_t i = 1; i < 3; ++i)
-    {
-        itemList.push_back(i);
-        itemScoreList.push_back(1.0);
-    }
-    return true;
     std::vector<std::pair<int, float> > context;
     if (!model_->context(text, context))
     {
         return false;
     }
-
+    boost::posix_time::ptime stime = boost::posix_time::microsec_clock::local_time();
     std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > > ad;
     std::vector<float> score;
     if (!model_->candidate(text, 1000, context, ad, score))
     {
         return false;
     }
-
+    boost::posix_time::ptime etime = boost::posix_time::microsec_clock::local_time();
+    LOG(INFO)<<"candidate time = "<<(etime-stime).total_milliseconds()<<"\t ad size = "<<ad.size();
+   
     priority_queue queue;
+    stime = boost::posix_time::microsec_clock::local_time();
     for (std::size_t i = 0; i < ad.size(); ++i)
     {
-        topn(ad[i].first, model_->score(text, context,  ad[i], score[i]), num, queue);   
+        //topn(ad[i].first, model_->score(text, context,  ad[i], score[i]), num, queue);   
+        model_->score(text, context,  ad[i], score[i]);   
     }
+    etime = boost::posix_time::microsec_clock::local_time();
+    LOG(INFO)<<"score time = "<<(etime-stime).total_milliseconds();
     {
         while (!queue.empty())
         {

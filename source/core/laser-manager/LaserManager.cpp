@@ -103,15 +103,17 @@ bool LaserManager::recommend(const LaserRecommendParam& param,
 {
     std::vector<docid_t> docIdList;
     std::vector<float> itemScoreList;
-    if (!recommend_->recommend(param.uuid_, docIdList, itemScoreList, param.topN_))
+    LOG(INFO)<<"recommend_";
+    if (!recommend_->recommend(param.text_, docIdList, itemScoreList, param.topN_))
     {
-        res.error_ = "Internal ERROR in Recommend Engine, no data for uuid: " + param.uuid_;;
+        res.error_ = "Internal ERROR in Recommend Engine, no data for : " + param.text_;;
         return false;
     }
     for (std::size_t i = 0; i < docIdList.size(); ++i)
     {
         actionItem.idList_.push_back(docIdList[i]);
     }
+    LOG(INFO)<<"recommend finish";
     adSearchService_->getDocumentsByIds(actionItem, res);
     res.score_.swap(itemScoreList);
     return true;

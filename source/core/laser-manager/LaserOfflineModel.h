@@ -6,7 +6,8 @@ namespace sf1r { namespace laser {
 class LaserOfflineModel : public LaserModel 
 {
 public:
-    LaserOfflineModel(const std::string& filename);
+    LaserOfflineModel(const std::string& filename, 
+        const std::size_t adDimension);
     ~LaserOfflineModel();
 public:
     virtual bool candidate(
@@ -21,6 +22,11 @@ public:
         const std::pair<docid_t, std::vector<std::pair<int, float> > >& ad,
         const float score) const;
     
+    virtual void updateAdDimension(const std::size_t adDimension)
+    {
+        adDimension_ = adDimension;
+    }
+    
     virtual void dispatch(const std::string& method, msgpack::rpc::request& req)
     {
     }
@@ -32,26 +38,29 @@ public:
     
     void setAlpha(std::vector<float>& alpha)
     {
-        alpha_.swap(alpha);
+        alpha_->swap(alpha);
     }
 
     void setBeta(std::vector<float>& beta)
     {
-        beta_.swap(beta);
+        beta_->swap(beta);
     }
     
     void setQuadratic(std::vector<std::vector<float> >& quadratic)
     {
-        quadratic_.swap(quadratic);
+        quadratic_->swap(quadratic);
     }
     
     void save();
     void load();
 private:
     const std::string filename_;
-    std::vector<float> alpha_;
-    std::vector<float> beta_;
-    std::vector<std::vector<float> > quadratic_;
+    std::size_t adDimension_;
+    std::vector<float>* alpha_;
+    std::vector<float>* beta_;
+    std::vector<float>* betaStable_;
+    std::vector<std::vector<float> >* quadratic_;
+    std::vector<std::vector<float> >* quadraticStable_;
 };
 } }
 #endif

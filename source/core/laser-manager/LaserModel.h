@@ -41,6 +41,10 @@ public:
 
     virtual bool context(const std::string& text, std::vector<std::pair<int, float> >& context) const = 0;
     virtual void dispatch(const std::string& method, msgpack::rpc::request& req) = 0;
+
+    virtual void updateAdDimension(const std::size_t adDimension)
+    {
+    }
 };
 } }
 #endif

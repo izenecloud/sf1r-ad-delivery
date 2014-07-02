@@ -81,7 +81,6 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
             req.error(msgpack::rpc::ARGUMENT_ERROR);
             return;
         }
-        
         boost::shared_lock<boost::shared_mutex> sharedLock(mutex_);
         const LaserManager* laserManager = get(collection);
         if (NULL == laserManager)
