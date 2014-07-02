@@ -28,10 +28,10 @@ namespace sf1r
 namespace sponsored
 {
 
-static const int MAX_BIDPHRASE_LEN = 3;
+static const int MAX_BIDPHRASE_LEN = 5;
 static const int MAX_DIFF_BID_KEYWORD_NUM = 1000000;
 static const int MAX_RANKED_AD_NUM = 20;
-static const int LOWEST_CLICK_COST = 10;
+static const int LOWEST_CLICK_COST = 40;
 static const int DEFAULT_AD_BUDGET = 1000;
 static const double MIN_AD_SCORE = 1e-6;
 
@@ -1375,6 +1375,10 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
             for(std::size_t j = 0; j < bidphrase_list.size(); ++j)
             {
                 bool missed = false;
+                if (bidphrase_list[j].size() <= best_match_size)
+                {
+                    continue;
+                }
                 for(std::size_t k = 0; k < bidphrase_list[j].size(); ++k)
                 {
                     //std::cout << bidphrase[j] << ",";
@@ -1388,11 +1392,8 @@ bool AdSponsoredMgr::sponsoredAdSearch(const SearchKeywordOperation& actionOpera
                 }
                 if (!missed)
                 {
-                    if (bidphrase_list[j].size() > best_match_size)
-                    {
-                        best_match_size = bidphrase_list[j].size();
-                        best_match_index = j;
-                    }
+                    best_match_size = bidphrase_list[j].size();
+                    best_match_index = j;
                 }
             }
             t1_total += t1.elapsed();

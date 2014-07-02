@@ -58,6 +58,7 @@ AdRecommender::~AdRecommender()
 
 void AdRecommender::init(const std::string& data_path, bool use_ad_feature)
 {
+    srand(time(NULL));
     clicked_num_ = 1;
     impression_num_ = 1000;
     data_path_ = data_path;

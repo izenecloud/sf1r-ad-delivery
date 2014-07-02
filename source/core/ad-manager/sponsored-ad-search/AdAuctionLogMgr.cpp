@@ -17,8 +17,8 @@ namespace bfs = boost::filesystem;
 namespace sf1r { namespace sponsored {
 
 static const int MAX_AD_SLOT = 20;
-static const double DEFAULT_AD_CTR = 0.006;
-static const int DEFAULT_CLICK_COST = 5;
+static const double DEFAULT_AD_CTR = 0.003;
+static const int DEFAULT_CLICK_COST = 50;
 
 static const int MIN_SEARCH_NUM = 1000;
 
