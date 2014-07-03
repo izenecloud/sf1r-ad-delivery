@@ -59,6 +59,11 @@ public:
         std::vector<int>& index, 
         std::vector<float>& value) const;
 
+    void updateAdDimension(const std::size_t adDimension) 
+    {
+        recommend_->updateAdDimension(adDimension);
+    }
+
     const std::vector<std::vector<float> >& getClustering() const
     {
         return *clusteringContainer_;
@@ -77,6 +82,7 @@ private:
     friend class laser::LaserRpcServer;
     friend class laser::LaserRecommend;
     friend class laser::LaserModelFactory;
+    friend class laser::AdIndexManager;
 private:
     const std::string collection_;
     const std::string workdir_;

@@ -58,7 +58,7 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
     
     indexManager_ = new laser::AdIndexManager(workdir_, 
         isNeedClustering,
-        documentManager_);
+        this);
     recommend_ = new LaserRecommend(this);
     // delete by TaskBuilder
     indexTask_ = new LaserIndexTask(this);

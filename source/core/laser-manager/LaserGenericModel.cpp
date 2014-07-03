@@ -2,11 +2,53 @@
 #include "LaserOnlineModel.h"
 #include "LaserOfflineModel.h"
 #include "AdIndexManager.h"
+#include "SparseVector.h"
 #include "context/KVClient.h"
 #include "context/MQClient.h"
-#include "LaserModelContainer.h"
 
 namespace sf1r { namespace laser {
+
+class OfflineStable
+{
+public:
+    float betaStable() const
+    {
+        return betaStable_;
+    }
+
+    const std::vector<float>& quadraticStable() const
+    {
+        return quadraticStable_;
+    }
+    MSGPACK_DEFINE(betaStable_, quadraticStable_);
+private:
+    float betaStable_;
+    std::vector<float> quadraticStable_;
+};
+
+class AdFeature
+{
+public:
+    long& adId() 
+    {
+        return adId_;
+    }
+
+    std::vector<int>& index()
+    {
+        return vector_.index();
+    }
+
+    std::vector<float>& value()
+    {
+        return vector_.value();
+    }
+    
+    MSGPACK_DEFINE(adId_, vector_);
+private:
+    long adId_;
+    SparseVector vector_;
+};
 
 LaserGenericModel::LaserGenericModel(const AdIndexManager& adIndexer, 
     const std::string& kvaddr,
@@ -87,6 +129,7 @@ void LaserGenericModel::updateAdDimension(const std::size_t adDimension)
 {
     adDimension_ = adDimension;
     offlineModel_->updateAdDimension(adDimension_);
+    pAdDb_->resize(adDimension_);
 }
     
 
@@ -153,6 +196,51 @@ void LaserGenericModel::dispatch(const std::string& method, msgpack::rpc::reques
     {
         updateOfflineModel(req);
     }
+    else if ("ad_feature|size" == method)
+    {
+        LOG(INFO)<<"send ad dimension: "<<adDimension_;
+        req.result(adDimension_);
+    }
+    else if ("ad_feature|next" == method)
+    {
+        AdFeature ad;
+        ad.adId() = adIndex_;
+        adIndex_++;
+
+        std::vector<int>& index = ad.index();
+        std::vector<float>& value = ad.value();
+        for (int k = 0; k < 10; ++k)
+        {
+            index.push_back(rand() % 10000);
+            value.push_back((rand() % 100) / 100.0);
+        }
+
+        req.result(ad);
+    }
+    else if ("ad_feature|start" == method)
+    {
+        msgpack::type::tuple<long> params;
+        req.params().convert(&params);
+        adIndex_ = params.get<0>();
+        LOG(INFO)<<"begin iterate: "<<adIndex_;
+        req.result(true);
+    }
+    else if ("precompute_ad_offline_model" == method)
+    {
+        msgpack::type::tuple<long, OfflineStable> params;
+        req.params().convert(&params);
+        LOG(INFO)<<params.get<0>();
+        req.result(true);
+    }
+    else if ("finish_offline_model" == method)
+    {
+        offlineModel_->save();
+    }
+    else if ("finish_online_model" == method)
+    {
+        LOG(INFO)<<"save online model";
+        save();
+    }
 }
     
 void LaserGenericModel::updatepAdDb(msgpack::rpc::request& req)
@@ -160,6 +248,7 @@ void LaserGenericModel::updatepAdDb(msgpack::rpc::request& req)
     msgpack::type::tuple<std::string, LaserOnlineModel> params;
     req.params().convert(&params);
     const std::string id(params.get<0>());
+    // TODO DOCID => docid_t
     std::stringstream ss(id); 
     docid_t docid = 0;
     ss >> docid;
@@ -176,11 +265,9 @@ void LaserGenericModel::updateOfflineModel(msgpack::rpc::request& req)
     std::vector<float> alpha(params.get<0>());
     std::vector<float> beta(params.get<1>());
     std::vector<std::vector<float> > quadratic(params.get<2>());
-    boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
     offlineModel_->setAlpha(alpha);
     offlineModel_->setBeta(beta);
     offlineModel_->setQuadratic(quadratic);
-    offlineModel_->save();
     LOG(INFO)<<"update finish";
     req.result(true);
 }

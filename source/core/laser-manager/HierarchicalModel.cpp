@@ -25,6 +25,21 @@ HierarchicalModel::HierarchicalModel(const AdIndexManager& adIndexer,
         boost::filesystem::create_directory(workdir_);
     }
     pClusteringDb_ = new std::vector<LaserOnlineModel>(clusteringDimension_);
+    if (boost::filesystem::exists(workdir_ + "per-clustering-online-model"))
+    {
+        load();
+    }
+    for (std::size_t i = 0; i < clusteringDimension_; ++i)
+    {
+        float delta = (rand() % 100) / 100.0;
+        std::vector<float> eta(200);
+        for (std::size_t k = 0; k < 200; ++k)
+        {
+            eta[k] = (rand() % 100) / 100.0;
+        }
+        LaserOnlineModel onlineModel(delta, eta);
+        (*pClusteringDb_)[i] = onlineModel;
+    }
 }
 
 HierarchicalModel::~HierarchicalModel()
@@ -54,8 +69,8 @@ bool HierarchicalModel::candidate(
     std::sort(clustering.begin(), clustering.end());
     for (std::size_t i = 0; i < clustering.size(); ++i)
     {
-        //adIndexer_.get(clustering[i].first, ad);
-        {
+        adIndexer_.get(clustering[i].first, ad);
+        /*{
             // TODO remove just for test
             // per clustering 1k ad
             for (std::size_t c = 0; c < 1024; ++c)
@@ -68,7 +83,7 @@ bool HierarchicalModel::candidate(
                 }
                 ad.push_back(std::make_pair(adid, vec));
             }
-        }
+        }*/
         if (ad.size() >= ncandidate)
             break;
     }
@@ -81,11 +96,13 @@ void HierarchicalModel::dispatch(const std::string& method, msgpack::rpc::reques
     if ("updatePerClusteringModel" == method)
     {
         updatepClusteringDb(req);
+        return;
     }
-    else
+    if ("finish_online_model" == method)
     {
-        LaserGenericModel::dispatch(method, req);
+        save();
     }
+    LaserGenericModel::dispatch(method, req);
 }
 
 void HierarchicalModel::updatepClusteringDb(msgpack::rpc::request& req)
@@ -108,4 +125,35 @@ void HierarchicalModel::updatepClusteringDb(msgpack::rpc::request& req)
     req.result(true);
 }
 
+void HierarchicalModel::save()
+{
+    std::ofstream ofs((workdir_ + "per-clustering-online-model").c_str(), std::ofstream::binary | std::ofstream::trunc);
+    boost::archive::text_oarchive oa(ofs);
+    try
+    {
+        oa << *pClusteringDb_;
+    }
+    catch(std::exception& e)
+    {
+        LOG(INFO)<<e.what();
+    }
+    ofs.close();
+}
+
+void HierarchicalModel::load()
+{
+    std::ifstream ifs((workdir_ + "per-clustering-online-model").c_str(), std::ios::binary);
+    boost::archive::text_iarchive ia(ifs);
+    try
+    {
+        ia >> *pClusteringDb_;
+    }
+    catch(std::exception& e)
+    {
+        LOG(INFO)<<e.what();
+    }
+    ifs.close();
+}
+    
+    
 } }

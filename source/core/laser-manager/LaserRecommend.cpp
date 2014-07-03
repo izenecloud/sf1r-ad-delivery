@@ -32,11 +32,22 @@ LaserRecommend::~LaserRecommend()
     }
 }
 
+void LaserRecommend::updateAdDimension(const std::size_t adDimension)
+{
+    boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
+    model_->updateAdDimension(adDimension);
+}
+
 bool LaserRecommend::recommend(const std::string& text, 
     std::vector<docid_t>& itemList, 
     std::vector<float>& itemScoreList, 
     const std::size_t num) const
 {
+    {
+        boost::shared_lock<boost::shared_mutex> sharedLock(mutex_, boost::try_to_lock);
+        if (!sharedLock)
+            return false;
+    }
     std::vector<std::pair<int, float> > context;
     if (!model_->context(text, context))
     {

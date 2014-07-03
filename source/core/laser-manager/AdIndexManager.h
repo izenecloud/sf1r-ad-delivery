@@ -7,8 +7,10 @@
 #include <common/inttypes.h>
 #include <document-manager/DocumentManager.h>
 
+namespace sf1r {
+class LaserManager;
+}
 namespace sf1r { namespace laser {
-
 
 class AdIndexManager
 {
@@ -20,7 +22,7 @@ class AdIndexManager
 public:
     AdIndexManager(const std::string& workdir,
         const bool isEnableClustering, 
-        const boost::shared_ptr<DocumentManager>& documentManager);
+        LaserManager* laserManager);
     ~AdIndexManager();
 
 public:
@@ -65,6 +67,7 @@ private:
     ContainerType* clusteringPtr_;
     docid_t lastDocId_;
 
+    LaserManager* laserManager_;
     const boost::shared_ptr<DocumentManager>& documentManager_;
 };
 

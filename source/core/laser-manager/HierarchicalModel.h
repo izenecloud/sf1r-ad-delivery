@@ -26,6 +26,8 @@ public:
 
 private:
     void updatepClusteringDb(msgpack::rpc::request& req);
+    void save();
+    void load();
 private:
     const std::string workdir_;
     const std::size_t clusteringDimension_;

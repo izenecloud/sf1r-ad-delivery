@@ -30,12 +30,15 @@ public:
         const std::size_t num) const;
     
     void dispatch(const std::string& method, msgpack::rpc::request& req);
+    void updateAdDimension(const std::size_t adDimension);
+
 private:
     void topn(const docid_t& docid, const float score, const std::size_t n, priority_queue& queue) const;
 private:
     const LaserManager* laserManager_;
     const LaserModelFactory* factory_;
     LaserModel* model_;
+    mutable boost::shared_mutex mutex_;
 };
 
 } }

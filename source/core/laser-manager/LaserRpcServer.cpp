@@ -81,11 +81,14 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
             req.error(msgpack::rpc::ARGUMENT_ERROR);
             return;
         }
+        //LOG(INFO)<<method;
+        //LOG(INFO)<<collection;
         boost::shared_lock<boost::shared_mutex> sharedLock(mutex_);
         const LaserManager* laserManager = get(collection);
         if (NULL == laserManager)
         {
             req.error("no collection: " + collection);
+            return;
         }
         
         if (method == "test")
@@ -145,7 +148,13 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
                  "updatePerUserModel" == method ||
                  "updatePerAdOnlineModel" == method ||
                  "updateOfflineModel" == method ||
-                 "updatePerClusteringModel" == method) 
+                 "updatePerClusteringModel" == method ||
+                 "ad_feature" == method || 
+                 "ad_feature|size" == method || 
+                 "ad_feature|next" == method || 
+                 "ad_feature|start" == method ||
+                 "precompute_ad_offline_model" == method
+                 ) 
         {
             laserManager->recommend_->dispatch(method, req);
         }
@@ -173,7 +182,7 @@ bool LaserRpcServer::parseRequest(msgpack::rpc::request& req, std::string& metho
 {
     std::string str;
     req.method().convert(&str);
-    std::size_t pos = str.find("|");
+    std::size_t pos = str.find_last_of("|");
     if (std::string::npos == pos)
     {
         return false;

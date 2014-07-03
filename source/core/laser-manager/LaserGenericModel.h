@@ -57,7 +57,7 @@ protected:
     LaserOfflineModel* offlineModel_;
     context::KVClient* kvclient_;
     context::MQClient* mqclient_;
-    mutable boost::shared_mutex mutex_;
+    long adIndex_;
 };
 } }
 #endif

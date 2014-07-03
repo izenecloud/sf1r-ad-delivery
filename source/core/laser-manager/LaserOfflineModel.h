@@ -25,12 +25,15 @@ public:
     virtual void updateAdDimension(const std::size_t adDimension)
     {
         adDimension_ = adDimension;
+        betaStable_->resize(adDimension_);
+        quadraticStable_->resize(adDimension_);
     }
+    
     
     virtual void dispatch(const std::string& method, msgpack::rpc::request& req)
     {
     }
-    
+
     virtual bool context(const std::string& text, std::vector<std::pair<int, float> >& context) const
     {
         return true;

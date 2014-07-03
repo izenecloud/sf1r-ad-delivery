@@ -1,4 +1,6 @@
 #include "AdIndexManager.h"
+#include "LaserManager.h"
+
 #include <boost/filesystem.hpp>
 #include <util/izene_serialization.h>
 #include <fstream>
@@ -8,13 +10,14 @@ namespace sf1r { namespace laser {
 
 AdIndexManager::AdIndexManager(const std::string& workdir, 
         const bool isEnableClustering, 
-        const boost::shared_ptr<DocumentManager>& documentManager)
+        LaserManager* laserManager)
     : workdir_(workdir + "/index/")
     , isEnableClustering_(isEnableClustering)
     , adPtr_(NULL)
     , clusteringPtr_(NULL)
     , lastDocId_(0)
-    , documentManager_(documentManager)
+    , laserManager_(laserManager)
+    , documentManager_(laserManager_->documentManager_)
 //    , cache_(NULL)
 {
     if (!boost::filesystem::exists(workdir_))
@@ -209,6 +212,7 @@ void AdIndexManager::preIndex()
 void AdIndexManager::postIndex()
 {
     serializeLastDocid_();
+    laserManager_->updateAdDimension(lastDocId_);
 }
     
 void AdIndexManager::serializeLastDocid_()
