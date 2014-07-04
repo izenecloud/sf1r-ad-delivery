@@ -71,32 +71,36 @@ LaserGenericModel::LaserGenericModel(const AdIndexManager& adIndexer,
     }
     LOG(INFO)<<"open per-item-online-model...";
     pAdDb_ = new std::vector<LaserOnlineModel>();
+    LOG(INFO)<<"ad dimension = "<<adDimension_;
     if (boost::filesystem::exists(workdir_ + "per-item-online-model"))
     {
         load();
     }
+    LOG(INFO)<<"per-item-online-model size = "<<pAdDb_->size();
     if (pAdDb_->size() < adDimension_)
     {
         pAdDb_->resize(adDimension_);
     }
+    /*
+    for (std::size_t i = 0; i < adDimension_; ++i)
+    {
+        float delta = (rand() % 100) / 100.0;
+        std::vector<float> eta(200);
+        for (std::size_t k = 0; k < 200; ++k)
+        {
+            eta[k] = (rand() % 100) / 100.0;
+        }
+        LaserOnlineModel onlineModel(delta, eta);
+        (*pAdDb_)[i] = onlineModel;
+    }
+    save();
+    */
 
     LOG(INFO)<<"open offline-model";
     offlineModel_ = new LaserOfflineModel(workdir_ + "/offline-model", adDimension_);
     
     kvclient_ = new context::KVClient(kvaddr, kvport);
     mqclient_ = new context::MQClient(mqaddr, mqport);
-    /*for (std::size_t i = 0; i < 2000000; ++i)
-    {
-    float delta = (rand() % 100) / 100.0;
-    std::vector<float> eta(200);
-    for (std::size_t k = 0; k < 200; ++k)
-    {
-        eta[k] = (rand() % 100) / 100.0;
-    }
-    LaserOnlineModel onlineModel(delta, eta);
-    pAdDb_->update(i, onlineModel);
-    }
-    pAdDb_->save();*/
 }
 
 LaserGenericModel::~LaserGenericModel()
@@ -268,7 +272,6 @@ void LaserGenericModel::updateOfflineModel(msgpack::rpc::request& req)
     offlineModel_->setAlpha(alpha);
     offlineModel_->setBeta(beta);
     offlineModel_->setQuadratic(quadratic);
-    LOG(INFO)<<"update finish";
     req.result(true);
 }
     

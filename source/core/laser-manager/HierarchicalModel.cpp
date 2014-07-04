@@ -25,11 +25,13 @@ HierarchicalModel::HierarchicalModel(const AdIndexManager& adIndexer,
         boost::filesystem::create_directory(workdir_);
     }
     pClusteringDb_ = new std::vector<LaserOnlineModel>(clusteringDimension_);
+    LOG(INFO)<<"clustering dimension = "<<clusteringDimension_;
     if (boost::filesystem::exists(workdir_ + "per-clustering-online-model"))
     {
         load();
     }
-    for (std::size_t i = 0; i < clusteringDimension_; ++i)
+    LOG(INFO)<<"per-clustering-model size = "<<pClusteringDb_->size();
+    /*for (std::size_t i = 0; i < clusteringDimension_; ++i)
     {
         float delta = (rand() % 100) / 100.0;
         std::vector<float> eta(200);
@@ -40,6 +42,7 @@ HierarchicalModel::HierarchicalModel(const AdIndexManager& adIndexer,
         LaserOnlineModel onlineModel(delta, eta);
         (*pClusteringDb_)[i] = onlineModel;
     }
+    save();*/
 }
 
 HierarchicalModel::~HierarchicalModel()
@@ -69,7 +72,10 @@ bool HierarchicalModel::candidate(
     std::sort(clustering.begin(), clustering.end());
     for (std::size_t i = 0; i < clustering.size(); ++i)
     {
-        adIndexer_.get(clustering[i].first, ad);
+        if (!adIndexer_.get(clustering[i].first, ad))
+        {
+            LOG(ERROR)<<"clustering : "<<clustering[i].first<<" container no ad";
+        }
         /*{
             // TODO remove just for test
             // per clustering 1k ad

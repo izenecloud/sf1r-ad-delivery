@@ -114,7 +114,10 @@ bool LaserManager::recommend(const LaserRecommendParam& param,
         actionItem.idList_.push_back(docIdList[i]);
     }
     LOG(INFO)<<"recommend finish";
+    boost::posix_time::ptime stime = boost::posix_time::microsec_clock::local_time();
     adSearchService_->getDocumentsByIds(actionItem, res);
+    boost::posix_time::ptime etime = boost::posix_time::microsec_clock::local_time();
+    LOG(INFO)<<"get ad time = "<<(etime-stime).total_milliseconds();
     res.score_.swap(itemScoreList);
     return true;
 }
@@ -124,7 +127,7 @@ void LaserManager::index(const docid_t& docid, const std::string& title)
     TokenSparseVector vec;
     tokenizer_->tokenize(title, vec);
     
-    if (!clusteringContainer_)
+    if (NULL != clusteringContainer_)
     {
         std::size_t clusteringId = assignClustering_(vec);
         if ( (std::size_t)-1 == clusteringId)

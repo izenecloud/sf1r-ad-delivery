@@ -29,36 +29,39 @@ LaserOfflineModel::LaserOfflineModel(const std::string& filename,
     {
         load();
     }
-    /*
-    for (std::size_t i = 0; i < adDimension_; ++i)
-    {
-        (*betaStable_)[i] = (rand() % 100) / 100.0;
-        std::vector<float> vec;
-        for (std::size_t k = 0; k < adf; ++k)
+        /*std::size_t adf = 10000;
+        std::size_t userf = 200;
+        alpha_->resize(userf);
+        beta_->resize(adf);
+        quadratic_->resize(userf);
+        for (std::size_t i = 0; i < adDimension_; ++i)
         {
-            vec.push_back((rand() % 100) / 100.0);
+            (*betaStable_)[i] = (rand() % 100) / 100.0;
+            std::vector<float> vec;
+            for (std::size_t k = 0; k < userf; ++k)
+            {
+                vec.push_back((rand() % 100) / 100.0);
+            }
+            (*quadraticStable_)[i] = vec;
         }
-        (*quadraticStable_)[i] = vec;
-    }
-    for (std::size_t i = 0; i < userf; ++i)
-    {
-        (*alpha_)[i] = (rand() % 100) / 100.0;
-    }
-    for (std::size_t i = 0; i < adf; ++i)
-    {
-        (*beta_)[i] = (rand() % 100) / 100.0;
-    }
-    for (std::size_t i = 0; i < userf; ++i)
-    {
-        std::vector<float> vec;
-        for (std::size_t k = 0; k < adf; k++)
+        for (std::size_t i = 0; i < userf; ++i)
         {
-            vec.push_back((rand() % 100) / 100.0);
+            (*alpha_)[i] = (rand() % 100) / 100.0;
         }
-        (*quadraticStable_)[i] = vec;
-    }
-    save();
-    */
+        for (std::size_t i = 0; i < adf; ++i)
+        {
+            (*beta_)[i] = (rand() % 100) / 100.0;
+        }
+        for (std::size_t i = 0; i < userf; ++i)
+        {
+            std::vector<float> vec;
+            for (std::size_t k = 0; k < adf; k++)
+            {
+                vec.push_back((rand() % 100) / 100.0);
+            }
+            (*quadraticStable_)[i] = vec;
+        }
+        save();*/
 }
 
 LaserOfflineModel::~LaserOfflineModel()

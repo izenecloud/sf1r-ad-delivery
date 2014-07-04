@@ -19,7 +19,7 @@ LaserModel* LaserModelFactory::createModel(const LaserPara& para,
     const std::string& workdir) const
 {
     LOG(INFO)<<"Create Laser model for type = "<<para.modelType;
-    const docid_t adDimension = 2000000; //adIndexer_.getLastDocId();
+    const docid_t adDimension = adIndexer_.getLastDocId();
     const std::size_t clusteringDimension = similarClustering_.size();
     if ("LaserGenericModel" == para.modelType)
     {

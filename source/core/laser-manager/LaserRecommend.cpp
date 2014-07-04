@@ -67,8 +67,8 @@ bool LaserRecommend::recommend(const std::string& text,
     stime = boost::posix_time::microsec_clock::local_time();
     for (std::size_t i = 0; i < ad.size(); ++i)
     {
-        //topn(ad[i].first, model_->score(text, context,  ad[i], score[i]), num, queue);   
-        model_->score(text, context,  ad[i], score[i]);   
+        topn(ad[i].first, model_->score(text, context,  ad[i], score[i]), num, queue);   
+        //model_->score(text, context,  ad[i], score[i]);   
     }
     etime = boost::posix_time::microsec_clock::local_time();
     LOG(INFO)<<"score time = "<<(etime-stime).total_milliseconds();
