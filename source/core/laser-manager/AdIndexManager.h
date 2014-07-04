@@ -14,7 +14,6 @@ namespace sf1r { namespace laser {
 
 class AdIndexManager
 {
-    typedef Lux::IO::Array ContainerType;
     typedef std::pair<docid_t, std::vector<std::pair<int, float> > > AD;
     typedef std::vector<AD> ADVector;
 
@@ -38,10 +37,6 @@ public:
     bool get(const docid_t& docid, std::size_t& clustering) const;
     
     bool get(const std::size_t& clusteringId, ADVector& adList) const;
-    bool get(const std::vector<docid_t>& docidList, ADVector& adList) const;
-
-    bool get(const docid_t& docid, 
-        std::pair<std::size_t, std::vector<std::pair<int, float> > >& vec) const;
     
     docid_t getLastDocId() const
     {
@@ -56,15 +51,16 @@ public:
     void preIndex();
     void postIndex();
 private:
-    void open_();
-    void close_();
-    void serializeLastDocid_();
-    void deserializeLastocid_();
+    void loadClusteringIndex();
+    void saveClusteringIndex();
+    void loadAdIndex();
+    void saveAdIndex();
 private:
     const std::string workdir_;
     const bool isEnableClustering_;
-    ContainerType* adPtr_;
-    ContainerType* clusteringPtr_;
+    std::vector<std::vector<std::pair<int, float> > >* adPtr_;
+    std::vector<std::size_t>* adClusteringPtr_;
+    std::vector<std::vector<docid_t> >* clusteringPtr_;
     docid_t lastDocId_;
 
     LaserManager* laserManager_;

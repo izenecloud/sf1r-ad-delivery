@@ -209,7 +209,7 @@ void LaserManager::getAdInfoById(const std::string& text,
     docid_t docid = 0;
     if (convertDocId(text, docid))
     {
-        std::pair<std::size_t, std::vector<std::pair<int, float> > > vec;
+        std::vector<std::pair<int, float> > vec;
         if (indexManager_->get(docid, vec))
         {
             {
@@ -217,18 +217,18 @@ void LaserManager::getAdInfoById(const std::string& text,
                 ss<<docid;
                 adId = ss.str();
             }
-            {
-                std::stringstream ss;
-                ss <<vec.first;
-                clusteringId = ss.str() + "|clustering";
-            }
-            std::vector<std::pair<int, float> >::const_iterator it = vec.second.begin();
-            for (; it != vec.second.end(); ++it)
+            std::vector<std::pair<int, float> >::const_iterator it = vec.begin();
+            for (; it != vec.end(); ++it)
             {
                 index.push_back(it->first);
                 value.push_back(it->second);
             }
         }
+        std::size_t cid = 0;
+        indexManager_->get(docid, cid);
+        std::stringstream ss;
+        ss <<cid;
+        clusteringId = ss.str() + "|clustering";
     }
 }
     
