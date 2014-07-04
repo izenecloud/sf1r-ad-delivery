@@ -20,6 +20,10 @@ AdIndexManager::AdIndexManager(const std::string& workdir,
     , laserManager_(laserManager)
     , documentManager_(laserManager_->documentManager_)
 {
+    if (!boost::filesystem::exists(workdir_))
+    {
+        boost::filesystem::create_directories(workdir_);
+    }
     adPtr_ = new std::vector<std::vector<std::pair<int, float> > >();
     loadAdIndex();
     if (isEnableClustering_)
@@ -52,6 +56,7 @@ AdIndexManager::~AdIndexManager()
 void AdIndexManager::index(const docid_t& docid, 
     const std::vector<std::pair<int, float> >& vec)
 {
+    boost::unique_lock<boost::shared_mutex> uniqueLock(mtx_);
     if (adPtr_->size() <= docid)
     {
         adPtr_->resize(docid + 1);
@@ -63,17 +68,23 @@ void AdIndexManager::index(const std::size_t& clusteringId,
         const docid_t& docid,
         const std::vector<std::pair<int, float> >& vec)
 {
+    boost::unique_lock<boost::shared_mutex> uniqueLock(mtx_);
     (*clusteringPtr_)[clusteringId].push_back(docid);
     if (adClusteringPtr_->size() <= docid)
     {
         adClusteringPtr_->resize(docid + 1);
     }
     (*adClusteringPtr_)[docid] = clusteringId;
-    index(docid, vec);
+    if (adPtr_->size() <= docid)
+    {
+        adPtr_->resize(docid + 1);
+    }
+    (*adPtr_)[docid] = vec;
 }
 
 bool AdIndexManager::get(const std::size_t& clusteringId, ADVector& advec) const
 {
+    //boost::shared_lock<boost::shared_mutex> sharedLock(mtx_);
     if (clusteringId >= clusteringPtr_->size())
     {
         return false;

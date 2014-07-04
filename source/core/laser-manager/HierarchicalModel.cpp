@@ -31,7 +31,8 @@ HierarchicalModel::HierarchicalModel(const AdIndexManager& adIndexer,
         load();
     }
     LOG(INFO)<<"per-clustering-model size = "<<pClusteringDb_->size();
-    /*for (std::size_t i = 0; i < clusteringDimension_; ++i)
+    /*
+    for (std::size_t i = 0; i < clusteringDimension_; ++i)
     {
         float delta = (rand() % 100) / 100.0;
         std::vector<float> eta(200);
@@ -42,7 +43,8 @@ HierarchicalModel::HierarchicalModel(const AdIndexManager& adIndexer,
         LaserOnlineModel onlineModel(delta, eta);
         (*pClusteringDb_)[i] = onlineModel;
     }
-    save();*/
+    */
+    save();
 }
 
 HierarchicalModel::~HierarchicalModel()
@@ -61,38 +63,49 @@ bool HierarchicalModel::candidate(
     std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
     std::vector<float>& score) const
 {
-    std::vector<std::pair<std::size_t, float> > clustering;
+    boost::posix_time::ptime stime = boost::posix_time::microsec_clock::local_time();
+    typedef izenelib::util::second_greater<std::pair<std::size_t, float> > greater_than;
+    typedef std::priority_queue<std::pair<size_t, float>, std::vector<std::pair<std::size_t, float> >, greater_than> priority_queue;
+    priority_queue queue;
     for (std::size_t i = 0; i < clusteringDimension_; ++i)
     {
         static const std::pair<docid_t, std::vector<std::pair<int, float> > > perAd;
-        clustering.push_back(std::make_pair(i, (*pClusteringDb_)[i].score(text, context, perAd, (float)0.0)));
+        float score = (*pClusteringDb_)[i].score(text, context, perAd, (float)0.0);
+        if (queue.size() < 1024)
+        {
+            queue.push(std::make_pair(i, score));
+        }
+        else
+        {
+            if (score > queue.top().second)
+            {
+                queue.pop();
+                queue.push(std::make_pair(i, score));
+            }
+        }
     }
+    std::vector<std::pair<std::size_t, float> > clustering;
+    clustering.reserve(queue.size());
+    while (!queue.empty())
+    {
+        clustering.push_back(queue.top());
+        queue.pop();
+    }
+    boost::posix_time::ptime etime = boost::posix_time::microsec_clock::local_time();
+    LOG(INFO)<<"score time = "<<(etime-stime).total_milliseconds();
     
-    typedef izenelib::util::second_greater<std::pair<std::size_t, float> > greater_than;
-    std::sort(clustering.begin(), clustering.end());
-    for (std::size_t i = 0; i < clustering.size(); ++i)
+    stime = boost::posix_time::microsec_clock::local_time();
+    for(int i = clustering.size() - 1; i >= 0; --i)
     {
         if (!adIndexer_.get(clustering[i].first, ad))
         {
             LOG(ERROR)<<"clustering : "<<clustering[i].first<<" container no ad";
         }
-        /*{
-            // TODO remove just for test
-            // per clustering 1k ad
-            for (std::size_t c = 0; c < 1024; ++c)
-            {
-                docid_t adid = rand() % 2000000; // 2M ad
-                std::vector<std::pair<int, float> > vec;
-                for (int k = 0; k < 10; ++k)
-                {
-                    vec.push_back(std::make_pair(rand() % 10000, (rand() % 100 )/ 100.0));
-                }
-                ad.push_back(std::make_pair(adid, vec));
-            }
-        }*/
         if (ad.size() >= ncandidate)
             break;
     }
+    etime = boost::posix_time::microsec_clock::local_time();
+    LOG(INFO)<<"query time = "<<(etime-stime).total_milliseconds();
     score.assign(ad.size(), 0);
     return true;
 }

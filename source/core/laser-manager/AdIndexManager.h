@@ -62,6 +62,7 @@ private:
     std::vector<std::size_t>* adClusteringPtr_;
     std::vector<std::vector<docid_t> >* clusteringPtr_;
     docid_t lastDocId_;
+    mutable boost::shared_mutex mtx_;
 
     LaserManager* laserManager_;
     const boost::shared_ptr<DocumentManager>& documentManager_;
