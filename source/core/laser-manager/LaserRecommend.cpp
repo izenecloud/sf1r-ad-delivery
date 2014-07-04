@@ -76,10 +76,13 @@ bool LaserRecommend::recommend(const std::string& text,
         while (!queue.empty())
         {
            itemList.push_back(queue.top().first);
-           itemScoreList.push_back(queue.top().second);
+           itemScoreList.push_back(1.0 / (1 + exp(-1 * queue.top().second)));
+           //itemScoreList.push_back(queue.top().second);
            queue.pop();
         }
     }
+    std::reverse(itemList.begin(), itemList.end());
+    std::reverse(itemScoreList.begin(), itemScoreList.end());
     return true;
 }
 
