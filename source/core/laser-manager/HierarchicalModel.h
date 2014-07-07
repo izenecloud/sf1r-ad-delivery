@@ -22,6 +22,13 @@ public:
         std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
         std::vector<float>& score) const;
     
+    virtual bool candidate(
+        const std::string& text,
+        const std::size_t ncandidate,
+        const std::vector<float>& context, 
+        std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
+        std::vector<float>& score) const;
+    
     virtual void dispatch(const std::string& method, msgpack::rpc::request& req);
 
 private:

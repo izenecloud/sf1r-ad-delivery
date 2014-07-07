@@ -48,7 +48,7 @@ bool LaserRecommend::recommend(const std::string& text,
         if (!sharedLock)
             return false;
     }
-    std::vector<std::pair<int, float> > context;
+    std::vector<float> context;
     if (!model_->context(text, context))
     {
         return false;

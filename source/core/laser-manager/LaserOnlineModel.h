@@ -26,10 +26,30 @@ public:
         const std::size_t ncandidate,
         const std::vector<std::pair<int, float> >& context, 
         std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
-        std::vector<float>& score) const;
+        std::vector<float>& score) const
+    {
+        return false;
+    }
+
+    virtual bool candidate(
+        const std::string& text,
+        const std::size_t ncandidate,
+        const std::vector<float>& context, 
+        std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
+        std::vector<float>& score) const
+    {
+        return false;
+    }
+
     virtual float score( 
         const std::string& text,
         const std::vector<std::pair<int, float> >& user, 
+        const std::pair<docid_t, std::vector<std::pair<int, float> > >& ad,
+        const float score) const;
+    
+    virtual float score( 
+        const std::string& text,
+        const std::vector<float>& user, 
         const std::pair<docid_t, std::vector<std::pair<int, float> > >& ad,
         const float score) const;
     
@@ -39,7 +59,12 @@ public:
     
     virtual bool context(const std::string& text, std::vector<std::pair<int, float> >& context) const
     {
-        return true;
+        return false;
+    }
+        
+    virtual bool context(const std::string& text, std::vector<float>& context) const
+    {
+        return false;
     }
         
     friend class boost::serialization::access;

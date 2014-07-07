@@ -149,10 +149,39 @@ bool LaserGenericModel::context(const std::string& text,
     return ret;
 }
 
+bool LaserGenericModel::context(const std::string& text, 
+     std::vector<float>& context) const
+{
+    bool ret = kvclient_->context(text, context);
+    if (!ret)
+    {
+        mqclient_->publish(text);
+    }
+    return ret;
+}
+
 bool LaserGenericModel::candidate(
     const std::string& text,
     const std::size_t ncandidate,
     const std::vector<std::pair<int, float> >& context, 
+    std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
+    std::vector<float>& score) const
+{
+    const docid_t& lastDocId = adIndexer_.getLastDocId();
+    for (docid_t docid = 0; docid < lastDocId; ++docid)
+    {
+        if (adIndexer_.get(docid, ad))
+        {
+            score.push_back(0);
+        }
+    }
+    return true;
+}
+
+bool LaserGenericModel::candidate(
+    const std::string& text,
+    const std::size_t ncandidate,
+    const std::vector<float>& context, 
     std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
     std::vector<float>& score) const
 {
@@ -174,10 +203,25 @@ float LaserGenericModel::score(
     const float score) const
 {
     float ret = score;
-    //if (!pAdDb_->get(ad.first, onlineModel))
-    //{
-    //    return ret;
-    //}
+    if (ad.first > adDimension_)
+    {
+        return ret;
+    }
+    static const std::pair<docid_t, std::vector<std::pair<int, float> > > perAd;
+    ret += (*pAdDb_)[ad.first].score(text, user, perAd, 0);
+    {
+        ret += offlineModel_->score(text, user, ad, 0);
+    }
+    return ret;
+}
+
+float LaserGenericModel::score(
+    const std::string& text,
+    const std::vector<float>& user, 
+    const std::pair<docid_t, std::vector<std::pair<int, float> > >& ad,
+    const float score) const
+{
+    float ret = score;
     if (ad.first > adDimension_)
     {
         return ret;

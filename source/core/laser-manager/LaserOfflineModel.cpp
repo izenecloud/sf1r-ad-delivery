@@ -93,16 +93,6 @@ LaserOfflineModel::~LaserOfflineModel()
     }
 }
 
-bool LaserOfflineModel::candidate(
-    const std::string& text,
-        const std::size_t ncandidate,
-    const std::vector<std::pair<int, float> >& context, 
-    std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
-    std::vector<float>& score) const
-{
-    return false;
-}
-
 float LaserOfflineModel::score( 
     const std::string& text,
     const std::vector<std::pair<int, float> >& user, 
@@ -137,6 +127,38 @@ float LaserOfflineModel::score(
         //    std::size_t row = user[i].first;
         //    ret += user[i].second + dot((*quadratic_)[row], ad.second);
         //}
+    }
+    return ret;
+}
+
+float LaserOfflineModel::score( 
+    const std::string& text,
+    const std::vector<float>& user, 
+    const std::pair<docid_t, std::vector<std::pair<int, float> > >& ad,
+    const float score) const
+{
+    float ret = score; 
+    // x * alpha
+    ret += dot(*alpha_, user);
+    
+    // c * beta
+    if (ad.first < betaStable_->size())
+    {
+        ret += (*betaStable_)[ad.first];
+    }
+    else
+    {
+        return ret;
+    }
+    
+    // x * A * c
+    if (ad.first < quadraticStable_->size())
+    {
+        ret += dot((*quadraticStable_)[ad.first], user);
+    }
+    else
+    {
+        return ret;
     }
     return ret;
 }

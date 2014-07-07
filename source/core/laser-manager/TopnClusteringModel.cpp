@@ -79,6 +79,49 @@ bool TopnClusteringModel::candidate(
     return true;
 }
 
+bool TopnClusteringModel::candidate(
+    const std::string& text,
+    const std::size_t ncandidate,
+    const std::vector<float>& context, 
+    std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
+    std::vector<float>& score) const
+{
+    ad.reserve(ncandidate);
+    score.reserve(ncandidate);
+
+    std::map<int, float> topn;
+    if (!topClusteringDb_->get(text, topn))
+    {
+        return false;
+    }
+    std::map<int, float>::const_iterator it = topn.begin();
+    std::size_t old = 0;
+    for (; it != topn.end(); ++it)
+    {
+        getAD(it->first, ad);
+        for (std::size_t i = 0; i < ad.size() - old; ++i)
+        {
+            score.push_back(it->second);
+        }
+        old = ad.size();
+        if (ad.size() >= ncandidate)
+            return true;
+    }
+    
+    for (it = topn.begin(); it != topn.end(); ++it)
+    {
+        getSimilarAd(it->first, ad);
+        for (std::size_t i = 0; i < ad.size() - old; ++i)
+        {
+            score.push_back(it->second);
+        }
+        old = ad.size();
+        if (ad.size() >= ncandidate)
+            return true;
+    }
+    return true;
+}
+
 bool TopnClusteringModel::getAD(const std::size_t& clusteringId, 
     std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad) const
 {
@@ -109,6 +152,24 @@ void TopnClusteringModel::getSimilarClustering(
 float TopnClusteringModel::score( 
     const std::string& text,
     const std::vector<std::pair<int, float> >& user, 
+    const std::pair<docid_t, std::vector<std::pair<int, float> > >& ad,
+    const float score) const
+{
+    float ret = score;
+    LaserOnlineModel onlineModel;
+    if (!pUserDb_->get(text, onlineModel))
+    {
+        return ret;
+    }
+    // per-user
+    static const std::vector<std::pair<int, float> > context; 
+    ret += onlineModel.score(text, context, ad, (float)0.0);
+    return ret;
+}
+
+float TopnClusteringModel::score( 
+    const std::string& text,
+    const std::vector<float>& user, 
     const std::pair<docid_t, std::vector<std::pair<int, float> > >& ad,
     const float score) const
 {

@@ -63,11 +63,6 @@ bool HierarchicalModel::candidate(
     std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
     std::vector<float>& score) const
 {
-        std::vector<float> ccontext(200);
-        for (std::size_t i = 0; i < 200; ++i)
-        {
-            ccontext[i] = (rand() % 100) / 100.0;
-        }
     boost::posix_time::ptime stime = boost::posix_time::microsec_clock::local_time();
     typedef izenelib::util::second_greater<std::pair<std::size_t, float> > greater_than;
     typedef std::priority_queue<std::pair<size_t, float>, std::vector<std::pair<std::size_t, float> >, greater_than> priority_queue;
@@ -76,8 +71,62 @@ bool HierarchicalModel::candidate(
     std::vector<LaserOnlineModel>::const_iterator it = pClusteringDb_->begin();
     for (std::size_t i = 0; it != pClusteringDb_->end(); ++it, ++i)
     {
-        //float score = it->score(text, context, perAd, (float)0.0);
-        float score = dot(it->eta(), ccontext);
+        float score = it->score(text, context, perAd, (float)0.0);
+        if (queue.size() < 1024)
+        {
+            queue.push(std::make_pair(i, score));
+        }
+        else
+        {
+            if (score > queue.top().second)
+            {
+                queue.pop();
+                queue.push(std::make_pair(i, score));
+            }
+        }
+    }
+    boost::posix_time::ptime etime = boost::posix_time::microsec_clock::local_time();
+    LOG(INFO)<<"score time = "<<(etime-stime).total_milliseconds();
+    std::vector<std::pair<std::size_t, float> > clustering;
+    clustering.reserve(queue.size());
+    while (!queue.empty())
+    {
+        clustering.push_back(queue.top());
+        queue.pop();
+    }
+    
+    stime = boost::posix_time::microsec_clock::local_time();
+    for(int i = clustering.size() - 1; i >= 0; --i)
+    {
+        if (!adIndexer_.get(clustering[i].first, ad))
+        {
+            LOG(ERROR)<<"clustering : "<<clustering[i].first<<" container no ad";
+        }
+        if (ad.size() >= ncandidate)
+            break;
+    }
+    etime = boost::posix_time::microsec_clock::local_time();
+    LOG(INFO)<<"query time = "<<(etime-stime).total_milliseconds();
+    score.assign(ad.size(), 0);
+    return true;
+}
+
+bool HierarchicalModel::candidate(
+    const std::string& text,
+    const std::size_t ncandidate,
+    const std::vector<float>& context, 
+    std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
+    std::vector<float>& score) const
+{
+    boost::posix_time::ptime stime = boost::posix_time::microsec_clock::local_time();
+    typedef izenelib::util::second_greater<std::pair<std::size_t, float> > greater_than;
+    typedef std::priority_queue<std::pair<size_t, float>, std::vector<std::pair<std::size_t, float> >, greater_than> priority_queue;
+    static const std::pair<docid_t, std::vector<std::pair<int, float> > > perAd;
+    priority_queue queue;
+    std::vector<LaserOnlineModel>::const_iterator it = pClusteringDb_->begin();
+    for (std::size_t i = 0; it != pClusteringDb_->end(); ++it, ++i)
+    {
+        float score = it->score(text, context, perAd, (float)0.0);
         if (queue.size() < 1024)
         {
             queue.push(std::make_pair(i, score));

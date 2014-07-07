@@ -19,6 +19,15 @@ public:
         }
         return true;
     }
+    
+    bool context(const std::string& text, std::vector<float>& context) const
+    {
+        for (std::size_t i = 0; i < 200; ++i)
+        {
+            context.push_back((rand() % 100) / 100.0);
+        }
+        return true;
+    }
 
     void shutdown()
     {
