@@ -6,6 +6,7 @@
 #include <common/inttypes.h>
 #include <3rdparty/msgpack/msgpack.hpp>
 #include <3rdparty/msgpack/rpc/server.h>
+#include <smmintrin.h>
 
 namespace sf1r { namespace laser {
 class LaserModel
@@ -15,15 +16,33 @@ public:
     {
     }
 public:
-    float dot(const std::vector<float>& model, 
+    inline float dot(const std::vector<float>& model, 
         const std::vector<std::pair<int, float> >& args) const
     {
-        float score = 0.0;
-        for (std::size_t i = 0; i < args.size(); ++i)
+        std::vector<std::pair<int, float> >::const_iterator it = args.begin();
+        float ret = 0.0;
+        for (; it != args.end(); ++it)
         {
-            score += model[args[i].first] * args[i].second;
+            ret += model[it->first] * it->second;
         }
-        return score;
+        return ret;
+    }
+    
+    inline float dot(const std::vector<float>& model, 
+        const std::vector<float>& args) const
+    {
+        const float* mdata = model.data();
+        const float* end = mdata + model.size();
+        const float* adata = args.data();
+        __m128 score;
+        for (; mdata < end; mdata+=4)
+        {
+            __m128 mul = _mm_mul_ps(_mm_loadu_ps(mdata), _mm_loadu_ps(adata));
+            score = _mm_add_ps(score, mul);
+        }
+        static float res[4];
+        _mm_storeu_ps(res, score);
+        return res[0] + res[1] + res[2] + res[3];
     }
     
     virtual bool candidate(

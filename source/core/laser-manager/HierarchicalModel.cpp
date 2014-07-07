@@ -63,14 +63,21 @@ bool HierarchicalModel::candidate(
     std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
     std::vector<float>& score) const
 {
+        std::vector<float> ccontext(200);
+        for (std::size_t i = 0; i < 200; ++i)
+        {
+            ccontext[i] = (rand() % 100) / 100.0;
+        }
     boost::posix_time::ptime stime = boost::posix_time::microsec_clock::local_time();
     typedef izenelib::util::second_greater<std::pair<std::size_t, float> > greater_than;
     typedef std::priority_queue<std::pair<size_t, float>, std::vector<std::pair<std::size_t, float> >, greater_than> priority_queue;
+    static const std::pair<docid_t, std::vector<std::pair<int, float> > > perAd;
     priority_queue queue;
-    for (std::size_t i = 0; i < clusteringDimension_; ++i)
+    std::vector<LaserOnlineModel>::const_iterator it = pClusteringDb_->begin();
+    for (std::size_t i = 0; it != pClusteringDb_->end(); ++it, ++i)
     {
-        static const std::pair<docid_t, std::vector<std::pair<int, float> > > perAd;
-        float score = (*pClusteringDb_)[i].score(text, context, perAd, (float)0.0);
+        //float score = it->score(text, context, perAd, (float)0.0);
+        float score = dot(it->eta(), ccontext);
         if (queue.size() < 1024)
         {
             queue.push(std::make_pair(i, score));
@@ -84,6 +91,8 @@ bool HierarchicalModel::candidate(
             }
         }
     }
+    boost::posix_time::ptime etime = boost::posix_time::microsec_clock::local_time();
+    LOG(INFO)<<"score time = "<<(etime-stime).total_milliseconds();
     std::vector<std::pair<std::size_t, float> > clustering;
     clustering.reserve(queue.size());
     while (!queue.empty())
@@ -91,8 +100,6 @@ bool HierarchicalModel::candidate(
         clustering.push_back(queue.top());
         queue.pop();
     }
-    boost::posix_time::ptime etime = boost::posix_time::microsec_clock::local_time();
-    LOG(INFO)<<"score time = "<<(etime-stime).total_milliseconds();
     
     stime = boost::posix_time::microsec_clock::local_time();
     for(int i = clustering.size() - 1; i >= 0; --i)

@@ -49,6 +49,11 @@ public:
         ar & delta_;
         ar & eta_;
     }
+    
+    const std::vector<float>& eta() const
+    {
+        return eta_;
+    }
 
 private:
     float delta_;
