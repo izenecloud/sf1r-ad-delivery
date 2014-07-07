@@ -31,10 +31,19 @@ LaserRecommend::~LaserRecommend()
         model_ = NULL;
     }
 }
+    
+void LaserRecommend::preUpdateAdDimension()
+{
+    mutex_.lock();
+}
+
+void LaserRecommend::postUpdateAdDimension()
+{
+    mutex_.unlock();
+}
 
 void LaserRecommend::updateAdDimension(const std::size_t adDimension)
 {
-    boost::unique_lock<boost::shared_mutex> uniqueLock(mutex_);
     model_->updateAdDimension(adDimension);
 }
 

@@ -131,6 +131,7 @@ bool AdIndexManager::get(const std::size_t& clusteringId, std::vector<docid_t>& 
 
 void AdIndexManager::preIndex()
 {
+    laserManager_->recommend_->preUpdateAdDimension();
 }
 
 void AdIndexManager::postIndex()
@@ -140,7 +141,8 @@ void AdIndexManager::postIndex()
     {
         saveClusteringIndex();
     }
-    laserManager_->updateAdDimension(lastDocId_);
+    laserManager_->recommend_->updateAdDimension(lastDocId_);
+    laserManager_->recommend_->postUpdateAdDimension();
 }
     
 void AdIndexManager::saveAdIndex()

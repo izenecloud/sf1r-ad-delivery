@@ -59,11 +59,6 @@ public:
         std::vector<int>& index, 
         std::vector<float>& value) const;
 
-    void updateAdDimension(const std::size_t adDimension) 
-    {
-        recommend_->updateAdDimension(adDimension);
-    }
-
     const std::vector<std::vector<float> >& getClustering() const
     {
         return *clusteringContainer_;

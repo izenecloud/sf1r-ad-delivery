@@ -30,6 +30,9 @@ public:
         const std::size_t num) const;
     
     void dispatch(const std::string& method, msgpack::rpc::request& req);
+
+    void preUpdateAdDimension();
+    void postUpdateAdDimension();
     void updateAdDimension(const std::size_t adDimension);
 
 private:
