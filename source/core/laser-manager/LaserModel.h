@@ -35,14 +35,19 @@ public:
         const float* end = mdata + model.size();
         const float* adata = args.data();
         __m128 score = {0};
-        for (; mdata < end; mdata+=4)
+        for (; mdata < end - 3; mdata+=4, adata +=4)
         {
             __m128 mul = _mm_mul_ps(_mm_loadu_ps(mdata), _mm_loadu_ps(adata));
             score = _mm_add_ps(score, mul);
         }
         static float res[4];
         _mm_storeu_ps(res, score);
-        return res[0] + res[1] + res[2] + res[3];
+        float ret = res[0] + res[1] + res[2] + res[3];
+        for (; mdata < end; ++mdata)
+        {
+            ret += (*mdata) * (*adata);
+        }
+        return ret;
     }
     
     virtual bool candidate(
