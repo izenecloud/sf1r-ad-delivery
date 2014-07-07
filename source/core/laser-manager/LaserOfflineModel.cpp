@@ -1,5 +1,6 @@
 #include "LaserModel.h"
 #include "LaserOfflineModel.h"
+#include "AdIndexManager.h"
 #include <boost/filesystem.hpp>
 #include <fstream>
 #include <boost/archive/text_oarchive.hpp>
@@ -10,15 +11,18 @@
 
 namespace sf1r { namespace laser {
 
-LaserOfflineModel::LaserOfflineModel(const std::string& filename,
+LaserOfflineModel::LaserOfflineModel(const AdIndexManager& adIndexer,
+    const std::string& filename,
     const std::size_t adDimension)
-    : filename_(filename)
+    : adIndexer_(adIndexer)
+    , filename_(filename)
     , adDimension_(adDimension)
     , alpha_(NULL)
     , beta_(NULL)
     , betaStable_(NULL)
     , quadratic_(NULL)
     , quadraticStable_(NULL)
+    , threadGroup_(NULL)
 {
     alpha_ = new std::vector<float>();
     beta_ = new std::vector<float>();
@@ -66,6 +70,11 @@ LaserOfflineModel::LaserOfflineModel(const std::string& filename,
 
 LaserOfflineModel::~LaserOfflineModel()
 {
+    if (NULL != threadGroup_)
+    {
+        threadGroup_->join_all();
+        delete threadGroup_;
+    }
     if (NULL != alpha_)
     {
         delete alpha_;
@@ -111,7 +120,6 @@ float LaserOfflineModel::score(
     else
     {
         return ret;
-        //ret += dot(*beta_, ad.second);
     }
     
     // x * A * c
@@ -122,11 +130,6 @@ float LaserOfflineModel::score(
     else
     {
         return ret;
-        //for (std::size_t i = 0; i < user.size(); ++i)
-        //{
-        //    std::size_t row = user[i].first;
-        //    ret += user[i].second + dot((*quadratic_)[row], ad.second);
-        //}
     }
     return ret;
 }
@@ -201,5 +204,44 @@ void LaserOfflineModel::load()
     ifs.close();
 }
     
+void LaserOfflineModel::updateAdDimension(const std::size_t adDimension)
+{
+    betaStable_->resize(adDimension);
+    quadraticStable_->resize(adDimension);
+    if (NULL != threadGroup_)
+    {
+        LOG(INFO)<<"wait last time's pre-compute threads finish";
+        threadGroup_->join_all();
+        delete threadGroup_;
+    }
+    threadGroup_ = new boost::thread_group();
+    for (int i = 0; i < THREAD_NUM; ++i)
+    {
+        threadGroup_->create_thread(
+            boost::bind(&LaserOfflineModel::precompute, this,
+                        adDimension_, adDimension, i));
+    }
+    adDimension_ = adDimension;
+}
+    
+void LaserOfflineModel::precompute(std::size_t startId, std::size_t endId, int threadId)
+{
+    for (std::size_t adId = startId; adId < endId; ++adId)
+    {
+        if (0 != adId % THREAD_NUM)
+            continue;
+
+        std::vector<std::pair<int, float> > vec;
+        adIndexer_.get(adId, vec);
+        (*betaStable_)[adId] = dot(*beta_, vec);
+        
+        std::vector<float>& row = (*quadraticStable_)[adId];
+        std::vector<std::vector<float> >::const_iterator it = quadratic_->begin();
+        for (; it != quadratic_->end(); ++it)
+        {
+            row.push_back(dot(*it, vec));
+        }
+    }
+}
     
 } }

@@ -3,10 +3,12 @@
 
 #include "LaserModel.h"
 namespace sf1r { namespace laser {
+class AdIndexManager;
 class LaserOfflineModel : public LaserModel 
 {
 public:
-    LaserOfflineModel(const std::string& filename, 
+    LaserOfflineModel(const AdIndexManager& adIndexer,
+        const std::string& filename, 
         const std::size_t adDimension);
     ~LaserOfflineModel();
 public:
@@ -42,13 +44,7 @@ public:
         const std::pair<docid_t, std::vector<std::pair<int, float> > >& ad,
         const float score) const;
     
-    virtual void updateAdDimension(const std::size_t adDimension)
-    {
-        adDimension_ = adDimension;
-        betaStable_->resize(adDimension_);
-        quadraticStable_->resize(adDimension_);
-    }
-    
+    virtual void updateAdDimension(const std::size_t adDimension);
     
     virtual void dispatch(const std::string& method, msgpack::rpc::request& req)
     {
@@ -82,7 +78,10 @@ public:
     
     void save();
     void load();
+
+    void precompute(std::size_t startId, std::size_t endId, int threadId);
 private:
+    const AdIndexManager& adIndexer_;
     const std::string filename_;
     std::size_t adDimension_;
     std::vector<float>* alpha_;
@@ -90,6 +89,8 @@ private:
     std::vector<float>* betaStable_;
     std::vector<std::vector<float> >* quadratic_;
     std::vector<std::vector<float> >* quadraticStable_;
+    boost::thread_group* threadGroup_;
+    const static int THREAD_NUM = 4;
 };
 } }
 #endif

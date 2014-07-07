@@ -97,7 +97,7 @@ LaserGenericModel::LaserGenericModel(const AdIndexManager& adIndexer,
     */
 
     LOG(INFO)<<"open offline-model";
-    offlineModel_ = new LaserOfflineModel(workdir_ + "/offline-model", adDimension_);
+    offlineModel_ = new LaserOfflineModel(adIndexer_, workdir_ + "/offline-model", adDimension_);
     
     kvclient_ = new context::KVClient(kvaddr, kvport);
     mqclient_ = new context::MQClient(mqaddr, mqport);
