@@ -268,7 +268,7 @@ void LaserOfflineModel::save()
     {
         oa << alpha_;
         oa << beta_;
-        oa << beta_;
+        oa << betaStable_;
         oa << conjunction_;
         oa << conjunctionStable_;
     }
