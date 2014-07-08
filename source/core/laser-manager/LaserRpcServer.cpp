@@ -153,13 +153,16 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
                  "ad_feature|size" == method || 
                  "ad_feature|next" == method || 
                  "ad_feature|start" == method ||
-                 "precompute_ad_offline_model" == method
+                 "precompute_ad_offline_model" == method ||
+                 "finish_online_model" == method ||
+                 "finish_offline_model" == method
                  ) 
         {
             laserManager->recommend_->dispatch(method, req);
         }
         else
         {
+            LOG(INFO)<<"no method for "<<method;
             req.error(msgpack::rpc::NO_METHOD_ERROR);
         }
     }

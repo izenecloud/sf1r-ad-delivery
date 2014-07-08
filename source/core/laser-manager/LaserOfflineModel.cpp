@@ -47,14 +47,14 @@ LaserOfflineModel::LaserOfflineModel(const AdIndexManager& adIndexer,
     , origBetaStable_(NULL)
     , origConjunctionStable_(NULL)
 {
-    const std::string betaDB = sysdir_ + "/beta-stable-offline-model";
+    const std::string betaDB = sysdir_ + "/orig-beta-stable-offline-model";
     if (!boost::filesystem::exists(betaDB))
     {
         boost::filesystem::create_directories(betaDB);
     }
     origBetaStable_ = new OrigBetaStableDB(betaDB);
     
-    const std::string conjunctionDB = sysdir_ + "/conjunction-stable-offline-model";
+    const std::string conjunctionDB = sysdir_ + "/orig-conjunction-stable-offline-model";
     if (!boost::filesystem::exists(conjunctionDB))
     {
         boost::filesystem::create_directories(conjunctionDB);
@@ -75,6 +75,8 @@ LaserOfflineModel::LaserOfflineModel(const AdIndexManager& adIndexer,
         LOG(INFO)<<"init per-item-online-model from original model, since localized model doesn't exist. \
             This procedure may be slow, be patient";
         localizeFromOrigModel();
+        LOG(INFO)<<"save model to local";
+        save();
     }
         /*std::size_t adf = 10000;
         std::size_t userf = 200;
@@ -226,7 +228,6 @@ void LaserOfflineModel::dispatch(const std::string& method, msgpack::rpc::reques
         msgpack::type::tuple<std::string, OfflineStable> params;
         req.params().convert(&params);
         const std::string& DOCID = params.get<0>();
-        LOG(INFO)<<params.get<0>();
         const OfflineStable& stable = params.get<1>();
         origBetaStable_->update(DOCID, stable.betaStable());
         origConjunctionStable_->update(DOCID, stable.conjunctionStable());
@@ -250,6 +251,7 @@ void LaserOfflineModel::dispatch(const std::string& method, msgpack::rpc::reques
     }
     else if ("finish_offline_model" == method)
     {
+        LOG(INFO)<<"save offline model";
         save();
         saveOrigModel();
         req.result(true);
@@ -340,15 +342,13 @@ void LaserOfflineModel::precompute(std::size_t startId, std::size_t endId, int t
 
 void LaserOfflineModel::saveOrigModel()
 {
-    std::ofstream ofs((MiningManager::system_working_path_ + "/Laser/orig-offline-model").c_str(), std::ofstream::binary | std::ofstream::trunc);
+    std::ofstream ofs((sysdir_ + "/orig-offline-model").c_str(), std::ofstream::binary | std::ofstream::trunc);
     boost::archive::text_oarchive oa(ofs);
     try
     {
-        oa << alpha_;
-        oa << beta_;
-        oa << beta_;
-        oa << conjunction_;
-        oa << conjunctionStable_;
+        oa << *alpha_;
+        oa << *beta_;
+        oa << *conjunction_;
     }
     catch(std::exception& e)
     {

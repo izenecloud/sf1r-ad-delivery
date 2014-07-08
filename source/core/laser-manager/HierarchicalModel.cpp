@@ -32,6 +32,14 @@ HierarchicalModel::HierarchicalModel(const AdIndexManager& adIndexer,
     {
         load();
     }
+    else
+    {
+        LOG(INFO)<<"init per-item-online-model from OrigModel, since localized model doesn't exist. \
+            This procedure may be slow, be patient";
+        localizeFromOrigModel();
+        LOG(INFO)<<"save model to local";
+        save();
+    }
     LOG(INFO)<<"per-clustering-model size = "<<pClusteringDb_->size();
     /*
     for (std::size_t i = 0; i < clusteringDimension_; ++i)
@@ -177,7 +185,10 @@ void HierarchicalModel::dispatch(const std::string& method, msgpack::rpc::reques
     }
     if ("finish_online_model" == method)
     {
+        LOG(INFO)<<"save laser online model";
         save();
+        // for rebuild
+        saveOrigModel();
     }
     LaserGenericModel::dispatch(method, req);
 }
@@ -204,7 +215,7 @@ void HierarchicalModel::updatepClusteringDb(msgpack::rpc::request& req)
 
 void HierarchicalModel::save()
 {
-    std::ofstream ofs((workdir_ + "per-clustering-online-model").c_str(), std::ofstream::binary | std::ofstream::trunc);
+    std::ofstream ofs((workdir_ + "/per-clustering-online-model").c_str(), std::ofstream::binary | std::ofstream::trunc);
     boost::archive::text_oarchive oa(ofs);
     try
     {
@@ -219,7 +230,7 @@ void HierarchicalModel::save()
 
 void HierarchicalModel::load()
 {
-    std::ifstream ifs((workdir_ + "per-clustering-online-model").c_str(), std::ios::binary);
+    std::ifstream ifs((workdir_ + "/per-clustering-online-model").c_str(), std::ios::binary);
     boost::archive::text_iarchive ia(ifs);
     try
     {
@@ -234,7 +245,7 @@ void HierarchicalModel::load()
     
 void HierarchicalModel::saveOrigModel()
 {
-    std::ofstream ofs((sysdir_ + "orig-per-clustering-online-model").c_str(), std::ofstream::binary | std::ofstream::trunc);
+    std::ofstream ofs((sysdir_ + "/orig-per-clustering-online-model").c_str(), std::ofstream::binary | std::ofstream::trunc);
     boost::archive::text_oarchive oa(ofs);
     try
     {
@@ -249,7 +260,13 @@ void HierarchicalModel::saveOrigModel()
 
 void HierarchicalModel::localizeFromOrigModel()
 {
-    std::ifstream ifs((sysdir_ + "orig-per-clustering-online-model").c_str(), std::ios::binary);
+    const std::string orig = sysdir_ + "/orig-per-clustering-online-model";
+    if (!boost::filesystem::exists(orig))
+    {
+        LOG(INFO)<<"orig per clustering model does't exist.";
+        return;
+    }
+    std::ifstream ifs(orig.c_str(), std::ios::binary);
     boost::archive::text_iarchive ia(ifs);
     try
     {

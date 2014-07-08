@@ -57,7 +57,7 @@ LaserGenericModel::LaserGenericModel(const AdIndexManager& adIndexer,
     {
         boost::filesystem::create_directory(workdir_);
     }
-    const std::string DB = sysdir_ + "/per-item-online-model";
+    const std::string DB = sysdir_ + "/orig-per-item-online-model";
     if (!boost::filesystem::exists(DB))
     {
         boost::filesystem::create_directories(DB);
@@ -65,9 +65,9 @@ LaserGenericModel::LaserGenericModel(const AdIndexManager& adIndexer,
     origLaserModel_ = new OrigOnlineDB(DB);
     
     LOG(INFO)<<"open per-item-online-model...";
-    pAdDb_ = new std::vector<LaserOnlineModel>();
+    pAdDb_ = new std::vector<LaserOnlineModel>(adDimension_);
     LOG(INFO)<<"ad dimension = "<<adDimension_;
-    if (boost::filesystem::exists(workdir_ + "per-item-online-model"))
+    if (boost::filesystem::exists(workdir_ + "/per-item-online-model"))
     {
         load();
     }
@@ -76,6 +76,8 @@ LaserGenericModel::LaserGenericModel(const AdIndexManager& adIndexer,
         LOG(INFO)<<"init per-item-online-model from OrigModel, since localized model doesn't exist. \
             This procedure may be slow, be patient";
         localizeFromOrigModel();
+        LOG(INFO)<<"save model to local";
+        save();
     }
     
     LOG(INFO)<<"per-item-online-model size = "<<pAdDb_->size();
@@ -278,6 +280,10 @@ void LaserGenericModel::dispatch(const std::string& method, msgpack::rpc::reques
         LOG(INFO)<<"save online model";
         save();
     }
+    else
+    {
+        offlineModel_->dispatch(method, req);
+    }
 }
     
 void LaserGenericModel::updatepAdDb(msgpack::rpc::request& req)
@@ -328,7 +334,7 @@ void LaserGenericModel::save()
 void LaserGenericModel::localizeFromOrigModel()
 {
     OrigOnlineDB::iterator it = origLaserModel_->begin();
-    for (; it != origLaserModel_->begin(); ++it)
+    for (; it != origLaserModel_->end(); ++it)
     {
         docid_t id = 0;
         if (adIndexer_.convertDocId(it->first, id))
