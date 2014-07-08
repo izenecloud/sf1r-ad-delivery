@@ -206,23 +206,17 @@ bool LaserManager::convertDocId(
     return true;
 }
     
-void LaserManager::getAdInfoById(const std::string& text, 
-    std::string& adId,
+bool LaserManager::getAdInfoByDOCID(const std::string& DOCID, 
     std::string& clusteringId,
     std::vector<int>& index, 
     std::vector<float>& value) const
 {
     docid_t docid = 0;
-    if (convertDocId(text, docid))
+    if (convertDocId(DOCID, docid))
     {
         std::vector<std::pair<int, float> > vec;
         if (indexManager_->get(docid, vec))
         {
-            {
-                std::stringstream ss;
-                ss<<docid;
-                adId = ss.str();
-            }
             std::vector<std::pair<int, float> >::const_iterator it = vec.begin();
             for (; it != vec.end(); ++it)
             {
@@ -235,7 +229,9 @@ void LaserManager::getAdInfoById(const std::string& text,
         std::stringstream ss;
         ss <<cid;
         clusteringId = ss.str() + "|clustering";
+        return true;
     }
+    return false;
 }
     
 void LaserManager::tokenize(const std::string& text, 

@@ -49,8 +49,7 @@ public:
 
     bool convertDocId(const std::string& docStr, docid_t& docId) const;
 
-    void getAdInfoById(const std::string& DOCID, 
-        std::string& adId,
+    bool getAdInfoByDOCID(const std::string& DOCID, 
         std::string& clusteringId,
         std::vector<int>& index, 
         std::vector<float>& value) const;

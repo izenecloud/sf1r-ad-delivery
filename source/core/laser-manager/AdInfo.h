@@ -7,9 +7,9 @@ namespace sf1r { namespace laser {
 class AdInfo
 {
 public:
-    std::string& adId() 
+    std::string& DOCID() 
     {
-        return adId_;
+        return DOCID_;
     }
 
     std::string& clusteringId()
@@ -27,9 +27,9 @@ public:
         return vector_.value();
     }
     
-    MSGPACK_DEFINE(adId_, clusteringId_, vector_);
+    MSGPACK_DEFINE(DOCID_, clusteringId_, vector_);
 private:
-    std::string adId_;
+    std::string DOCID_;
     std::string clusteringId_;
     SparseVector vector_;
 };

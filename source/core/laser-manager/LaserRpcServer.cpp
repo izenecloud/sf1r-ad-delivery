@@ -129,13 +129,16 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
             }
             req.result(clusterings);
         }
-        else if ("getAdInfoById" == method )
+        else if ("getAdInfoByDOCID" == method )
         {
             msgpack::type::tuple<std::string> params;
             req.params().convert(&params);
             AdInfo adinfo;
-            laserManager->getAdInfoById(params.get<0>(), 
-                adinfo.adId(), adinfo.clusteringId(), adinfo.index(), adinfo.value());
+            if (laserManager->getAdInfoByDOCID(params.get<0>(), 
+               adinfo.clusteringId(), adinfo.index(), adinfo.value()))
+            {
+                adinfo.DOCID() = params.get<0>();
+            }
             req.result(adinfo);
         }
         /*else if ("getUserInfoByUrl" == method)
