@@ -35,7 +35,7 @@ public:
         const float* end = mdata + model.size();
         const float* adata = args.data();
         __m128 score = {0};
-        for (; mdata < end - 3; mdata+=4, adata +=4)
+        for (; mdata < end - 4; mdata+=4, adata +=4)
         {
             __m128 mul = _mm_mul_ps(_mm_loadu_ps(mdata), _mm_loadu_ps(adata));
             score = _mm_add_ps(score, mul);
@@ -43,7 +43,7 @@ public:
         static float res[4];
         _mm_storeu_ps(res, score);
         float ret = res[0] + res[1] + res[2] + res[3];
-        for (; mdata < end; ++mdata)
+        if (mdata < end) for (; mdata < end; ++mdata)
         {
             ret += (*mdata) * (*adata);
         }

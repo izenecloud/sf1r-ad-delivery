@@ -174,7 +174,7 @@ void LaserOfflineModel::save()
     {
         oa << alpha_;
         oa << beta_;
-        oa << beta_;
+        oa << betaStable_;
         oa << quadratic_;
         oa << quadraticStable_;
     }
