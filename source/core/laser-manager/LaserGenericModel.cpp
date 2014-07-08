@@ -6,25 +6,10 @@
 #include "context/KVClient.h"
 #include "context/MQClient.h"
 
+#include <mining-manager/MiningManager.h>
+
 namespace sf1r { namespace laser {
 
-class OfflineStable
-{
-public:
-    float betaStable() const
-    {
-        return betaStable_;
-    }
-
-    const std::vector<float>& quadraticStable() const
-    {
-        return quadraticStable_;
-    }
-    MSGPACK_DEFINE(betaStable_, quadraticStable_);
-private:
-    float betaStable_;
-    std::vector<float> quadraticStable_;
-};
 
 class AdFeature
 {
@@ -56,19 +41,29 @@ LaserGenericModel::LaserGenericModel(const AdIndexManager& adIndexer,
     const std::string& mqaddr,
     const int mqport,
     const std::string& workdir,
+    const std::string& sysdir,
     const std::size_t adDimension)
     : adIndexer_(adIndexer)
     , workdir_(workdir)
+    , sysdir_(sysdir)
     , adDimension_(adDimension)
     , pAdDb_(NULL)
     , offlineModel_(NULL)
     , kvclient_(NULL)
     , mqclient_(NULL)
+    , origLaserModel_(NULL)
 {
     if (!boost::filesystem::exists(workdir_))
     {
         boost::filesystem::create_directory(workdir_);
     }
+    const std::string DB = sysdir_ + "/per-item-online-model";
+    if (!boost::filesystem::exists(DB))
+    {
+        boost::filesystem::create_directories(DB);
+    }
+    origLaserModel_ = new OrigOnlineDB(DB);
+    
     LOG(INFO)<<"open per-item-online-model...";
     pAdDb_ = new std::vector<LaserOnlineModel>();
     LOG(INFO)<<"ad dimension = "<<adDimension_;
@@ -76,11 +71,14 @@ LaserGenericModel::LaserGenericModel(const AdIndexManager& adIndexer,
     {
         load();
     }
-    LOG(INFO)<<"per-item-online-model size = "<<pAdDb_->size();
-    if (pAdDb_->size() < adDimension_)
+    else
     {
-        pAdDb_->resize(adDimension_);
+        LOG(INFO)<<"init per-item-online-model from OrigModel, since localized model doesn't exist. \
+            This procedure may be slow, be patient";
+        localizeFromOrigModel();
     }
+    
+    LOG(INFO)<<"per-item-online-model size = "<<pAdDb_->size();
     /*
     for (std::size_t i = 0; i < adDimension_; ++i)
     {
@@ -97,14 +95,20 @@ LaserGenericModel::LaserGenericModel(const AdIndexManager& adIndexer,
     */
 
     LOG(INFO)<<"open offline-model";
-    offlineModel_ = new LaserOfflineModel(adIndexer_, workdir_ + "/offline-model", adDimension_);
+    offlineModel_ = new LaserOfflineModel(adIndexer_, workdir_ + "/offline-model", sysdir_, adDimension_);
     
     kvclient_ = new context::KVClient(kvaddr, kvport);
     mqclient_ = new context::MQClient(mqaddr, mqport);
+
 }
 
 LaserGenericModel::~LaserGenericModel()
 {
+    if (NULL != origLaserModel_)
+    {
+        delete origLaserModel_;
+        origLaserModel_ = NULL;
+    }
     if (NULL != pAdDb_)
     {
         delete pAdDb_;
@@ -240,10 +244,6 @@ void LaserGenericModel::dispatch(const std::string& method, msgpack::rpc::reques
     {
         updatepAdDb(req);
     }
-    else if ("updateOfflineModel" == method)
-    {
-        updateOfflineModel(req);
-    }
     else if ("ad_feature|size" == method)
     {
         LOG(INFO)<<"send ad dimension: "<<adDimension_;
@@ -273,17 +273,6 @@ void LaserGenericModel::dispatch(const std::string& method, msgpack::rpc::reques
         LOG(INFO)<<"begin iterate: "<<adIndex_;
         req.result(true);
     }
-    else if ("precompute_ad_offline_model" == method)
-    {
-        msgpack::type::tuple<long, OfflineStable> params;
-        req.params().convert(&params);
-        LOG(INFO)<<params.get<0>();
-        req.result(true);
-    }
-    else if ("finish_offline_model" == method)
-    {
-        offlineModel_->save();
-    }
     else if ("finish_online_model" == method)
     {
         LOG(INFO)<<"save online model";
@@ -295,27 +284,14 @@ void LaserGenericModel::updatepAdDb(msgpack::rpc::request& req)
 {
     msgpack::type::tuple<std::string, LaserOnlineModel> params;
     req.params().convert(&params);
-    const std::string id(params.get<0>());
-    // TODO DOCID => docid_t
-    std::stringstream ss(id); 
-    docid_t docid = 0;
-    ss >> docid;
-    LOG(INFO)<<docid;
-    (*pAdDb_)[docid] =  params.get<1>();
-    req.result(true);
-}
-
-void LaserGenericModel::updateOfflineModel(msgpack::rpc::request& req)
-{
-    LOG(INFO)<<"update OfflineModel ..."; 
-    msgpack::type::tuple<std::vector<float>, std::vector<float>, std::vector<std::vector<float> > > params;
-    req.params().convert(&params);
-    std::vector<float> alpha(params.get<0>());
-    std::vector<float> beta(params.get<1>());
-    std::vector<std::vector<float> > quadratic(params.get<2>());
-    offlineModel_->setAlpha(alpha);
-    offlineModel_->setBeta(beta);
-    offlineModel_->setQuadratic(quadratic);
+    const std::string DOCID(params.get<0>());
+    const LaserOnlineModel& model = params.get<1>();
+    origLaserModel_->update(DOCID, model);
+    docid_t adid = 0;
+    if (adIndexer_.convertDocId(DOCID, adid))
+    {
+        (*pAdDb_)[adid] = model;
+    }
     req.result(true);
 }
     
@@ -347,6 +323,19 @@ void LaserGenericModel::save()
         LOG(INFO)<<e.what();
     }
     ofs.close();
+}
+    
+void LaserGenericModel::localizeFromOrigModel()
+{
+    OrigOnlineDB::iterator it = origLaserModel_->begin();
+    for (; it != origLaserModel_->begin(); ++it)
+    {
+        docid_t id = 0;
+        if (adIndexer_.convertDocId(it->first, id))
+        {
+            (*pAdDb_)[id] = it->second;
+        }
+    }
 }
 
 } }

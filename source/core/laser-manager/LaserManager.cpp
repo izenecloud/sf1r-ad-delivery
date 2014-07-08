@@ -28,6 +28,7 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
         const LaserPara& para)
     : collection_(collection)
     , workdir_(collectionDataPath + "/LASER/")
+    , sysdir_(MiningManager::system_working_path_ + "/LASER/" + collection_)
     , para_(para)
     , adSearchService_(adSearchService)
     , documentManager_(documentManager)
@@ -45,6 +46,11 @@ LaserManager::LaserManager(const boost::shared_ptr<AdSearchService>& adSearchSer
     {
         boost::filesystem::create_directories(workdir_);
     }
+    if (!boost::filesystem::exists(sysdir_))
+    {
+        boost::filesystem::create_directories(sysdir_);
+    }
+
     
     tokenizer_ = new Tokenizer(MiningManager::system_resource_path_ + "/dict/title_pca/",
         resdir_ + "/terms_dic.dat");

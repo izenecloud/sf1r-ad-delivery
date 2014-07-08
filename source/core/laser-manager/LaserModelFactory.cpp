@@ -12,6 +12,7 @@ namespace sf1r { namespace laser {
 LaserModelFactory::LaserModelFactory(const LaserManager& laserManager)
     : similarClustering_(*(laserManager.similarClustering_))
     , adIndexer_(*(laserManager.indexManager_))
+    , sysdir_(laserManager.sysdir_)
 {
 }
 
@@ -23,7 +24,7 @@ LaserModel* LaserModelFactory::createModel(const LaserPara& para,
     const std::size_t clusteringDimension = similarClustering_.size();
     if ("LaserGenericModel" == para.modelType)
     {
-        return new LaserGenericModel(adIndexer_, para.kvaddr, para.kvport, para.mqaddr, para.mqport, workdir, adDimension);
+        return new LaserGenericModel(adIndexer_, para.kvaddr, para.kvport, para.mqaddr, para.mqport, workdir, sysdir_, adDimension);
     }
     else if ("TopnClusteringModel" == para.modelType)
     {
@@ -31,7 +32,7 @@ LaserModel* LaserModelFactory::createModel(const LaserPara& para,
     }
     else if ("HierarchicalModel" == para.modelType)
     {
-        return new HierarchicalModel(adIndexer_, para.kvaddr, para.kvport, para.mqaddr, para.mqport, workdir, adDimension, clusteringDimension);
+        return new HierarchicalModel(adIndexer_, para.kvaddr, para.kvport, para.mqaddr, para.mqport, workdir, sysdir_, adDimension, clusteringDimension);
     }
     LOG(ERROR)<<"No Laser model for type = "<<para.modelType<<", LaserRecommend stays unavailable.";
     return NULL;

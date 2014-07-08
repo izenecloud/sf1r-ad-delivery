@@ -13,10 +13,12 @@ HierarchicalModel::HierarchicalModel(const AdIndexManager& adIndexer,
     const std::string& mqaddr,
     const int mqport,
     const std::string& workdir,
+    const std::string& sysdir,
     const std::size_t adDimension,
     const std::size_t clusteringDimension)
-    : LaserGenericModel(adIndexer, kvaddr, kvport, mqaddr, mqport, workdir, adDimension)
+    : LaserGenericModel(adIndexer, kvaddr, kvport, mqaddr, mqport, workdir, sysdir, adDimension)
     , workdir_(workdir)
+    , sysdir_(sysdir)
     , clusteringDimension_(clusteringDimension)
     , pClusteringDb_(NULL)
 {
@@ -230,5 +232,34 @@ void HierarchicalModel::load()
     ifs.close();
 }
     
+void HierarchicalModel::saveOrigModel()
+{
+    std::ofstream ofs((sysdir_ + "orig-per-clustering-online-model").c_str(), std::ofstream::binary | std::ofstream::trunc);
+    boost::archive::text_oarchive oa(ofs);
+    try
+    {
+        oa << *pClusteringDb_;
+    }
+    catch(std::exception& e)
+    {
+        LOG(INFO)<<e.what();
+    }
+    ofs.close();
+}
+
+void HierarchicalModel::localizeFromOrigModel()
+{
+    std::ifstream ifs((sysdir_ + "orig-per-clustering-online-model").c_str(), std::ios::binary);
+    boost::archive::text_iarchive ia(ifs);
+    try
+    {
+        ia >> *pClusteringDb_;
+    }
+    catch(std::exception& e)
+    {
+        LOG(INFO)<<e.what();
+    }
+    ifs.close();
+}
     
 } }

@@ -81,6 +81,7 @@ private:
 private:
     const std::string collection_;
     const std::string workdir_;
+    const std::string sysdir_;
     std::string resdir_;
     const LaserPara& para_;
     const boost::shared_ptr<AdSearchService>& adSearchService_;

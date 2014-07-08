@@ -4,6 +4,8 @@
 #include <boost/filesystem.hpp>
 #include <util/izene_serialization.h>
 #include <fstream>
+
+#include <mining-manager/MiningManager.h>
 #include <glog/logging.h>
 
 namespace sf1r { namespace laser {
@@ -222,5 +224,9 @@ void AdIndexManager::loadClusteringIndex()
         LOG(INFO)<<e.what();
     }
 }
-
+    
+bool AdIndexManager::convertDocId(const std::string& docStr, docid_t& docId) const
+{
+    return laserManager_->convertDocId(docStr, docId);
+}
 } }

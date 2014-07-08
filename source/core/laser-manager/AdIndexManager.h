@@ -48,6 +48,8 @@ public:
         lastDocId_ = docid;
     }
     
+    bool convertDocId(const std::string& docStr, docid_t& docId) const;
+    
     void preIndex();
     void postIndex();
 private:

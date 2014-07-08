@@ -11,6 +11,7 @@ public:
         const std::string& mqaddr,
         const int mqport,
         const std::string& workdir,
+        const std::string& sysdir,
         const std::size_t adDimension,
         const std::size_t clusteringDimension);
     ~HierarchicalModel();
@@ -35,8 +36,11 @@ private:
     void updatepClusteringDb(msgpack::rpc::request& req);
     void save();
     void load();
+    void saveOrigModel();
+    void localizeFromOrigModel();
 private:
     const std::string workdir_;
+    const std::string sysdir_;
     const std::size_t clusteringDimension_;
     std::vector<LaserOnlineModel>* pClusteringDb_;
 };
