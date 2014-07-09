@@ -242,7 +242,7 @@ float LaserGenericModel::score(
     
 void LaserGenericModel::dispatch(const std::string& method, msgpack::rpc::request& req)
 {
-    if ("updatePerAdOnlineModel" == method)
+    if ("update_online_model" == method)
     {
         updatepAdDb(req);
     }

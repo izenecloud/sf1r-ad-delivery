@@ -250,7 +250,7 @@ void LaserManager::tokenize(const std::string& text,
 
 bool LaserManager::isNeedClusteringKnowlege() const
 {
-    if ("TopNClusteringModel" == para_.modelType)
+    if ("TopnClusteringModel" == para_.modelType)
     {
         return true;
     }

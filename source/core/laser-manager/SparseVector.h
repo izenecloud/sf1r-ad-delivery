@@ -16,6 +16,17 @@ public:
         return value_;
     }
     
+    const std::vector<int>& index() const
+    {
+        return index_;
+    }
+
+    const std::vector<float>& value() const
+    {
+        return value_;
+    }
+    
+    
     MSGPACK_DEFINE(index_, value_);
 private:
     std::vector<int> index_;

@@ -239,7 +239,7 @@ void LaserOfflineModel::dispatch(const std::string& method, msgpack::rpc::reques
         }
         req.result(true);
     }
-    else if ("updateOfflineModel" == method)
+    else if ("update_offline_model" == method)
     {
         LOG(INFO)<<"update OfflineModel ..."; 
         msgpack::type::tuple<std::vector<float>, std::vector<float>, std::vector<std::vector<float> > > params;

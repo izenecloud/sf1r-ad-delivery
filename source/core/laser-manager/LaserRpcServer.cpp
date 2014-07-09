@@ -147,16 +147,14 @@ void LaserRpcServer::dispatch(msgpack::rpc::request req)
             req.params().convert(&params);
             laserManager->getUserInfoByUrl(params.get<0>(), params.get<1>(), );
         }*/
-        else if ("updateTopnClustering" == method ||
-                 "updatePerUserModel" == method ||
-                 "updatePerAdOnlineModel" == method ||
-                 "updateOfflineModel" == method ||
-                 "updatePerClusteringModel" == method ||
+        else if ("update_topn_clustering" == method ||
                  "ad_feature" == method || 
                  "ad_feature|size" == method || 
                  "ad_feature|next" == method || 
                  "ad_feature|start" == method ||
                  "precompute_ad_offline_model" == method ||
+                 "update_online_model" == method ||
+                 "update_offline_model" == method ||
                  "finish_online_model" == method ||
                  "finish_offline_model" == method
                  ) 

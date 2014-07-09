@@ -3,23 +3,46 @@
 #include "LaserOnlineModel.h"
 #include "LaserOfflineModel.h"
 #include "AdIndexManager.h"
+#include "SparseVector.h"
 
 namespace sf1r { namespace laser {
 TopnClusteringModel::TopnClusteringModel(const AdIndexManager& adIndexer,
     const std::vector<std::vector<int> >& similarClustering,
-    const std::string& workdir)
+    const std::string& workdir,
+    const std::string& sysdir)
     : adIndexer_(adIndexer)
     , similarClustering_(similarClustering)
     , workdir_(workdir)
+    , sysdir_(sysdir)
     , pUserDb_(NULL)
+    , origUserDb_(NULL)
     , topClusteringDb_(NULL)
+    , origClusteringDb_(NULL)
 {
     if (!boost::filesystem::exists(workdir_))
     {
         boost::filesystem::create_directory(workdir_);
     }
-    pUserDb_ = new LaserModelDB<std::string, LaserOnlineModel>(workdir_ + "/per-user-online-model");
-    topClusteringDb_ = new TopNClusteringDB(workdir_ + "/per-user-topn-clustering", similarClustering_.size());
+    const std::string origUserDB = sysdir_ + "/orig-per-user-online-model";
+    origUserDb_ = new LaserModelDB<std::string, LaserOnlineModel>(origUserDB);
+    const std::string userDB = workdir_ + "/per-user-online-model";
+    bool loadUserDB = false;
+    if (!boost::filesystem::exists(userDB))
+    {
+        loadUserDB = true;
+    }
+    pUserDb_ = new LaserModelDB<std::string, LaserOnlineModel>(userDB);
+    
+    const std::string origCDB = sysdir_ + "/orig-per-user-topn-clustering";
+    origClusteringDb_= new LaserModelDB<std::string, std::vector<std::pair<int, float> > >(origCDB);
+    const std::string cDB = workdir_ + "/per-user-topn-clustering";
+    bool loadCDB = false;
+    if (!boost::filesystem::exists(cDB))
+    {
+        loadCDB = true;
+    }
+    topClusteringDb_ = new LaserModelDB<std::string, std::vector<std::pair<int, float> > >(cDB);
+    localizeFromOrigDB(loadUserDB, loadCDB);
 }
 
 TopnClusteringModel::~TopnClusteringModel()
@@ -29,10 +52,20 @@ TopnClusteringModel::~TopnClusteringModel()
         delete pUserDb_;
         pUserDb_ = NULL;
     }
+    if (NULL != origUserDb_)
+    {
+        delete origUserDb_;
+        origUserDb_ = NULL;
+    }
     if (NULL != topClusteringDb_)
     {
         delete topClusteringDb_;
         topClusteringDb_ = NULL;
+    }
+    if (NULL != origClusteringDb_)
+    {
+        delete origClusteringDb_;
+        origClusteringDb_ = NULL;
     }
 }
 
@@ -46,12 +79,12 @@ bool TopnClusteringModel::candidate(
     ad.reserve(ncandidate);
     score.reserve(ncandidate);
 
-    std::map<int, float> topn;
+    std::vector<std::pair<int, float> > topn;
     if (!topClusteringDb_->get(text, topn))
     {
         return false;
     }
-    std::map<int, float>::const_iterator it = topn.begin();
+    std::vector<std::pair<int, float> >::const_iterator it = topn.begin();
     std::size_t old = 0;
     for (; it != topn.end(); ++it)
     {
@@ -89,12 +122,12 @@ bool TopnClusteringModel::candidate(
     ad.reserve(ncandidate);
     score.reserve(ncandidate);
 
-    std::map<int, float> topn;
+    std::vector<std::pair<int, float> > topn;
     if (!topClusteringDb_->get(text, topn))
     {
         return false;
     }
-    std::map<int, float>::const_iterator it = topn.begin();
+    std::vector<std::pair<int, float> >::const_iterator it = topn.begin();
     std::size_t old = 0;
     for (; it != topn.end(); ++it)
     {
@@ -187,34 +220,75 @@ float TopnClusteringModel::score(
     
 void TopnClusteringModel::dispatch(const std::string& method, msgpack::rpc::request& req)
 {
-    if ("updateTopNClustering" == method)
+    if ("update_topn_clustering" == method)
     {
         updateTopClusteringDb(req);
     }
-    else if ("updatePerUserModel" == method)
+    else if ("finish_offline_model" == method)
+    {
+        req.result(true);
+    }
+    else if ("update_online_model" == method)
     {
         updatepUserDb(req);
     }
-    req.error("No handler for " + method);
+    else if ("finish_online_model" == method)
+    {
+        req.result(true);
+    }
+    else
+    {
+        req.error("No handler for " + method);
+    }
 }
     
 void TopnClusteringModel::updatepUserDb(msgpack::rpc::request& req)
 {
-    msgpack::type::tuple<std::string, std::string, float, std::vector<float> > params;
+    msgpack::type::tuple<std::string, LaserOnlineModel> params;
     req.params().convert(&params);
-    LaserOnlineModel onlineModel(params.get<2>(), params.get<3>());
-    const std::string uuid(params.get<1>());
-    bool res = pUserDb_->update(uuid, onlineModel);
+    const std::string uuid(params.get<0>());
+    bool res = pUserDb_->update(uuid, params.get<1>());
     req.result(res);
 }
 
 void TopnClusteringModel::updateTopClusteringDb(msgpack::rpc::request& req)
 {
-    msgpack::type::tuple<std::string, std::string, std::map<int, float> > params;
+    msgpack::type::tuple<std::string, SparseVector> params;
     req.params().convert(&params);
-
-    bool res = topClusteringDb_->update(params.get<1>(), params.get<2>());
+    const SparseVector& sv = params.get<1>();
+    const std::vector<int>& index = sv.index();
+    const std::vector<float>& value = sv.value();
+    std::vector<std::pair<int, float> > topn(index.size());
+    for (std::size_t i = 0; i < index.size(); ++i)
+    {
+        topn[i] = std::make_pair(index[i], value[i]);
+    }
+    bool res = topClusteringDb_->update(params.get<0>(), topn);
     req.result(res);
+}
+    
+void TopnClusteringModel::localizeFromOrigDB(bool loadUDB, bool loadCDB)
+{
+    if (loadUDB)
+    {
+        LOG(INFO)<<"localize per-user-online-model from original model, since localized model doesn't exist. \
+            This procedure may be slow, be patient";
+        LaserModelDB<std::string, LaserOnlineModel>::iterator it = origUserDb_->begin();
+        for (; it != origUserDb_->end(); ++it)
+        {
+            pUserDb_->update(it->first, it->second);
+        }
+    }
+    if (loadCDB)
+    {
+        LOG(INFO)<<"localize per-user-topn-clustering from original model, since localized model doesn't exist. \
+            This procedure may be slow, be patient";
+        LaserModelDB<std::string, std::vector<std::pair<int, float> > >::iterator it = origClusteringDb_->begin();
+        for (; it != origClusteringDb_->end(); ++it)
+        {
+             topClusteringDb_->update(it->first, it->second);
+        }
+    }
 }
 
 } }

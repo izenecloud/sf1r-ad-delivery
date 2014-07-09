@@ -6,7 +6,6 @@
 
 namespace sf1r { namespace laser {
 class AdIndexManager;
-class TopNClusteringDB;
 class LaserOnlineModel;
 class LaserOfflineModel;
 
@@ -15,7 +14,8 @@ class TopnClusteringModel : public LaserModel
 public:
     TopnClusteringModel(const AdIndexManager& adIndexer,
         const std::vector<std::vector<int> >& similarClustering,
-        const std::string& workdir);
+        const std::string& workdir,
+        const std::string& sysdir);
     ~TopnClusteringModel();
 
 public:
@@ -67,12 +67,16 @@ private:
     void updatepUserDb(msgpack::rpc::request& req);
     void updateTopClusteringDb(msgpack::rpc::request& req);
 
+    void localizeFromOrigDB(bool loadUDB, bool loadCDB);
 protected:
     const AdIndexManager& adIndexer_;
     const std::vector<std::vector<int> >& similarClustering_;
     const std::string workdir_;
+    const std::string sysdir_;
     LaserModelDB<std::string, LaserOnlineModel>* pUserDb_;
-    TopNClusteringDB* topClusteringDb_;
+    LaserModelDB<std::string, LaserOnlineModel>* origUserDb_;
+    LaserModelDB<std::string, std::vector<std::pair<int, float> > >* topClusteringDb_;
+    LaserModelDB<std::string, std::vector<std::pair<int, float> > >* origClusteringDb_;
 };
 } }
 #endif
