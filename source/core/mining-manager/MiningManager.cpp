@@ -453,7 +453,7 @@ bool MiningManager::open()
         }
 
         /** slim */
-        if(mining_schema_.laser_index_config.isEnable && !initSlimManager_())
+        if(miningConfig_.laser_param.isEnableLaser() && !initSlimManager_())
         {
             LOG(ERROR) << "init SlimManager fail"<<endl;
             return false;
