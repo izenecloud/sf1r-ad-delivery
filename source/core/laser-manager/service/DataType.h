@@ -26,6 +26,7 @@ inline std::ostream& operator<<(std::ostream& os, uint128_t uint128)
 
 struct RequestData
 {
+    std::string collection_;
 };
 
 struct TestData: public RequestData

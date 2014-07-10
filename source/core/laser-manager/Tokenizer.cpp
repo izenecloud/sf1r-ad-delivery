@@ -1,4 +1,5 @@
 #include "Tokenizer.h"
+#include <util/functional.h>
 using namespace sf1r::laser::clustering::type;
 using namespace ilplib::knlp;
 
@@ -177,6 +178,7 @@ void Tokenizer::tokenize(const std::string& title, std::vector<std::pair<int, fl
         {
             it->second /= total;
         }
+        std::sort(vec.begin(), vec.end());
     }
     else
     {

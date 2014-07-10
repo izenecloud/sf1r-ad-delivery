@@ -131,6 +131,30 @@ void DocumentsRenderer::renderDocuments(
     }
 }
 
+void DocumentsRenderer::renderDocuments(
+    const std::vector<DisplayProperty>& propertyList,
+    const RawTextResultFromAIA& result,
+    izenelib::driver::Value& resources
+)
+{
+    std::vector<sf1r::wdocid_t> widList;
+    result.getWIdList(widList);
+
+    std::size_t resultCount = widList.size();
+
+    for (std::size_t i = 0; i < resultCount; ++i)
+    {
+        Value& newResource = resources();
+
+        newResource[Keys::_id] = widList[i];
+        newResource[Keys::_ctr] = result.score_[i];
+
+        renderPropertyList(splitRenderer_, propertyList,
+            result, i, newResource);
+    }
+}
+
+
 /**
  * @brief Render documents in response
  *

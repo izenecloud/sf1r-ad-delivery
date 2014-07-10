@@ -1,54 +1,90 @@
-#ifndef SF1R_LASER_ONLINE_MODEL_H
-#define SF1R_LASER_ONLINE_MODEL_H
-#include <3rdparty/msgpack/msgpack.hpp>
-#include <vector>
-#include <string>
+#ifndef LASER_ONLINE_MODEL_H
+#define LASER_ONLINE_MODEL_H
+#include "LaserModel.h"
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/serialization.hpp>
+#include <3rdparty/msgpack/msgpack.hpp>
 namespace sf1r { namespace laser {
-class LaserOnlineModel
+
+class LaserOnlineModel : public LaserModel 
 {
 public:
     LaserOnlineModel()
     {
     }
 
-    LaserOnlineModel(const std::vector<float>& args)
-    : args_(args)
+    LaserOnlineModel(float delta, const std::vector<float>& eta)
+        : delta_(delta)
+        , eta_(eta)
     {
     }
+    MSGPACK_DEFINE(delta_, eta_);
 
 public:
-    void userName(const std::string& un)
+    virtual bool candidate(
+        const std::string& text,
+        const std::size_t ncandidate,
+        const std::vector<std::pair<int, float> >& context, 
+        std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
+        std::vector<float>& score) const
     {
-        user_ = un;
-    }
-    
-    const std::string& userName() const
-    {
-        return user_;
-    }
-    
-    void set(const std::vector<float>& args)
-    {
-        args_ = args;
+        return false;
     }
 
-    const std::vector<float>& get() const
+    virtual bool candidate(
+        const std::string& text,
+        const std::size_t ncandidate,
+        const std::vector<float>& context, 
+        std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
+        std::vector<float>& score) const
     {
-        return args_;
+        return false;
     }
 
-    MSGPACK_DEFINE(user_, args_);
+    virtual float score( 
+        const std::string& text,
+        const std::vector<std::pair<int, float> >& user, 
+        const std::pair<docid_t, std::vector<std::pair<int, float> > >& ad,
+        const float score) const;
+    
+    virtual float score( 
+        const std::string& text,
+        const std::vector<float>& user, 
+        const std::pair<docid_t, std::vector<std::pair<int, float> > >& ad,
+        const float score) const;
+    
+    virtual void dispatch(const std::string& method, msgpack::rpc::request& req)
+    {
+    }
+    
+    virtual bool context(const std::string& text, std::vector<std::pair<int, float> >& context) const
+    {
+        return false;
+    }
+        
+    virtual bool context(const std::string& text, std::vector<float>& context) const
+    {
+        return false;
+    }
+        
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version)
     {
-        ar & args_;
+        ar & delta_;
+        ar & eta_;
     }
+    
+    const std::vector<float>& eta() const
+    {
+        return eta_;
+    }
+
 private:
-    std::vector<float> args_;
-    std::string user_;
+    float delta_;
+    std::vector<float> eta_;
 };
+
 } }
+
 #endif

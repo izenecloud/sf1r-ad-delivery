@@ -32,7 +32,7 @@ void LaserHandler::recommend()
     laser::LaserRecommendParam param;
     if (parseSelect_()  && parseLaserRecommendParam_(param))
     {
-        RawTextResultFromMIA result;
+        RawTextResultFromAIA result;
         laserManager->recommend(param, actionItem_, result);
         if (!result.error_.empty())
         {
@@ -40,7 +40,6 @@ void LaserHandler::recommend()
             return ;
         }
         
-
         DocumentsRenderer renderer(miningSchema_);
         renderer.renderDocuments(
             actionItem_.displayPropertyList_,
@@ -74,7 +73,7 @@ bool LaserHandler::parseSelect_()
 bool LaserHandler::parseLaserRecommendParam_(laser::LaserRecommendParam& param)
 {
     const Value& recommendParam = request_[driver::Keys::recommend];
-    param.uuid_ = asString(recommendParam[driver::Keys::uuid]);
+    param.text_ = asString(recommendParam[driver::Keys::text]);
     param.topN_ = asInt(recommendParam[driver::Keys::topn]);
     return true;
 }

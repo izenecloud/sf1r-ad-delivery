@@ -428,8 +428,8 @@ private:
     bool initProductRankerFactory_(const ProductRankingConfig& rankConfig);
 
     bool initAdIndexManager_(AdIndexConfig& adIndexConfig);
-    bool initLaserManager_(LaserIndexConfig& laserIndexConfig);
     bool initSlimManager_();
+    bool initLaserManager_(LaserPara& laserPara);
     
     const std::string& getOfferItemCountPropName_() const;
 

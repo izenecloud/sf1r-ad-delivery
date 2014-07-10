@@ -550,6 +550,23 @@ public:
             idList_, numberOfDuplicatedDocs_, numberOfSimilarDocs_, errno_, error_);
 }; // end - class RawTextResultFromMIA
 
+class RawTextResultFromAIA : public RawTextResultFromSIA // Log : 2011.07.27
+{
+public:
+
+    std::vector<float> score_;
+
+
+    DATA_IO_LOAD_SAVE(RawTextResultFromAIA,
+            &fullTextOfDocumentInPage_&snippetTextOfDocumentInPage_&rawTextOfSummaryInPage_&idList_
+            &score_&errno_&error_
+            );
+
+    MSGPACK_DEFINE(fullTextOfDocumentInPage_, snippetTextOfDocumentInPage_, rawTextOfSummaryInPage_,
+            idList_, score_, errno_, error_);
+}; // end - class RawTextResultFromAIA
+
+
 } // end - namespace sf1r
 
 

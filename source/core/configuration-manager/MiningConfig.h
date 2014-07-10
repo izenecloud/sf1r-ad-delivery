@@ -50,6 +50,41 @@ private:
     }
 };
 
+class LaserPara
+{
+public:
+    std::string modelType;
+    std::string kvaddr;
+    int kvport;
+    std::string mqaddr;
+    int mqport;
+
+    LaserPara() 
+        : modelType("")
+        , kvaddr("")
+        , kvport(0)
+        , mqaddr("")
+        , mqport(0)
+    {}
+public:
+    bool isEnableLaser()
+    {
+        return !modelType.empty();
+    }
+private:
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void serialize(Archive & ar, const unsigned int version)
+    {
+        ar & modelType;
+        ar & kvaddr;
+        ar & kvport;
+        ar & mqaddr;
+        ar & mqport;
+    }
+};
+
 /**
  * @brief for configuration <MiningTaskPara>
  */
@@ -97,6 +132,7 @@ public:
     DocumentMiningPara dcmin_param;
     ProductRankingPara product_ranking_param;
     MiningTaskPara mining_task_param;
+    LaserPara laser_param;
 };
 
 } // namespace

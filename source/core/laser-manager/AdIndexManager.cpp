@@ -1,155 +1,161 @@
 #include "AdIndexManager.h"
+#include "LaserManager.h"
+
 #include <boost/filesystem.hpp>
 #include <util/izene_serialization.h>
 #include <fstream>
+
+#include <mining-manager/MiningManager.h>
 #include <glog/logging.h>
 
 namespace sf1r { namespace laser {
 
 AdIndexManager::AdIndexManager(const std::string& workdir, 
-        const std::size_t clusteringNum,
-        const boost::shared_ptr<DocumentManager>& documentManager)
-    : workdir_(workdir + "/LASER/")
-    , clusteringNum_(clusteringNum)
-    , containerPtr_(NULL)
+        const bool isEnableClustering, 
+        LaserManager* laserManager)
+    : workdir_(workdir + "/index/")
+    , isEnableClustering_(isEnableClustering)
+    , adPtr_(NULL)
+    , adClusteringPtr_(NULL)
+    , clusteringPtr_(NULL)
     , lastDocId_(0)
-    , documentManager_(documentManager)
-//    , cache_(NULL)
+    , laserManager_(laserManager)
+    , documentManager_(laserManager_->documentManager_)
 {
     if (!boost::filesystem::exists(workdir_))
     {
-        boost::filesystem::create_directory(workdir_);
+        boost::filesystem::create_directories(workdir_);
     }
-    containerPtr_ = new ContainerType(Lux::IO::NONCLUSTER);
-    containerPtr_->set_noncluster_params(Lux::IO::Linked);
-    containerPtr_->set_lock_type(Lux::IO::LOCK_THREAD);
-    open_();
-//    cache_ = new Cache(clusteringNum_);
-    for (std::size_t i = 0; i < clusteringNum_; i++)
+    adPtr_ = new std::vector<std::vector<std::pair<int, float> > >();
+    loadAdIndex();
+    if (isEnableClustering_)
     {
-        ADVector advec;
-        if (get(i, advec))
-        {
-            LOG(INFO)<<"clustering  = "<<i<<" ad num = "<<advec.size();
-        }
+        clusteringPtr_ = new std::vector<std::vector<docid_t> >(laserManager_->clusteringContainer_->size());
+        adClusteringPtr_ = new std::vector<std::size_t>();
+        loadClusteringIndex();
     }
 }
 
 AdIndexManager::~AdIndexManager()
 {
-    if (NULL != containerPtr_)
+    if (NULL != clusteringPtr_)
     {
-        containerPtr_->close();
-        delete containerPtr_;
+        delete clusteringPtr_;
+        clusteringPtr_ = NULL;
     }
-    serializeLastDocid_();
+    if (NULL != adClusteringPtr_)
+    {
+        delete adClusteringPtr_;
+        adClusteringPtr_ = NULL;
+    }
+    if (NULL != adPtr_)
+    {
+        delete adPtr_;
+        adPtr_ = NULL;
+    }
 }
-    
+
+void AdIndexManager::index(const docid_t& docid, 
+    const std::vector<std::pair<int, float> >& vec)
+{
+    boost::unique_lock<boost::shared_mutex> uniqueLock(mtx_);
+    if (adPtr_->size() <= docid)
+    {
+        adPtr_->resize(docid + 1);
+    }
+    (*adPtr_)[docid] = vec;
+}
+
 void AdIndexManager::index(const std::size_t& clusteringId, 
-        const docid_t& docid, 
+        const docid_t& docid,
         const std::vector<std::pair<int, float> >& vec)
 {
-    /*ADVector& advec = (*cache_)[clusteringId];
-    AD ad;
-    ad.first = docid;
-    ad.second = vec;
-    advec.push_back(ad);*/
-
-    ADVector advec;
-    get(clusteringId, advec);
-
-    AD ad;
-    ad.first = docid;
-    ad.second = vec;
-    advec.push_back(ad);
-    izenelib::util::izene_serialization<ADVector> izs(advec);
-    char* src;
-    size_t srcLen;
-    izs.write_image(src, srcLen);
-    containerPtr_->put(clusteringId, src, srcLen, Lux::IO::OVERWRITE);
+    boost::unique_lock<boost::shared_mutex> uniqueLock(mtx_);
+    (*clusteringPtr_)[clusteringId].push_back(docid);
+    if (adClusteringPtr_->size() <= docid)
+    {
+        adClusteringPtr_->resize(docid + 1);
+    }
+    (*adClusteringPtr_)[docid] = clusteringId;
+    if (adPtr_->size() <= docid)
+    {
+        adPtr_->resize(docid + 1);
+    }
+    (*adPtr_)[docid] = vec;
 }
 
 bool AdIndexManager::get(const std::size_t& clusteringId, ADVector& advec) const
 {
-    Lux::IO::data_t *val_p = NULL;
-    if (!containerPtr_->get(clusteringId, &val_p, Lux::IO::SYSTEM))
+    //boost::shared_lock<boost::shared_mutex> sharedLock(mtx_);
+    if (clusteringId >= clusteringPtr_->size())
     {
-        containerPtr_->clean_data(val_p);
         return false;
     }
-    else
+    const std::vector<docid_t>& docidList = (*clusteringPtr_)[clusteringId];
+    for (std::size_t i = 0; i < docidList.size(); ++i)
     {
-        ADVector vec;
-        izenelib::util::izene_deserialization<ADVector> izd((char*)val_p->data, val_p->size);
-        izd.read_image(vec);
-        containerPtr_->clean_data(val_p);
-        ADVector::const_iterator it = vec.begin();
-        for (; it != vec.end(); ++it)
-        {
-            if (!documentManager_->isDeleted(it->first))
-            {
-                advec.push_back(*it);
-            }
-        }
+        advec.push_back(std::make_pair(docidList[i], (*adPtr_)[docidList[i]]));
     }
     return true;
 }
 
-void AdIndexManager::open_()
+bool AdIndexManager::get(const docid_t& docid, std::size_t& clustering) const
 {
-    LOG(INFO)<<"AdIndexManager worddir = "<<workdir_;
-    try
+    if (docid >= adClusteringPtr_->size())
     {
-        const std::string filename = workdir_ + "/index";
-        if ( !boost::filesystem::exists(filename) )
-        {
-            containerPtr_->open(filename.c_str(), Lux::IO::DB_CREAT);
-        }
-        else
-        {
-            containerPtr_->open(filename.c_str(), Lux::IO::DB_RDWR);
-        }
+        return false;
     }
-    catch (...)
-    {
-    }
-
-   {
-        const std::string filename = workdir_ + "/last_docid";
-        if ( boost::filesystem::exists(filename) )
-        {
-            std::ifstream ifs(filename.c_str(), std::ios::binary);
-            boost::archive::text_iarchive ia(ifs);
-            ia >> lastDocId_;
-        }
-   }
+    clustering = (*adClusteringPtr_)[docid];
+    return true;
 }
-    
+
+bool AdIndexManager::get(const docid_t& docid, 
+    std::vector<std::pair<int, float> > & vec) const
+{
+    if (docid >= adPtr_->size())
+    {
+        return false;
+    }
+    vec = (*adPtr_)[docid];
+    return true;
+}
+
+bool AdIndexManager::get(const std::size_t& clusteringId, std::vector<docid_t>& docids) const
+{
+    if (clusteringId >= clusteringPtr_->size())
+    {
+        return false;
+    }
+    docids = (*clusteringPtr_)[clusteringId];
+    return true;
+}
+
+
 void AdIndexManager::preIndex()
 {
-    //LOG(INFO)<<"load LUX IO to cache...";
-    /*for (std::size_t i = 0; i < clusteringNum_; i++)
-    {
-        ADVector advec;
-        if (get(i, advec))
-        {
-            (*cache_)[i] = advec;
-        }
-    }*/
+    laserManager_->recommend_->preUpdateAdDimension();
 }
 
 void AdIndexManager::postIndex()
 {
-    serializeLastDocid_();
+    saveAdIndex();
+    if (isEnableClustering_)
+    {
+        saveClusteringIndex();
+    }
+    laserManager_->recommend_->updateAdDimension(lastDocId_);
+    laserManager_->recommend_->postUpdateAdDimension();
 }
     
-void AdIndexManager::serializeLastDocid_()
+void AdIndexManager::saveAdIndex()
 {
-    const std::string filename = workdir_ + "/last_docid";
-    std::ofstream ofs(filename .c_str(), std::ofstream::binary | std::ofstream::trunc);
+    LOG(INFO)<<"save ad-index...";
+    const std::string filename = workdir_ + "ad-index";
+    std::ofstream ofs(filename.c_str(), std::ofstream::binary | std::ofstream::trunc);
     boost::archive::text_oarchive oa(ofs);
     try
     {
+        oa << *adPtr_;
         oa << lastDocId_;
     }
     catch(std::exception& e)
@@ -158,5 +164,69 @@ void AdIndexManager::serializeLastDocid_()
     }
     ofs.close();
 }
+    
+void AdIndexManager::loadAdIndex()
+{
+    const std::string filename = workdir_ + "ad-index";
+    if (!boost::filesystem::exists(filename))
+    {
+        return;
+    }
+    LOG(INFO)<<"open ad-index...";
+    try
+    {
+        std::ifstream ifs(filename.c_str(), std::ios::binary);
+        boost::archive::text_iarchive ia(ifs);
+        ia >> *adPtr_;
+        ia >> lastDocId_;
+    }
+    catch (std::exception& e)
+    {
+        LOG(INFO)<<e.what();
+    }
+}
 
+void AdIndexManager::saveClusteringIndex()
+{
+    LOG(INFO)<<"save clustering-index...";
+    const std::string filename = workdir_ + "clustering-index";
+    std::ofstream ofs(filename.c_str(), std::ofstream::binary | std::ofstream::trunc);
+    boost::archive::text_oarchive oa(ofs);
+    try
+    {
+        oa << *clusteringPtr_;
+        oa << *adClusteringPtr_;
+    }
+    catch(std::exception& e)
+    {
+        LOG(INFO)<<e.what();
+    }
+    ofs.close();
+}
+    
+void AdIndexManager::loadClusteringIndex()
+{
+    const std::string filename = workdir_ + "clustering-index";
+    if (!boost::filesystem::exists(filename))
+    {
+        return;
+    }
+    LOG(INFO)<<"open clustering-index...";
+    try
+    {
+        std::ifstream ifs(filename.c_str(), std::ios::binary);
+        boost::archive::text_iarchive ia(ifs);
+        ia >> *clusteringPtr_;
+        ia >> *adClusteringPtr_;
+    }
+    catch (std::exception& e)
+    {
+        LOG(INFO)<<e.what();
+    }
+}
+    
+bool AdIndexManager::convertDocId(const std::string& docStr, docid_t& docId) const
+{
+    return laserManager_->convertDocId(docStr, docId);
+}
 } }

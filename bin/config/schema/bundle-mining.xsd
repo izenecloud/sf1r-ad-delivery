@@ -27,6 +27,13 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
+    <xs:complexType name="LaserParaType">
+        <xs:attribute name="modelType" type="xs:string" use="required"/>
+        <xs:attribute name="kvaddr" type="xs:string" use="optional"/>
+        <xs:attribute name="kvport" type="xs:integer" use="optional"/>
+        <xs:attribute name="mqaddr" type="xs:string" use="optional"/>
+        <xs:attribute name="mqport" type="xs:integer" use="optional"/>
+    </xs:complexType>
 
     <xs:element name="MiningBundle">
         <xs:complexType>
@@ -39,7 +46,6 @@
                             <xs:element ref="ProductRanking" minOccurs="0"/>
                             <xs:element ref="SuffixMatch" minOccurs="0"/>
                             <xs:element ref="AdIndex" minOccurs="0"/>
-                            <xs:element ref="LaserIndex" minOccurs="0"/>
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
@@ -51,6 +57,7 @@
                             <xs:element name="DocumentMiningPara" type="DocumentMiningParaType" minOccurs="0"/>
                             <xs:element name="ProductRankingPara" type="ProductRankingParaType" minOccurs="0"/>
                             <xs:element name="MiningTaskPara" type="MiningTaskParaType" minOccurs="0"/>
+                            <xs:element name="LaserPara" type="LaserParaType" minOccurs="0"/>
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
@@ -91,14 +98,6 @@
         </xs:complexType>
     </xs:element>
     
-    <xs:element name="LaserIndex">
-        <xs:complexType>
-            <xs:sequence>
-                <xs:element name="Property" minOccurs="0" maxOccurs="unbounded"/>
-            </xs:sequence>
-        </xs:complexType>
-    </xs:element>
-
     <xs:element name="Normalizer">
         <xs:complexType>
             <xs:attribute name="padding" type="xs:string" use="required"/>

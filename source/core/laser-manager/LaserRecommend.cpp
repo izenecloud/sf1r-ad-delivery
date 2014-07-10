@@ -1,109 +1,119 @@
 #include "LaserRecommend.h"
+#include "LaserModel.h"
+#include "LaserModelFactory.h"
+#include "LaserManager.h"
 #include <glog/logging.h>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 
 namespace sf1r { namespace laser {
 
-bool LaserRecommend::recommend(const std::string& uuid, 
+LaserRecommend::LaserRecommend(const LaserManager* laserManager)
+    : laserManager_(laserManager)
+    , factory_(NULL)
+    , model_(NULL)
+{
+    factory_ = new LaserModelFactory(*laserManager_);
+    model_ = factory_->createModel(laserManager_->para_, 
+        laserManager_->workdir_ + "/model/");
+}
+
+LaserRecommend::~LaserRecommend()
+{
+    if (NULL != factory_)
+    {
+        delete factory_;
+        factory_ = NULL;
+    }
+    if (NULL != model_)
+    {
+        delete model_;
+        model_ = NULL;
+    }
+}
+    
+void LaserRecommend::preUpdateAdDimension()
+{
+    mutex_.lock();
+}
+
+void LaserRecommend::postUpdateAdDimension()
+{
+    mutex_.unlock();
+}
+
+void LaserRecommend::updateAdDimension(const std::size_t adDimension)
+{
+    model_->updateAdDimension(adDimension);
+}
+
+bool LaserRecommend::recommend(const std::string& text, 
     std::vector<docid_t>& itemList, 
     std::vector<float>& itemScoreList, 
     const std::size_t num) const
 {
-    std::map<int, float> clustering;
-    std::vector<float> model;
-    if (topnClustering_->get(uuid, clustering) && laserOnlineModel_->get(uuid, model))
     {
-        priority_queue queue;
-        LOG(INFO)<<"uuid = "<<uuid<<", top clustering num = "<<clustering.size();
-        for (std::map<int, float>::const_iterator it = clustering.begin();
-            it != clustering.end(); ++it)
-        {
-            AdIndexManager::ADVector advec;
-            if (getAD(it->first, advec))
-            {
-                LOG(INFO)<<"clusteringId = "<<it->first<<", ad num = "<<advec.size();
-                topN(model, it->second, advec, num, queue);
-            }
-            else
-            {
-                LOG(INFO)<<"no ad in clustering = "<<it->first<<", use similar clustering instead";
-                if (getSimilarAd(it->first, advec))
-                {
-                    topN(model, it->second, advec, num, queue);
-                }
-            }
-        }
-
+        boost::shared_lock<boost::shared_mutex> sharedLock(mutex_, boost::try_to_lock);
+        if (!sharedLock)
+            return false;
+    }
+    std::vector<float> context;
+    if (!model_->context(text, context))
+    {
+        return false;
+    }
+    boost::posix_time::ptime stime = boost::posix_time::microsec_clock::local_time();
+    std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > > ad;
+    std::vector<float> score;
+    if (!model_->candidate(text, 1000, context, ad, score))
+    {
+        return false;
+    }
+    boost::posix_time::ptime etime = boost::posix_time::microsec_clock::local_time();
+    LOG(INFO)<<"candidate time = "<<(etime-stime).total_milliseconds()<<"\t ad size = "<<ad.size();
+   
+    priority_queue queue;
+    stime = boost::posix_time::microsec_clock::local_time();
+    for (std::size_t i = 0; i < ad.size(); ++i)
+    {
+        topn(ad[i].first, model_->score(text, context,  ad[i], score[i]), num, queue);   
+        //model_->score(text, context,  ad[i], score[i]);   
+    }
+    etime = boost::posix_time::microsec_clock::local_time();
+    LOG(INFO)<<"score time = "<<(etime-stime).total_milliseconds();
+    {
         while (!queue.empty())
         {
            itemList.push_back(queue.top().first);
-           itemScoreList.push_back(queue.top().second);
+           itemScoreList.push_back(1.0 / (1 + exp(-1 * queue.top().second)));
+           //itemScoreList.push_back(queue.top().second);
            queue.pop();
         }
-        return true;
+    }
+    std::reverse(itemList.begin(), itemList.end());
+    std::reverse(itemScoreList.begin(), itemScoreList.end());
+    return true;
+}
+
+void LaserRecommend::topn(const docid_t& docid, const float score, const std::size_t n, priority_queue& queue) const
+{
+    if(queue.size() >= n)
+    {
+        if(score > queue.top().second)
+        {
+            queue.pop();
+            queue.push(std::make_pair(docid, score));
+        }
     }
     else
     {
-        LOG(INFO)<<"top clustering or online model does not exist";
-        return false;
+        queue.push(std::make_pair(docid, score));
     }
 }
 
-bool LaserRecommend::getAD(const std::size_t& clusteringId, AdIndexManager::ADVector& advec) const
+void LaserRecommend::dispatch(const std::string& method, msgpack::rpc::request& req)
 {
-    return indexManager_->get(clusteringId, advec);
+    model_->dispatch(method, req);
 }
     
-bool LaserRecommend::getSimilarAd(const std::size_t& clusteringId, AdIndexManager::ADVector& advec) const
-{
-    bool ret = false;
-    std::vector<int> idvec;
-    getSimilarClustering(clusteringId, idvec);
-    LOG(INFO)<<"clustering = "<<clusteringId<<", similar clustering size = "<<idvec.size();
-    for (std::size_t i = 0; i < idvec.size(); ++i )
-    {
-        ret |= getAD(idvec[i], advec);
-    }
-    return ret;
-}
-
-void LaserRecommend::getSimilarClustering(const std::size_t& clusteringId, std::vector<int>& idvec) const
-{
-    idvec = (*similarClustering_)[clusteringId];
-}
-
-void LaserRecommend::topN(const std::vector<float>& model, 
-        const float offset, 
-        const AdIndexManager::ADVector& advec, 
-        const std::size_t n, 
-        priority_queue& queue) const
-{
-    for (std::size_t i = 0; i < advec.size(); ++i)
-    {
-        const AdIndexManager::AD& ad = advec[i];
-        const docid_t& docid = ad.first;
-        const std::vector<std::pair<int, float> >& vec = ad.second;
-        std::vector<std::pair<int, float> >::const_iterator it = vec.begin();
-        float weight = 0;
-        for (; it != vec.end(); ++it)
-        {
-            weight += model[it->first + 1] * it->second;
-        }
-        weight += model[0];
-        weight += offset;
-        if(queue.size() >= n)
-        {
-            if(weight > queue.top().second)
-            {
-                queue.pop();
-                queue.push(std::make_pair(docid, weight));
-            }
-        }
-        else
-        {
-            queue.push(std::make_pair(docid, weight));
-        }
-    }
-}
-
 } }

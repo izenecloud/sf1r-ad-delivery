@@ -40,6 +40,12 @@ public:
 
     void renderDocuments(
         const std::vector<DisplayProperty>& propertyList,
+        const RawTextResultFromAIA& result,
+        izenelib::driver::Value& resources
+    );
+
+    void renderDocuments(
+        const std::vector<DisplayProperty>& propertyList,
         const KeywordSearchResult& searchResult,
         izenelib::driver::Value& resources
     );

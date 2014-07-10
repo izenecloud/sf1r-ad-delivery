@@ -1427,6 +1427,15 @@ void CollectionConfig::parseMiningBundleParam(const ticpp::Element * mining, Col
     // for mining task
     params.Get<std::size_t>("MiningTaskPara/threadnum",
                             mining_config.mining_task_param.threadNum);
+    
+    //for laser
+    params.GetString("LaserPara/modelType", mining_config.laser_param.modelType);
+    boost::trim(mining_config.laser_param.modelType);
+    params.GetString("LaserPara/kvaddr", mining_config.laser_param.kvaddr);
+    params.Get<int>("LaserPara/kvport", mining_config.laser_param.kvport);
+    params.GetString("LaserPara/mqaddr", mining_config.laser_param.mqaddr);
+    params.Get<int>("LaserPara/mqport", mining_config.laser_param.mqport);
+    LOG(INFO)<<mining_config.laser_param.modelType;
 
     std::set<std::string> directories;
     params.Get("CollectionDataDirectory", directories);
@@ -1753,8 +1762,7 @@ void CollectionConfig::parseMiningBundleSchema(const ticpp::Element * mining_sch
     task_node = getUniqChildElement(mining_schema_node, "AdIndex", false);
     parseAdIndexNode(task_node, collectionMeta);
     
-    task_node = getUniqChildElement(mining_schema_node, "LaserIndex", false);
-    parseLaserIndexNode(task_node, collectionMeta);
+    task_node = getUniqChildElement(mining_schema_node, "Laser", false);
 }
 
 void CollectionConfig::parseFuzzyNormalizerNode(
@@ -1809,20 +1817,6 @@ void CollectionConfig::parseAdIndexNode(
     }
 }
     
-void CollectionConfig::parseLaserIndexNode(
-            const ticpp::Element* laserIndexNode,
-            CollectionMeta& collectionMeta) const
-{
-    if(!laserIndexNode)
-        return;
-
-    MiningSchema& miningSchema =
-        collectionMeta.miningBundleConfig_->mining_schema_;
-
-
-   miningSchema.laser_index_config.isEnable = true;
-}
-
 void CollectionConfig::parseZambeziNode(
     const ticpp::Element* zambeziNode,
     CollectionMeta& collectionMeta) const
