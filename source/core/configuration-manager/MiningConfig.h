@@ -54,6 +54,8 @@ class LaserPara
 {
 public:
     std::string modelType;
+    int AD_FD;
+    int USER_FD;
     std::string kvaddr;
     int kvport;
     std::string mqaddr;
@@ -61,6 +63,8 @@ public:
 
     LaserPara() 
         : modelType("")
+        , AD_FD(-1)
+        , USER_FD(-1)
         , kvaddr("")
         , kvport(0)
         , mqaddr("")
@@ -78,6 +82,8 @@ private:
     void serialize(Archive & ar, const unsigned int version)
     {
         ar & modelType;
+        ar & AD_FD;
+        ar & USER_FD;
         ar & kvaddr;
         ar & kvport;
         ar & mqaddr;

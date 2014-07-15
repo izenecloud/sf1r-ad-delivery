@@ -33,11 +33,15 @@ private:
 LaserOfflineModel::LaserOfflineModel(const AdIndexManager& adIndexer,
     const std::string& filename,
     const std::string& sysdir,
-    const std::size_t adDimension)
+    const std::size_t adDimension,
+    const std::size_t AD_FD,
+    const std::size_t USER_FD)
     : adIndexer_(adIndexer)
     , filename_(filename)
     , sysdir_(sysdir)
     , adDimension_(adDimension)
+    , AD_FD_(AD_FD)
+    , USER_FD_(USER_FD)
     , alpha_(NULL)
     , beta_(NULL)
     , betaStable_(NULL)
@@ -61,11 +65,12 @@ LaserOfflineModel::LaserOfflineModel(const AdIndexManager& adIndexer,
     }
     origConjunctionStable_ = new OrigConjunctionStableDB(conjunctionDB);
     
-    alpha_ = new std::vector<float>();
-    beta_ = new std::vector<float>();
+    alpha_ = new std::vector<float>(AD_FD_);
+    beta_ = new std::vector<float>(USER_FD_);
     betaStable_ = new std::vector<float>(adDimension_);
-    conjunction_ = new std::vector<std::vector<float> >();
-    conjunctionStable_ = new std::vector<std::vector<float> >(adDimension_);
+    std::vector<float> adZero(AD_FD);
+    conjunction_ = new std::vector<std::vector<float> >(USER_FD, adZero);
+    conjunctionStable_ = new std::vector<std::vector<float> >(adDimension_, adZero);
     if (boost::filesystem::exists(filename_))
     {
         load();
@@ -108,7 +113,7 @@ LaserOfflineModel::LaserOfflineModel(const AdIndexManager& adIndexer,
             {
                 vec.push_back((rand() % 100) / 100.0);
             }
-            (*conjunctionStable_)[i] = vec;
+            (*conjunction_)[i] = vec;
         }
         save();*/
 }
@@ -229,6 +234,12 @@ void LaserOfflineModel::dispatch(const std::string& method, msgpack::rpc::reques
         req.params().convert(&params);
         const std::string& DOCID = params.get<0>();
         const OfflineStable& stable = params.get<1>();
+        if (stable.conjunctionStable().size() != AD_FD_)
+        {
+            LOG(ERROR)<<"Dimension Mismatch";
+            req.result(false);
+            return;
+        }
         origBetaStable_->update(DOCID, stable.betaStable());
         origConjunctionStable_->update(DOCID, stable.conjunctionStable());
         docid_t adid = 0;
@@ -244,8 +255,28 @@ void LaserOfflineModel::dispatch(const std::string& method, msgpack::rpc::reques
         LOG(INFO)<<"update OfflineModel ..."; 
         msgpack::type::tuple<std::vector<float>, std::vector<float>, std::vector<std::vector<float> > > params;
         req.params().convert(&params);
+        if (params.get<0>().size() != alpha_->size())
+        {
+            LOG(ERROR)<<"Dimension Mismatch";
+            req.result(false);
+            return;
+        }
         *alpha_ = params.get<0>();
+        if (params.get<1>().size() != beta_->size())
+        {
+            LOG(ERROR)<<"Dimension Mismatch";
+            req.result(false);
+            return;
+        }
         *beta_ = params.get<1>();
+        const std::vector<std::vector<float> >& conjunction = params.get<2>();
+        if (conjunction.size() != conjunction_->size() ||
+            conjunction[0].size() != (*conjunction_)[0].size())
+        {
+            LOG(ERROR)<<"Dimension Mismatch";
+            req.result(false);
+            return;
+        }
         *conjunction_ = params.get<2>();
         req.result(true);
     }
@@ -303,7 +334,8 @@ void LaserOfflineModel::load()
 void LaserOfflineModel::updateAdDimension(const std::size_t adDimension)
 {
     betaStable_->resize(adDimension);
-    conjunctionStable_->resize(adDimension);
+    std::vector<float> adZero(AD_FD_);
+    conjunctionStable_->resize(adDimension, adZero);
     if (NULL != threadGroup_)
     {
         LOG(INFO)<<"wait last time's pre-compute threads finish";

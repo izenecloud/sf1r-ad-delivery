@@ -15,8 +15,10 @@ HierarchicalModel::HierarchicalModel(const AdIndexManager& adIndexer,
     const std::string& workdir,
     const std::string& sysdir,
     const std::size_t adDimension,
-    const std::size_t clusteringDimension)
-    : LaserGenericModel(adIndexer, kvaddr, kvport, mqaddr, mqport, workdir, sysdir, adDimension)
+    const std::size_t clusteringDimension,
+    const std::size_t AD_FD,
+    const std::size_t USER_FD)
+    : LaserGenericModel(adIndexer, kvaddr, kvport, mqaddr, mqport, workdir, sysdir, adDimension, AD_FD, USER_FD)
     , workdir_(workdir)
     , sysdir_(sysdir)
     , clusteringDimension_(clusteringDimension)
@@ -26,7 +28,10 @@ HierarchicalModel::HierarchicalModel(const AdIndexManager& adIndexer,
     {
         boost::filesystem::create_directory(workdir_);
     }
-    pClusteringDb_ = new std::vector<LaserOnlineModel>(clusteringDimension_);
+
+    std::vector<float> vec(AD_FD_);
+    LaserOnlineModel initModel(0.0, vec);
+    pClusteringDb_ = new std::vector<LaserOnlineModel>(clusteringDimension_, initModel);
     LOG(INFO)<<"clustering dimension = "<<clusteringDimension_;
     if (boost::filesystem::exists(workdir_ + "per-clustering-online-model"))
     {
@@ -209,8 +214,16 @@ void HierarchicalModel::updatepClusteringDb(msgpack::rpc::request& req)
     std::size_t clusteringId = 0;
     ss >> clusteringId;
     //LOG(INFO)<<clusteringId;
-    (*pClusteringDb_)[clusteringId] =  params.get<1>();
-    req.result(true);
+    if (params.get<1>().eta().size() != AD_FD_)
+    {
+        LOG(ERROR)<<"Dimension Mismatch";
+        req.result(false);
+    }
+    else
+    {
+        (*pClusteringDb_)[clusteringId] =  params.get<1>();
+        req.result(true);
+    }
 }
 
 void HierarchicalModel::save()

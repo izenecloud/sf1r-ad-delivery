@@ -13,7 +13,9 @@ public:
         const std::string& workdir,
         const std::string& sysdir,
         const std::size_t adDimension,
-        const std::size_t clusteringDimension);
+        const std::size_t clusteringDimension,
+        const std::size_t AD_FD,
+        const std::size_t USER_FD);
     ~HierarchicalModel();
 public:
     virtual bool candidate(

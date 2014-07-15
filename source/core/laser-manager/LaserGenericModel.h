@@ -25,7 +25,9 @@ public:
         const int mqport,
         const std::string& workdir,
         const std::string& sysdir,
-        const std::size_t maxDocid);
+        const std::size_t maxDocid,
+        const std::size_t AD_FD,
+        const std::size_t USER_FD);
     ~LaserGenericModel();
 
 public:
@@ -70,11 +72,14 @@ private:
     void load();
     void save();
     void localizeFromOrigModel();
+
 protected:
     const AdIndexManager& adIndexer_;
     const std::string workdir_;
     const std::string sysdir_;
     std::size_t adDimension_;
+    const std::size_t AD_FD_;
+    const std::size_t USER_FD_;
     std::vector<LaserOnlineModel>* pAdDb_;
     LaserOfflineModel* offlineModel_;
     context::KVClient* kvclient_;

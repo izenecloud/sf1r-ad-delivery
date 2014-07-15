@@ -1431,6 +1431,8 @@ void CollectionConfig::parseMiningBundleParam(const ticpp::Element * mining, Col
     //for laser
     params.GetString("LaserPara/modelType", mining_config.laser_param.modelType);
     boost::trim(mining_config.laser_param.modelType);
+    params.Get<int>("LaserPara/AD_FD", mining_config.laser_param.AD_FD);
+    params.Get<int>("LaserPara/USER_FD", mining_config.laser_param.USER_FD);
     params.GetString("LaserPara/kvaddr", mining_config.laser_param.kvaddr);
     params.Get<int>("LaserPara/kvport", mining_config.laser_param.kvport);
     params.GetString("LaserPara/mqaddr", mining_config.laser_param.mqaddr);
