@@ -29,6 +29,8 @@
     </xs:complexType>
     <xs:complexType name="LaserParaType">
         <xs:attribute name="modelType" type="xs:string" use="required"/>
+        <xs:attribute name="AD_FD" type="xs:integer" use="required"/>
+        <xs:attribute name="USER_FD" type="xs:integer" use="required"/>
         <xs:attribute name="kvaddr" type="xs:string" use="optional"/>
         <xs:attribute name="kvport" type="xs:integer" use="optional"/>
         <xs:attribute name="mqaddr" type="xs:string" use="optional"/>

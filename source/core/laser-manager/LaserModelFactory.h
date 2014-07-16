@@ -21,7 +21,7 @@ public:
         const std::string& workdir) const;
  
 private:
-    const std::vector<std::vector<int> >& similarClustering_;
+    const std::vector<std::vector<int> >* similarClustering_;
     const AdIndexManager& adIndexer_;
     const std::string sysdir_;
 };

@@ -42,11 +42,15 @@ LaserGenericModel::LaserGenericModel(const AdIndexManager& adIndexer,
     const int mqport,
     const std::string& workdir,
     const std::string& sysdir,
-    const std::size_t adDimension)
+    const std::size_t adDimension,
+    const std::size_t AD_FD,
+    const std::size_t USER_FD)
     : adIndexer_(adIndexer)
     , workdir_(workdir)
     , sysdir_(sysdir)
     , adDimension_(adDimension)
+    , AD_FD_(AD_FD)
+    , USER_FD_(USER_FD)
     , pAdDb_(NULL)
     , offlineModel_(NULL)
     , kvclient_(NULL)
@@ -65,23 +69,29 @@ LaserGenericModel::LaserGenericModel(const AdIndexManager& adIndexer,
     origLaserModel_ = new OrigOnlineDB(DB);
     
     LOG(INFO)<<"open per-item-online-model...";
-    pAdDb_ = new std::vector<LaserOnlineModel>(adDimension_);
-    LOG(INFO)<<"ad dimension = "<<adDimension_;
+    LOG(INFO)<<"AD Feature Dimension = "<<AD_FD_<<", USER Feature Dimension = "<<USER_FD_;
     if (boost::filesystem::exists(workdir_ + "/per-item-online-model"))
     {
+        pAdDb_ = new std::vector<LaserOnlineModel>();
         load();
     }
     else
     {
+        std::vector<float> vec(USER_FD_);
+        LaserOnlineModel initModel(0.0, vec);
+        pAdDb_ = new std::vector<LaserOnlineModel>(adDimension_, initModel);
         LOG(INFO)<<"init per-item-online-model from OrigModel, since localized model doesn't exist. \
             This procedure may be slow, be patient";
         localizeFromOrigModel();
         LOG(INFO)<<"save model to local";
         save();
     }
-    
     LOG(INFO)<<"per-item-online-model size = "<<pAdDb_->size();
     /*
+    std::vector<float> vec(USER_FD_);
+    LaserOnlineModel initModel(0.0, vec);
+    pAdDb_ = new std::vector<LaserOnlineModel>(adDimension_, initModel);
+    LOG(INFO)<<"per-item-online-model size = "<<pAdDb_->size();
     for (std::size_t i = 0; i < adDimension_; ++i)
     {
         float delta = (rand() % 100) / 100.0;
@@ -97,7 +107,7 @@ LaserGenericModel::LaserGenericModel(const AdIndexManager& adIndexer,
     */
 
     LOG(INFO)<<"open offline-model";
-    offlineModel_ = new LaserOfflineModel(adIndexer_, workdir_ + "/offline-model", sysdir_, adDimension_);
+    offlineModel_ = new LaserOfflineModel(adIndexer_, workdir_ + "/offline-model", sysdir_, adDimension_, AD_FD_, USER_FD_);
     
     kvclient_ = new context::KVClient(kvaddr, kvport);
     mqclient_ = new context::MQClient(mqaddr, mqport);
@@ -255,17 +265,20 @@ void LaserGenericModel::dispatch(const std::string& method, msgpack::rpc::reques
     {
         AdFeature ad;
         ad.adId() = adIndex_;
-        adIndex_++;
 
+        std::vector<std::pair<int, float> > vec;
+        docid_t docid = adIndex_;
+        adIndexer_.get(docid, vec);
         std::vector<int>& index = ad.index();
         std::vector<float>& value = ad.value();
-        for (int k = 0; k < 10; ++k)
+        for (std::size_t k = 0; k < vec.size(); ++k)
         {
-            index.push_back(rand() % 10000);
-            value.push_back((rand() % 100) / 100.0);
+            index.push_back(vec[k].first);
+            value.push_back(vec[k].second);
         }
 
         req.result(ad);
+        adIndex_++;
     }
     else if ("ad_feature|start" == method)
     {
@@ -292,6 +305,13 @@ void LaserGenericModel::updatepAdDb(msgpack::rpc::request& req)
     req.params().convert(&params);
     const std::string DOCID(params.get<0>());
     const LaserOnlineModel& model = params.get<1>();
+    if (model.eta().size() != USER_FD_)
+    {
+        LOG(ERROR)<<"Dimension Mismatch";
+        req.result(false);
+        return;
+    }
+
     origLaserModel_->update(DOCID, model);
     docid_t adid = 0;
     if (adIndexer_.convertDocId(DOCID, adid))
@@ -304,7 +324,7 @@ void LaserGenericModel::updatepAdDb(msgpack::rpc::request& req)
 void LaserGenericModel::load()
 {
     std::ifstream ifs((workdir_ + "per-item-online-model").c_str(), std::ios::binary);
-    boost::archive::text_iarchive ia(ifs);
+    boost::archive::binary_iarchive ia(ifs);
     try
     {
         ia >> *pAdDb_;
@@ -319,7 +339,7 @@ void LaserGenericModel::load()
 void LaserGenericModel::save()
 {
     std::ofstream ofs((workdir_ + "per-item-online-model").c_str(), std::ofstream::binary | std::ofstream::trunc);
-    boost::archive::text_oarchive oa(ofs);
+    boost::archive::binary_oarchive oa(ofs);
     try
     {
         oa << *pAdDb_;

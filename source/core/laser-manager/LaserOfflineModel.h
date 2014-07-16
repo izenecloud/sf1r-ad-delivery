@@ -13,7 +13,9 @@ public:
     LaserOfflineModel(const AdIndexManager& adIndexer,
         const std::string& filename, 
         const std::string& sysdir,
-        const std::size_t adDimension);
+        const std::size_t adDimension,
+        const std::size_t AD_FD,
+        const std::size_t USER_FD);
     ~LaserOfflineModel();
 public:
     virtual bool candidate(
@@ -82,6 +84,21 @@ public:
     void load();
 
     void precompute(std::size_t startId, std::size_t endId, int threadId);
+
+    const std::vector<float>* alpha() const
+    {
+        return alpha_;
+    }
+
+    const std::vector<float>* betaStable() const
+    {
+        return betaStable_;
+    }
+
+    const std::vector<std::vector<float> >* conjunctionStable() const
+    {
+        return conjunctionStable_;
+    }
 private:
     void saveOrigModel();
     void localizeFromOrigModel();
@@ -90,6 +107,8 @@ private:
     const std::string filename_;
     const std::string sysdir_;
     std::size_t adDimension_;
+    const std::size_t AD_FD_;
+    const std::size_t USER_FD_;
     std::vector<float>* alpha_;
     std::vector<float>* beta_;
     std::vector<float>* betaStable_;

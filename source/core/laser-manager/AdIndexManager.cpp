@@ -152,7 +152,7 @@ void AdIndexManager::saveAdIndex()
     LOG(INFO)<<"save ad-index...";
     const std::string filename = workdir_ + "ad-index";
     std::ofstream ofs(filename.c_str(), std::ofstream::binary | std::ofstream::trunc);
-    boost::archive::text_oarchive oa(ofs);
+    boost::archive::binary_oarchive oa(ofs);
     try
     {
         oa << *adPtr_;
@@ -176,7 +176,7 @@ void AdIndexManager::loadAdIndex()
     try
     {
         std::ifstream ifs(filename.c_str(), std::ios::binary);
-        boost::archive::text_iarchive ia(ifs);
+        boost::archive::binary_iarchive ia(ifs);
         ia >> *adPtr_;
         ia >> lastDocId_;
     }
@@ -191,7 +191,7 @@ void AdIndexManager::saveClusteringIndex()
     LOG(INFO)<<"save clustering-index...";
     const std::string filename = workdir_ + "clustering-index";
     std::ofstream ofs(filename.c_str(), std::ofstream::binary | std::ofstream::trunc);
-    boost::archive::text_oarchive oa(ofs);
+    boost::archive::binary_oarchive oa(ofs);
     try
     {
         oa << *clusteringPtr_;
@@ -215,7 +215,7 @@ void AdIndexManager::loadClusteringIndex()
     try
     {
         std::ifstream ifs(filename.c_str(), std::ios::binary);
-        boost::archive::text_iarchive ia(ifs);
+        boost::archive::binary_iarchive ia(ifs);
         ia >> *clusteringPtr_;
         ia >> *adClusteringPtr_;
     }

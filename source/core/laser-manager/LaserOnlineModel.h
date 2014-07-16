@@ -80,6 +80,11 @@ public:
         return eta_;
     }
 
+    float delta() const
+    {
+        return delta_;
+    }
+
 private:
     float delta_;
     std::vector<float> eta_;
