@@ -75,6 +75,7 @@ public:
 private:
     LshIndex* createLshIndex();
     void buildLshIndex(LshIndex* lsh);
+    void buildLshIndex(LshIndex* lsh, std::size_t threadId);
     void save();
     void load();
     void saveOrigModel();
@@ -82,10 +83,8 @@ private:
 private:
     const std::string workdir_;
     LshIndex* lsh_;
-    int etaD_;
-    int conjunctionD_;
-    int LSH_DIM_;
-    int ALSH_DIM_;
+    const int LSH_DIM_;
+    const int ALSH_DIM_;
     mutable boost::shared_mutex mtx_;
 };
 } }

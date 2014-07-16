@@ -12,6 +12,7 @@ static const float P2 = 0.01;
 static const float DELTA = 1e-4;
 static const int ALSH_M = 3;    // default M value in ALSH
 static const float ALSH_W = 2.5;
+static const std::size_t THREAD_NUM = 16;
 
 LSHIndexModel::LSHIndexModel(const AdIndexManager& adIndexer, 
     const std::string& kvaddr,
@@ -26,27 +27,27 @@ LSHIndexModel::LSHIndexModel(const AdIndexManager& adIndexer,
     : LaserGenericModel(adIndexer, kvaddr, kvport, mqaddr, mqport, workdir, sysdir, adDimension, AD_FD, USER_FD)
     , workdir_(workdir)
     , lsh_(NULL)
-    , LSH_DIM_(-1)
-    , ALSH_DIM_(-1)
+    , LSH_DIM_(1 + USER_FD_ + USER_FD_ + 1 + USER_FD_)
+    , ALSH_DIM_(LSH_DIM_ + ALSH_M)
 {
     if (!boost::filesystem::exists(workdir_))
     {
         boost::filesystem::create_directory(workdir_);
     }
     
-    LSH_DIM_ = 1 + AD_FD_ + 1 + 1 + AD_FD_;
-    ALSH_DIM_ = LSH_DIM_ + ALSH_M;
     const std::string lsh = workdir_ + "/lsh-index-model";
     if (boost::filesystem::exists(lsh))
     {
-        //lsh_ = new LshIndex();
-        //load();
+        lsh_ = new LshIndex();
+        load();
     }
     else
     {
         lsh_ = createLshIndex();
     }
-    //buildLshIndex();
+    //lsh_ = createLshIndex();
+    //buildLshIndex(lsh_);
+    //save();
 }
 
 LSHIndexModel::~LSHIndexModel()
@@ -76,20 +77,20 @@ bool LSHIndexModel::candidate(
     std::vector<std::pair<docid_t, std::vector<std::pair<int, float> > > >& ad,
     std::vector<float>& score) const
 {
-    boost::posix_time::ptime stime = boost::posix_time::microsec_clock::local_time();
     SCANNER scanner(adDimension_, ad);
     float* query = new float[ALSH_DIM_];
     float* thisRow = query;
     *thisRow = 1.0;
     ++thisRow;
-    memcpy(thisRow, context.data(), etaD_);
-    thisRow += etaD_;
+    memcpy(thisRow, context.data(), USER_FD_);
+    thisRow += USER_FD_;
+
+    memcpy(thisRow, context.data(), USER_FD_);
+    thisRow += USER_FD_;
     *thisRow = 1.0;
     ++thisRow;
-    *thisRow = 1.0;
-    ++thisRow;
-    memcpy(thisRow, context.data(), conjunctionD_);
-    thisRow += conjunctionD_;
+    memcpy(thisRow, context.data(), USER_FD_);
+    thisRow += USER_FD_;
 
 
     for (int k = 0; k < ALSH_M; ++k)
@@ -105,8 +106,6 @@ bool LSHIndexModel::candidate(
     }
     lsh_->query(query, scanner);
     delete query;
-    boost::posix_time::ptime etime = boost::posix_time::microsec_clock::local_time();
-    LOG(INFO)<<"score time = "<<(etime-stime).total_milliseconds();
     score.assign(ad.size(), 0);
     return true;
 }
@@ -130,8 +129,8 @@ void LSHIndexModel::dispatch(const std::string& method, msgpack::rpc::request& r
 
 LSHIndexModel::LshIndex* LSHIndexModel::createLshIndex()
 {
-    static const int M = log(adDimension_) / log(1 / P2);         
-    static const int L = ceil(log(DELTA) / log(1 - exp(M * log(P1))));        // default hash table number
+    static const int M = adDimension_ > 1 ? log(adDimension_) / log(1 / P2) : 1;         
+    static const int L = ceil(1.5 * log(DELTA) / log(1 - exp(M * log(P1))));        // default hash table number
     static LshIndex::Parameter param;
     LOG(INFO)<<"LSH parameter, M = "<<M<<", L = "<<L<<", DIM = "<<ALSH_DIM_;
     param.range = H;
@@ -146,6 +145,22 @@ LSHIndexModel::LshIndex* LSHIndexModel::createLshIndex()
 
 void LSHIndexModel::buildLshIndex(LshIndex* lsh)
 {
+    LOG(INFO)<<"build LSH Index...";
+    boost::posix_time::ptime stime = boost::posix_time::microsec_clock::local_time();
+    boost::thread_group threadGroup;
+    for (std::size_t i = 0; i < THREAD_NUM; ++i)
+    {
+        threadGroup.create_thread(
+            boost::bind(&LSHIndexModel::buildLshIndex, this, lsh, i));
+    }
+    threadGroup.join_all();
+    LOG(INFO)<<"LSH Index finished...";
+    boost::posix_time::ptime etime = boost::posix_time::microsec_clock::local_time();
+    LOG(INFO)<<"index time = "<<(etime-stime).total_milliseconds();
+}
+
+void LSHIndexModel::buildLshIndex(LshIndex* lsh, std::size_t threadId)
+{
     const std::vector<LaserOnlineModel>* data = pAdDb_;
     const std::vector<float>* alpha = offlineModel_->alpha();
     const std::vector<float>* betaStable = offlineModel_->betaStable();
@@ -154,21 +169,23 @@ void LSHIndexModel::buildLshIndex(LshIndex* lsh)
         return;
 
     float* row = new float[ALSH_DIM_]; 
-    LOG(INFO)<<"build LSH Index...";
-    boost::posix_time::ptime stime = boost::posix_time::microsec_clock::local_time();
     for (std::size_t i = 0; i < adDimension_; ++i)
     {
+        if (i % THREAD_NUM!= threadId)
+            continue;
         float* thisRow = row;
         *thisRow = (*data)[i].delta();
         ++thisRow;
-        memcpy(thisRow, (*data)[i].eta().data(), etaD_);
-        thisRow += etaD_;
-        *thisRow = (*alpha)[i];
-        ++thisRow;
+        memcpy(thisRow, (*data)[i].eta().data(), USER_FD_);
+        thisRow += USER_FD_;
+
+        memcpy(thisRow, alpha->data(), USER_FD_);
+        thisRow += USER_FD_;
+
         *thisRow = (*betaStable)[i];
         ++thisRow;
-        memcpy(thisRow, (*conjunctionStable)[i].data(), conjunctionD_);
-        thisRow += conjunctionD_;
+        memcpy(thisRow, (*conjunctionStable)[i].data(), USER_FD_);
+        thisRow += USER_FD_;
 
         float norm = dot(row, row, LSH_DIM_);
         *thisRow = norm;
@@ -180,15 +197,8 @@ void LSHIndexModel::buildLshIndex(LshIndex* lsh)
             ++thisRow;
         }
         lsh->insert(i, row);
-        //if (i % 100 == 0)
-        //{
-        //    LOG(INFO)<<i;
-        //}
     }
     delete row;
-    LOG(INFO)<<"LSH Index finished...";
-    boost::posix_time::ptime etime = boost::posix_time::microsec_clock::local_time();
-    LOG(INFO)<<"index time = "<<(etime-stime).total_milliseconds();
 }
 
 void LSHIndexModel::save()

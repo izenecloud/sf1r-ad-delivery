@@ -29,7 +29,7 @@ HierarchicalModel::HierarchicalModel(const AdIndexManager& adIndexer,
         boost::filesystem::create_directory(workdir_);
     }
 
-    std::vector<float> vec(AD_FD_);
+    std::vector<float> vec(USER_FD_);
     LaserOnlineModel initModel(0.0, vec);
     pClusteringDb_ = new std::vector<LaserOnlineModel>(clusteringDimension_, initModel);
     LOG(INFO)<<"clustering dimension = "<<clusteringDimension_;
@@ -214,7 +214,7 @@ void HierarchicalModel::updatepClusteringDb(msgpack::rpc::request& req)
     std::size_t clusteringId = 0;
     ss >> clusteringId;
     //LOG(INFO)<<clusteringId;
-    if (params.get<1>().eta().size() != AD_FD_)
+    if (params.get<1>().eta().size() != USER_FD_)
     {
         LOG(ERROR)<<"Dimension Mismatch";
         req.result(false);
@@ -229,7 +229,7 @@ void HierarchicalModel::updatepClusteringDb(msgpack::rpc::request& req)
 void HierarchicalModel::save()
 {
     std::ofstream ofs((workdir_ + "/per-clustering-online-model").c_str(), std::ofstream::binary | std::ofstream::trunc);
-    boost::archive::text_oarchive oa(ofs);
+    boost::archive::binary_oarchive oa(ofs);
     try
     {
         oa << *pClusteringDb_;
@@ -244,7 +244,7 @@ void HierarchicalModel::save()
 void HierarchicalModel::load()
 {
     std::ifstream ifs((workdir_ + "/per-clustering-online-model").c_str(), std::ios::binary);
-    boost::archive::text_iarchive ia(ifs);
+    boost::archive::binary_iarchive ia(ifs);
     try
     {
         ia >> *pClusteringDb_;
@@ -259,7 +259,7 @@ void HierarchicalModel::load()
 void HierarchicalModel::saveOrigModel()
 {
     std::ofstream ofs((sysdir_ + "/orig-per-clustering-online-model").c_str(), std::ofstream::binary | std::ofstream::trunc);
-    boost::archive::text_oarchive oa(ofs);
+    boost::archive::binary_oarchive oa(ofs);
     try
     {
         oa << *pClusteringDb_;
@@ -280,7 +280,7 @@ void HierarchicalModel::localizeFromOrigModel()
         return;
     }
     std::ifstream ifs(orig.c_str(), std::ios::binary);
-    boost::archive::text_iarchive ia(ifs);
+    boost::archive::binary_iarchive ia(ifs);
     try
     {
         ia >> *pClusteringDb_;

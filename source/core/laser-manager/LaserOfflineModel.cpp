@@ -3,8 +3,8 @@
 #include "AdIndexManager.h"
 #include <boost/filesystem.hpp>
 #include <fstream>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
 #include <boost/serialization/vector.hpp>
 
 #include <mining-manager/MiningManager.h>
@@ -64,30 +64,40 @@ LaserOfflineModel::LaserOfflineModel(const AdIndexManager& adIndexer,
         boost::filesystem::create_directories(conjunctionDB);
     }
     origConjunctionStable_ = new OrigConjunctionStableDB(conjunctionDB);
-    
-    alpha_ = new std::vector<float>(AD_FD_);
-    beta_ = new std::vector<float>(USER_FD_);
-    betaStable_ = new std::vector<float>(adDimension_);
-    std::vector<float> adZero(AD_FD);
-    conjunction_ = new std::vector<std::vector<float> >(USER_FD, adZero);
-    conjunctionStable_ = new std::vector<std::vector<float> >(adDimension_, adZero);
+   
     if (boost::filesystem::exists(filename_))
     {
+        alpha_ = new std::vector<float>();
+        beta_ = new std::vector<float>();
+        betaStable_ = new std::vector<float>();
+        conjunction_ = new std::vector<std::vector<float> >();
+        conjunctionStable_ = new std::vector<std::vector<float> >();
         load();
     }
     else
     {
+        alpha_ = new std::vector<float>(USER_FD_);
+        beta_ = new std::vector<float>(AD_FD_);
+        betaStable_ = new std::vector<float>(adDimension_);
+        std::vector<float> adZero(USER_FD_);
+        conjunction_ = new std::vector<std::vector<float> >(USER_FD, adZero);
+        conjunctionStable_ = new std::vector<std::vector<float> >(adDimension_, adZero);
         LOG(INFO)<<"init per-item-online-model from original model, since localized model doesn't exist. \
             This procedure may be slow, be patient";
         localizeFromOrigModel();
         LOG(INFO)<<"save model to local";
         save();
     }
-        /*std::size_t adf = 10000;
-        std::size_t userf = 200;
-        alpha_->resize(userf);
-        beta_->resize(adf);
-        conjunction_->resize(userf);
+    LOG(INFO)<<"load offline model finish";
+    /*
+        alpha_ = new std::vector<float>(USER_FD_);
+        beta_ = new std::vector<float>(AD_FD_);
+        betaStable_ = new std::vector<float>(adDimension_);
+        std::vector<float> adZero(USER_FD_);
+        conjunction_ = new std::vector<std::vector<float> >(USER_FD, adZero);
+        conjunctionStable_ = new std::vector<std::vector<float> >(adDimension_, adZero);
+        std::size_t adf = AD_FD_;
+        std::size_t userf = USER_FD_;
         for (std::size_t i = 0; i < adDimension_; ++i)
         {
             (*betaStable_)[i] = (rand() % 100) / 100.0;
@@ -115,7 +125,8 @@ LaserOfflineModel::LaserOfflineModel(const AdIndexManager& adIndexer,
             }
             (*conjunction_)[i] = vec;
         }
-        save();*/
+        save();
+    */
 }
 
 LaserOfflineModel::~LaserOfflineModel()
@@ -296,7 +307,7 @@ void LaserOfflineModel::dispatch(const std::string& method, msgpack::rpc::reques
 void LaserOfflineModel::save()
 {
     std::ofstream ofs(filename_.c_str(), std::ofstream::binary | std::ofstream::trunc);
-    boost::archive::text_oarchive oa(ofs);
+    boost::archive::binary_oarchive oa(ofs);
     try
     {
         oa << alpha_;
@@ -315,7 +326,7 @@ void LaserOfflineModel::save()
 void LaserOfflineModel::load()
 {
     std::ifstream ifs(filename_.c_str(), std::ios::binary);
-    boost::archive::text_iarchive ia(ifs);
+    boost::archive::binary_iarchive ia(ifs);
     try
     {
         ia >> alpha_;
@@ -375,7 +386,7 @@ void LaserOfflineModel::precompute(std::size_t startId, std::size_t endId, int t
 void LaserOfflineModel::saveOrigModel()
 {
     std::ofstream ofs((sysdir_ + "/orig-offline-model").c_str(), std::ofstream::binary | std::ofstream::trunc);
-    boost::archive::text_oarchive oa(ofs);
+    boost::archive::binary_oarchive oa(ofs);
     try
     {
         oa << *alpha_;
@@ -423,7 +434,7 @@ void LaserOfflineModel::localizeFromOrigModel()
         //throw std::runtime_error("orig offline model does't exist");
     }
     std::ifstream ifs(origOfflineModel.c_str(), std::ios::binary);
-    boost::archive::text_iarchive ia(ifs);
+    boost::archive::binary_iarchive ia(ifs);
     try
     {
         ia >> *alpha_;
