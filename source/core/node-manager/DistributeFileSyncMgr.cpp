@@ -50,6 +50,11 @@ static void getFileList(const std::string& dir, std::vector<std::string>& file_l
         bfs::path current(file->path());
         if (bfs::is_directory(current))
         {
+            if (current.filename().string() == "LASER")
+            {
+                continue;
+            }
+
             if (recrusive)
                 getFileList(current.string(), file_list, ignore_list, recrusive);
         }
@@ -440,9 +445,6 @@ DistributeFileSyncMgr::DistributeFileSyncMgr()
     ignore_list_.insert("CURRENT");
     ignore_list_.insert("barrels");
 
-    // ignore for laser
-    ignore_list_.insert("index.aidx");
-    ignore_list_.insert("index.data");
     reporting_ = false;
 }
 
