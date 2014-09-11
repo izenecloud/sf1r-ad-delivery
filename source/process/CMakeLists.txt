@@ -59,7 +59,6 @@ TARGET_LINK_LIBRARIES(clusteringMatcher
   sf1r_bundle_mining
 
   ${idmlib_LIBRARIES}
-  ${imllib_LIBRARIES}
   ${ilplib_LIBRARIES}
   ${wisekma_LIBRARIES}
   ${izenecma_LIBRARIES}
@@ -105,9 +104,7 @@ TARGET_LINK_LIBRARIES(clustering
   sf1r_bundle_mining
 
   ${idmlib_LIBRARIES}
-  ${imllib_LIBRARIES}
   ${ilplib_LIBRARIES}
-  ${wisekma_LIBRARIES}
   ${izenecma_LIBRARIES}
   ${izenejma_LIBRARIES}
   ${izenelib_LIBRARIES}
@@ -153,12 +150,9 @@ TARGET_LINK_LIBRARIES(slim
   sf1r_bundle_mining
 
   ${idmlib_LIBRARIES}
-  ${imllib_LIBRARIES}
   ${ilplib_LIBRARIES}
-  ${wisekma_LIBRARIES}
   ${izenecma_LIBRARIES}
   ${izenejma_LIBRARIES}
-  ${izenelib_LIBRARIES}
 
   #external
   ${XML2_LIBRARIES}
@@ -209,9 +203,7 @@ TARGET_LINK_LIBRARIES(CobraProcess
   sf1r_bundle_mining
 
   ${idmlib_LIBRARIES}
-  ${imllib_LIBRARIES}
   ${ilplib_LIBRARIES}
-  ${wisekma_LIBRARIES}
   ${izenecma_LIBRARIES}
   ${izenejma_LIBRARIES}
   ${izenelib_LIBRARIES}
