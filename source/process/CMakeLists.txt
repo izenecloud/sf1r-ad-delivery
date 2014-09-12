@@ -5,9 +5,7 @@ INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_SOURCE_DIR}
 
   ${idmlib_INCLUDE_DIRS}
-  ${imllib_INCLUDE_DIRS}
   ${ilplib_INCLUDE_DIRS}
-  ${wisekma_INCLUDE_DIRS}
   ${izenecma_INCLUDE_DIRS}
   ${izenejma_INCLUDE_DIRS}
   ${izenelib_INCLUDE_DIRS}
@@ -60,7 +58,6 @@ TARGET_LINK_LIBRARIES(clusteringMatcher
 
   ${idmlib_LIBRARIES}
   ${ilplib_LIBRARIES}
-  ${wisekma_LIBRARIES}
   ${izenecma_LIBRARIES}
   ${izenejma_LIBRARIES}
   ${izenelib_LIBRARIES}
@@ -153,6 +150,7 @@ TARGET_LINK_LIBRARIES(slim
   ${ilplib_LIBRARIES}
   ${izenecma_LIBRARIES}
   ${izenejma_LIBRARIES}
+  ${izenelib_LIBRARIES}
 
   #external
   ${XML2_LIBRARIES}
