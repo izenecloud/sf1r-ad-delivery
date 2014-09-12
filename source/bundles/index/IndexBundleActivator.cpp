@@ -23,8 +23,6 @@
 #include <util/singleton.h>
 #include <ad-manager/AdSearchService.h>
 
-#include <question-answering/QuestionAnalysis.h>
-
 #include <boost/filesystem.hpp>
 
 #include <memory> // for auto_ptr

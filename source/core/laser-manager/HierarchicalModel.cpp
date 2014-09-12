@@ -4,6 +4,7 @@
 #include "AdIndexManager.h"
 #include <util/functional.h>
 #include <algorithm>    // std::sort
+#include <queue>
     
 namespace sf1r { namespace laser {
 
