@@ -29,7 +29,6 @@
 #include <util/driver/DriverConnectionFirewall.h>
 #include <util/singleton.h>
 
-#include <question-answering/QuestionAnalysis.h>
 #include <ad-manager/AdFeedbackMgr.h>
 #include <ad-manager/AdStreamSubscriber.h>
 
@@ -150,14 +149,6 @@ bool CobraProcess::initLAManager()
 
 void CobraProcess::initQuery()
 {
-    ilplib::qa::QuestionAnalysis* pQA = Singleton<ilplib::qa::QuestionAnalysis>::get();
-    const std::string& qahome = SF1Config::get()->getResourceDir();
-    bfs::path path(bfs::path(qahome) / "qa" / "questionwords.txt");
-    std::string qaPath = path.string();
-    if( boost::filesystem::exists(qaPath) )
-    {
-        pQA->load(qaPath);
-    }
 }
 
 bool CobraProcess::initFireWall()

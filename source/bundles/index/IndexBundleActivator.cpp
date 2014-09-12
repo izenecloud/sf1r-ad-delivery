@@ -284,7 +284,6 @@ bool IndexBundleActivator::init_()
 
     indexAggregator_ = createIndexAggregator_();
     SF1R_ENSURE_INIT(indexAggregator_);
-    pQA_ = Singleton<ilplib::qa::QuestionAnalysis>::get();
 
     searchService_ = new IndexSearchService(config_);
 
@@ -305,7 +304,6 @@ bool IndexBundleActivator::init_()
     searchService_->searchWorker_->invertedIndexManager_ = invertedIndexManager_;
     //searchService_->searchWorker_->rankingManager_ = rankingManager_;
     searchService_->searchWorker_->searchManager_ = searchManager_;
-    searchService_->searchWorker_->pQA_ = pQA_;
     searchService_->adSearchService_ = adSearchService_;
 
     taskService_ = new IndexTaskService(config_);
