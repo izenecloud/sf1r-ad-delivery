@@ -9,7 +9,7 @@ the `broad match` is delivered through `succinct self index`, which is the faste
 * _Online engine for TARE_. `TARE` refers to `Targeted Advertising and Recommender Engine`, which aims to build
 an unified engine for both targeted advertising and recommendation. Currently, `TARE` is tailored for products only.
 
-![Topology](https://raw.githubusercontent.com/izenecloud/sf1r/master/docs/source/images/sf1r.png)
+![Topology](https://github.com/izenecloud/laser/raw/master/doc/pic/topology2.png)
 
 
 ### Dependencies
