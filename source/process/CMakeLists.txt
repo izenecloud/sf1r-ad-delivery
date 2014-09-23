@@ -14,7 +14,6 @@ INCLUDE_DIRECTORIES(
   ${Glog_INCLUDE_DIRS}
   ${XML2_INCLUDE_DIR}
   ${SQLITE3_INCLUDE_DIR}
-  ${ImageMagick_INCLUDE_DIRS}
   )
 
 MESSAGE(STATUE "include path: ${INCLUDE_DIRECTORIES}")
@@ -34,6 +33,9 @@ FILE(GLOB clusteringMather_SRC
 
 ADD_EXECUTABLE(clusteringMatcher ${clusteringMather_SRC})
 TARGET_LINK_LIBRARIES(clusteringMatcher
+  sf1r_bundle_index
+  sf1r_bundle_mining
+
   sf1r_mining_manager
   sf1r_ad_manager
   sf1r_laser_manager
@@ -53,9 +55,6 @@ TARGET_LINK_LIBRARIES(clusteringMatcher
   sf1r_node_manager
   sf1r_net
 
-  sf1r_bundle_index
-  sf1r_bundle_mining
-
   ${idmlib_LIBRARIES}
   ${ilplib_LIBRARIES}
   ${izenecma_LIBRARIES}
@@ -63,6 +62,7 @@ TARGET_LINK_LIBRARIES(clusteringMatcher
   ${izenelib_LIBRARIES}
 
   #external
+  ${OpenSSL_LIBRARIES}
   ${XML2_LIBRARIES}
   ${Boost_LIBRARIES}
   ${TokyoCabinet_LIBRARIES}
@@ -178,6 +178,9 @@ ADD_DEFINITIONS("-fno-strict-aliasing")
 ADD_EXECUTABLE(CobraProcess ${cobra_process_SRC})
 
 TARGET_LINK_LIBRARIES(CobraProcess
+  sf1r_bundle_index
+  sf1r_bundle_mining
+
   sf1r_mining_manager
   sf1r_ad_manager
   sf1r_laser_manager
@@ -197,9 +200,6 @@ TARGET_LINK_LIBRARIES(CobraProcess
   sf1r_node_manager
   sf1r_net
 
-  sf1r_bundle_index
-  sf1r_bundle_mining
-
   ${idmlib_LIBRARIES}
   ${ilplib_LIBRARIES}
   ${izenecma_LIBRARIES}
@@ -207,6 +207,7 @@ TARGET_LINK_LIBRARIES(CobraProcess
   ${izenelib_LIBRARIES}
 
   #external
+  ${OpenSSL_LIBRARIES}
   ${XML2_LIBRARIES}
   ${Boost_LIBRARIES}
   ${TokyoCabinet_LIBRARIES}

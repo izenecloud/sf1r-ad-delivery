@@ -31,11 +31,11 @@ namespace sf1r
 namespace laser
 {
 
-static shared_ptr<RpcServer> rpcServer;
-static shared_mutex mutex;
-shared_ptr<RpcServer>& RpcServer::getInstance()
+static boost::shared_ptr<RpcServer> rpcServer;
+static boost::shared_mutex mutex;
+boost::shared_ptr<RpcServer>& RpcServer::getInstance()
 {
-    unique_lock<shared_mutex> uniqueLock(mutex);
+    boost::unique_lock<boost::shared_mutex> uniqueLock(mutex);
     if (NULL == rpcServer.get())
     {
         rpcServer.reset(new RpcServer());

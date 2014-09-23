@@ -86,7 +86,7 @@ private:
     const LaserPara& para_;
     const boost::shared_ptr<AdSearchService>& adSearchService_;
     const boost::shared_ptr<DocumentManager>& documentManager_;
-    mutable izenelib::ir::idmanager::IDManager& idManager_;
+    izenelib::ir::idmanager::IDManager& idManager_;
     laser::LaserRecommend* recommend_;
     laser::AdIndexManager* indexManager_;
     laser::LaserIndexTask* indexTask_;
